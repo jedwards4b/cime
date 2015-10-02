@@ -11,11 +11,11 @@ use CIME::Base;
 my %opts;
 $opts{localopt}=7;
 $opts{loglevel}="WARN";
-print "HERE1 @ARGV<> $opts{loglevel}<> $opts{localopt} <> $opts{help}\n";
+
 CIME::Base->getopts(\%opts);
-print "HERE2 @ARGV<> $opts{loglevel}<> $opts{localopt} <> $opts{help}\n";
+
 GetOptions("localopt=s"=>$opts{localopt});
-print "HERE3 @ARGV<> $opts{loglevel}<> $opts{localopt} <> $opts{help}\n";
+
 
 __END__
 =head1 NAME
