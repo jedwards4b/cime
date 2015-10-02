@@ -1,0 +1,20 @@
+package CIME::Base;
+use strict;
+use warnings;
+
+our $VERSION = "0.1";
+
+sub new {
+     my $class = shift();
+     my $this = {};
+     bless($this, $class);
+     $this->_init(@_);
+     return $this;
+}
+
+sub _init {
+  my ($this, $foo, $bar, $baz) = @_;
+  $this->SUPER::_init($bar, $baz);
+  $$this{foo} = $foo;
+}
+1;
