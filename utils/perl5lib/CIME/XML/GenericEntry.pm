@@ -68,9 +68,8 @@ sub resolve
 
     foreach my $id (keys %$self){
 	if(defined $self->{$id}{value}){
-	    my $a = qr/$string/;
-	    if($self->{$id}{value} =~ /$a/){
-		$self->{$id}{value} =~ s/$a/$value/;
+	    if($self->{$id}{value} =~ /$string/){
+		$self->{$id}{value} =~ s/$string/$value/;
 		$logger->debug("id = $id value = $self->{$id}{value} string=$string sub=$value");
 	    }
 	}

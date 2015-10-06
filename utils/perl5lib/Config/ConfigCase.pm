@@ -70,9 +70,9 @@ use English;
 #use warnings;
 #use diagnostics;
 use IO::File;
-use XML::LibXML;
+
 use File::Basename;
-use Log::Log4perl qw(get_logger);
+
 use SetupTools;
 
 
