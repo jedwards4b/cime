@@ -22,7 +22,6 @@ sub new {
 sub _init {
   my ($this) = @_;
   $this->SUPER::_init();
-#  $$this{foo} = $foo;
 }
 
 sub read {

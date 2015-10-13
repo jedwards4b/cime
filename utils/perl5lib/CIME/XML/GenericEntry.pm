@@ -44,22 +44,54 @@ sub read{
 	foreach my $define_node ($node->childNodes()) 
 	{
 	    my $node_name  = $define_node->nodeName();
-	    my $node_value = $define_node->textContent();
-	    if (defined $node_value) {
-		# now set the initial value to the default value - this can get overwritten
-		if ($node_name eq 'default_value') {
-		    $self->{$id}{value} = $node_value;
-		} else {
-		    $self->{$id}{$node_name} = $node_value;
+
+	    #
+            # This creates a hash of values with attribute name and id as keys
+            #
+	    if($node_name eq "values"){
+		foreach my $val_node ($define_node->childNodes()){
+                    if($val_node->hasAttributes()){		 
+			my @att = $val_node->attributes();
+			foreach my $attstr (@att){
+			    $attstr =~ /(\w+)=\"(.*)\"/;
+			    my $att = $1;
+			    my $att_val = $2;
+			    my $val =  $val_node->textContent();		
+			    $self->{$id}{$att}{$att_val} = $val;
+			}
+		    }
 		}
-		$logger->debug("id= $id name = $node_name value = $node_value\n");
+
+	    }else{
+		my $node_value = $define_node->textContent();
+		if (defined $node_value) {
+		    # now set the initial value to the default value - this can get overwritten
+		    $self->{$id}{$node_name} = $node_value;
+		    $logger->debug("id= $id name = $node_name value = $node_value\n");
+		}
 	    }
 	}
+	$self->set_default($id);
 	if (! defined $self->{$id}{value} ) {
 	    $logger->logdie( "ERROR default_value must be set for $id in $file\n");
 	}
     }
 }
+
+
+sub set_default
+{
+    my($self, $id) = @_;
+
+    if(defined $self->{$id}{default_value}){
+	$self->{$id}{value} = $self->{$id}{default_value};
+    }
+
+}
+
+
+
+
     
 sub resolve 
 {
@@ -79,5 +111,25 @@ sub resolve
 }
 
 
+sub get
+{
+    my($self, $name, $attribute, $id) = @_;
+
+    defined($self->{$name}) or $logger->logdie( "ERROR $pkg_nm::get: unknown parameter name: $name\n");
+    $logger->debug("GET: $name $self->{$name}->{value}\n");
+    if(defined $attribute && defined $id){
+	if(defined $self->{$name}{$attribute}){
+	    my $val = $self->{$name}{$attribute}{$id};
+	    if(! defined $val){
+		$logger->warn("No match for $attribute and $id in $name");
+	    }
+	    return $val;
+	}else{
+	    $logger->warn("No values found for $name");
+	}
+    }
+    return $self->{$name}{'value'};
+
+}
 
 1;

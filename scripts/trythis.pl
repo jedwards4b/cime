@@ -28,7 +28,8 @@ my $cimeroot = $ENV{CIMEROOT};
 my $components = CIME::XML::Components->new();
 $components->read("$cimeroot/driver_cpl/cime_config/config_component.xml","something",$cimeroot,"cesm");
 use Data::Dumper;
-print "$components->{FILES_CONFIG_SPEC}{value}\n";
+my $files_config_spec = $components->get('FILES_CONFIG_SPEC');
+print "$files_config_spec\n";
 #print Dumper($components);
 
 __END__
