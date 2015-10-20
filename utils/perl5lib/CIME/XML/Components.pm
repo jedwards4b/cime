@@ -11,8 +11,8 @@ BEGIN{
 }
 
 sub new {
-     my $class = shift();
-     my $this = {};
+     my ($class, $cimeroot) = @_;
+     my $this = {CIMEROOT=>$cimeroot};
      
      bless($this, $class);
      $this->_init(@_);
@@ -22,6 +22,8 @@ sub new {
 sub _init {
   my ($this) = @_;
   $this->SUPER::_init();
+ 
+
 }
 
 sub read {

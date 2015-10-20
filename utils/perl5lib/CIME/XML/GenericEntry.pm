@@ -25,7 +25,7 @@ sub _init {
 }
 
 sub read{
-    my ($self, $file) = @_;
+    my ($this, $file) = @_;
 
     if(! -f $file){
 	$logger->logdie("Could not find or open file $file");
@@ -37,7 +37,6 @@ sub read{
     if (! @nodes) {
 	$logger->logdie( "ERROR XML read error in $file \n"); 
     }
-
     foreach my $node (@nodes) 
     {
 	my $id = $node->getAttribute('id');
@@ -57,7 +56,7 @@ sub read{
 			    my $att = $1;
 			    my $att_val = $2;
 			    my $val =  $val_node->textContent();		
-			    $self->{$id}{$att}{$att_val} = $val;
+			    $this->{$id}{$att}{$att_val} = $val;
 			}
 		    }
 		}
@@ -66,13 +65,13 @@ sub read{
 		my $node_value = $define_node->textContent();
 		if (defined $node_value) {
 		    # now set the initial value to the default value - this can get overwritten
-		    $self->{$id}{$node_name} = $node_value;
 		    $logger->debug("id= $id name = $node_name value = $node_value\n");
+		    $this->{$id}{$node_name} = $node_value;
 		}
 	    }
 	}
-	$self->set_default($id);
-	if (! defined $self->{$id}{value} ) {
+	$this->set_default($id);
+	if (! defined $this->{$id}{value} ) {
 	    $logger->logdie( "ERROR default_value must be set for $id in $file\n");
 	}
     }
@@ -81,10 +80,10 @@ sub read{
 
 sub set_default
 {
-    my($self, $id) = @_;
+    my($this, $id) = @_;
 
-    if(defined $self->{$id}{default_value}){
-	$self->{$id}{value} = $self->{$id}{default_value};
+    if(defined $this->{$id}{default_value}){
+	$this->{$id}{value} = $this->{$id}{default_value};
     }
 
 }
@@ -95,14 +94,16 @@ sub set_default
     
 sub resolve 
 {
-    my ($self, $string, $value) = @_;
+    my ($this, $string, $value) = @_;
 
 
-    foreach my $id (keys %$self){
-	if(defined $self->{$id}{value}){
-	    if($self->{$id}{value} =~ /$string/){
-		$self->{$id}{value} =~ s/$string/$value/;
-		$logger->debug("id = $id value = $self->{$id}{value} string=$string sub=$value");
+
+    foreach my $id (keys %$this){
+	next unless (ref $this->{$id});
+	if(defined $this->{$id}{value}){
+	    if($this->{$id}{value} =~ /$string/){
+		$this->{$id}{value} =~ s/$string/$value/;
+		$logger->debug("id = $id value = $this->{$id}{value} string=$string sub=$value");
 	    }
 	}
     }
@@ -113,13 +114,13 @@ sub resolve
 
 sub get
 {
-    my($self, $name, $attribute, $id) = @_;
+    my($this, $name, $attribute, $id) = @_;
 
-    defined($self->{$name}) or $logger->logdie( "ERROR $pkg_nm::get: unknown parameter name: $name\n");
-    $logger->debug("GET: $name $self->{$name}->{value}\n");
+    defined($this->{$name}) or $logger->logdie( "ERROR get: unknown parameter name: $name\n");
+    $logger->debug("GET: $name $this->{$name}->{value}\n");
     if(defined $attribute && defined $id){
-	if(defined $self->{$name}{$attribute}){
-	    my $val = $self->{$name}{$attribute}{$id};
+	if(defined $this->{$name}{$attribute}){
+	    my $val = $this->{$name}{$attribute}{$id};
 	    if(! defined $val){
 		$logger->warn("No match for $attribute and $id in $name");
 	    }
@@ -128,7 +129,7 @@ sub get
 	    $logger->warn("No values found for $name");
 	}
     }
-    return $self->{$name}{'value'};
+    return $this->{$name}{'value'};
 
 }
 

@@ -7,15 +7,15 @@ BEGIN{
     require CIME::Base;
 }
 use CIME::Base;
+use CIME::XML::Machine;
 use CIME::XML::Components;
 use CIME::XML::GenericEntry;
 my %opts;
-$opts{localopt}=7;
 $opts{loglevel}="INFO";
 
 CIME::Base->getopts(\%opts);
 
-GetOptions("localopt=s"=>$opts{localopt});
+#GetOptions("localopt=s"=>$opts{localopt});
 
 my $level = Log::Log4perl::Level::to_priority($opts{loglevel});
 Log::Log4perl->easy_init({level=>$level,
@@ -23,13 +23,16 @@ Log::Log4perl->easy_init({level=>$level,
 
 my $logger = Log::Log4perl::get_logger();
 
-
 my $cimeroot = $ENV{CIMEROOT};
-my $components = CIME::XML::Components->new();
-$components->read("$cimeroot/driver_cpl/cime_config/config_component.xml","something",$cimeroot,"cesm");
-use Data::Dumper;
-my $files_config_spec = $components->get('FILES_CONFIG_SPEC');
-print "$files_config_spec\n";
+my $machine = CIME::XML::Machine->new({CIMEROOT=>$cimeroot,
+                                                                        MODEL=>"cesm"});
+
+$machine->read("Jellowstone");
+
+
+#use Data::Dumper;
+#my $files_config_spec = $components->get('FILES_CONFIG_SPEC');
+#print "$files_config_spec\n";
 #print Dumper($components);
 
 __END__
