@@ -26,11 +26,13 @@ my $logger = Log::Log4perl::get_logger();
 my $cimeroot = $ENV{CIMEROOT};
 my $machine = CIME::XML::Machine->new({CIMEROOT=>$cimeroot,
                                                                         MODEL=>"cesm"});
+$machine->read("yellowstone");
+$machine->loadModules();
+use Data::Dumper;
 
-$machine->read("Jellowstone");
+#print Dumper($machine->{module_system});
 
 
-#use Data::Dumper;
 #my $files_config_spec = $components->get('FILES_CONFIG_SPEC');
 #print "$files_config_spec\n";
 #print Dumper($components);

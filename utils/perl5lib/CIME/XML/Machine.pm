@@ -3,6 +3,7 @@ my $pkg_nm = __PACKAGE__;
 
 use CIME::Base;
 use CIME::XML::Files;
+use CIME::XML::Modules;
 
 my $logger;
 
@@ -36,6 +37,9 @@ sub read {
     my $machxml = XML::LibXML->new( no_blanks => 1)->parse_file($machfile);
     my @machnodes = $machxml->findnodes(".//machine[\@MACH=\"$machine\"]");
     if (@machnodes) {
+	if($#machnodes > 0){
+	    $logger->logdie("ERROR more than one machine match for $machine in $machfile");
+	}
 	$logger->info("Found machine \"$machine\" in $machfile \n");
     } else {
 	$logger->error( "ERROR ConfigMachine::setMachineFile: no match for machine $machine 
@@ -43,7 +47,57 @@ sub read {
 	$this->listMachines( $machfile );
 	exit -1;
     }	    
+    my $node = $machnodes[0];
+    foreach my $child ($node->findnodes("./*")) {
+	next if ($child->nodeType() == XML_COMMENT_NODE);
+
+	my $name = $child->nodeName();
+	if($name eq "mpirun"){
+	    $this->read_mpirun_node($child);
+	    next;
+	}
+
+	if($name eq "module_system"){
+	   $this->{module_system} = CIME::XML::Modules->new($child);
+	    next;
+	}
+	if($name eq "batch_system"){
+	    next;
+	}
+	if($name eq "environment_variables"){
+	    next;
+	}
+
+	my $value = $child->textContent();
+	$this->{$name} = $value;
+    }  
 }
+
+
+
+sub read_mpirun_node
+{
+    my($this, $node) = @_;
+
+    my $mpilib = 'any';
+    my $threaded = 'any';
+    my $compiler = 'any';
+    if(defined $node->getAttribute('mpilib')){
+	$mpilib = $node->getAttribute('mpilib');
+    }
+    if(defined $node->getAttribute('threaded')){
+	$threaded = $node->getAttribute('threaded');
+    }
+    if($node->getAttribute('compiler')){
+	$compiler = $node->getAttribute('compiler');
+    }
+    my @exenode = $node->findnodes("./*");
+    my $exe = $exenode[0]->textContent();
+    
+    $this->{exectuable}{$mpilib}{$compiler}{$threaded} = $exe;
+}
+
+
 sub listMachines
 {
     my($this, $machfile) = @_;
@@ -66,6 +120,14 @@ sub listMachines
     }
 
 }
+
+sub loadModules
+{
+    my($this) = @_;
+    $this->{module_system}->load();
+}
+
+
 
 1;
  

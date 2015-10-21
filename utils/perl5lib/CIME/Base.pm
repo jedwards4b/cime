@@ -8,6 +8,7 @@ use base 'ToolSet';
 ToolSet->use_pragma('strict');
 ToolSet->use_pragma('warnings');
 ToolSet->export('Log::Log4perl'=>undef,
+		'Data::Dumper'=>undef,
 		'Getopt::Long'=>qw(GetOptions),
 		'XML::LibXML'=>undef,
 );
