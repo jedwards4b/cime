@@ -36,10 +36,18 @@ sub read {
 		my $lang = $pn->getAttribute('lang');
 		$this->{init}{$name}{$lang} = $pn->textContent();
 	    }elsif($name eq "modules"){
+# The data structure in the commands element of the Modules hash is perhaps a bit complicated 
+# but it preserves the order dependence of module commands and allows for dependence on 
+# other attributes such as compiler or mpilib
+# it is an array of hashs of module actions, each action  may operate on mutiple libraries so
+# thats another list.   attributes are stored as type=value where value may contain
+# regular expressions.  
+#  
+#
 		my @cmd_list;
 		my @attlist;
 		my $thash={};
-		my $ahash={};
+		my $ahash=$thash;
 		if($pn->hasAttributes()){
 		    @attlist = $pn->attributes();
 		    foreach my $att (@attlist){
@@ -51,7 +59,10 @@ sub read {
 		foreach my $cmd (@command_nodes){
 		    push(@{$ahash->{$cmd->getAttribute('name')}},$cmd->textContent());
 		}
-		push(@cmd_list, $thash);
+		
+		foreach (keys %$thash){
+		    push(@cmd_list, {$_=>$thash->{$_}});
+		}
 		push(@{$this->{commands}},@cmd_list);
 		
 	    }
@@ -62,10 +73,10 @@ sub read {
 
 sub load
 {
-    my($this) = @_;
+    my($this, $attributes) = @_;
 
-    if($this->{type} eq "module"){
-	$this->load_modules();
+     if($this->{type} eq "module"){
+	$this->load_modules($attributes);
     }elsif($this->{type} eq "dotkit"){
 	$this->load_dotkit();
     }elsif($this->{type} eq "soft"){
@@ -80,26 +91,54 @@ sub load
 
 sub load_modules
 {
-    my($this) = @_;
+    my($this, $attributes) = @_;
 
 
     if(defined $this->{init}{init_path}{perl}){
 	require $this->{init}{init_path}{perl};
 
-	foreach my $cmdlist (@{$this->{commands}}){
-	    foreach my $cmd (@{$cmdlist}){
-		foreach my $action (keys %$cmd){
-		    if($action =~ /(.*)=(.*)/){
-		    }else{
-			$logger->info("$action $cmd->{$action}");
-			module($action, $cmd->{$action});
-		    }
-		}
-	    }
-	}
+      LIST: foreach my $cmdlist (@{$this->{commands}}){
+	  my @cmdlist;
+	  my $hashref = $cmdlist;
+	  foreach my $cmd (keys %{$hashref}){
+	      if($cmd =~ /=/){
+		  while($cmd =~ /\s*(.*)\s*=\s*\"(!)?(.*)\"\s*/){
+		      my $type = $1;
+		      my $neg = defined $2 ? 1: 0;
+		      my $val = $3;
+		      if(defined $attributes->{$type}){
+			  if($attributes->{$type} =~ /$val/ or ($neg && $attributes->{$type} !~ /$val/)){
+			      if(ref( $hashref->{$cmd}) eq 'HASH'){
+				  $hashref = $hashref->{$cmd};
+				  my @kl = keys %{$hashref};
+				  $cmd = $kl[0];
+			      }
+			      
+			  }else{
+			      next LIST;
+			  }
+			  
+		      }else{
+			  $logger->warn("attribute $type not found");
+			  next LIST;
+		      }
+		  }
+
+	      }
+	      @cmdlist = @{$hashref->{$cmd}};
+	        
+	      
+	      foreach my $actupon (@cmdlist){
+		  $logger->info("$cmd $actupon");
+		  module("$cmd $actupon");
+		  
+	      }
+	      
+	  }
+      }
 	
     }
-      
+    module("list");
 }
 sub load_soft
 {

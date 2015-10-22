@@ -124,9 +124,39 @@ sub listMachines
 sub loadModules
 {
     my($this) = @_;
-    $this->{module_system}->load();
+    my $attributes={};
+   
+# Compiler and mpilib are in machine but what about debug hard coded for the moment
+    $attributes->{compiler} = $this->get('compiler');
+    $attributes->{mpilib} = $this->get('mpilib');
+    $attributes->{debug} = 'false';
+
+    $this->{module_system}->load($attributes);
 }
 
+sub get
+{
+    my($this, $what) = @_;
+
+
+# no compiler set, get the default
+    if($what eq 'compiler'){
+	if(defined $this->{COMPILERS}){
+	    my @compilers = split(",",$this->{COMPILERS});
+	    $this->{compiler} = $compilers[0];
+	} 
+    }
+# no mpilib set, get the default
+    if($what eq 'mpilib'){
+	if(defined $this->{MPILIBS}){
+	    $this->{mpilib} = (split(",",$this->{MPILIBS}))[0];
+	} 
+    }
+    if(defined $this->{$what}){
+	return $this->{$what};
+    }
+    $logger->warn("no $what attribute found");
+}
 
 
 1;
