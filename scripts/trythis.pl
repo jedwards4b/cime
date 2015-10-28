@@ -7,9 +7,10 @@ BEGIN{
     require CIME::Base;
 }
 use CIME::Base;
-use CIME::XML::Machine;
-use CIME::XML::Components;
-use CIME::XML::GenericEntry;
+#use CIME::XML::Machine;
+#use CIME::XML::Components;
+#use CIME::XML::Headers;
+use CIME::XML::Run;
 my %opts;
 $opts{loglevel}="INFO";
 
@@ -24,13 +25,18 @@ Log::Log4perl->easy_init({level=>$level,
 my $logger = Log::Log4perl::get_logger();
 
 my $cimeroot = $ENV{CIMEROOT};
-my $machine = CIME::XML::Machine->new({CIMEROOT=>$cimeroot,
-                                                                        MODEL=>"cesm"});
-$machine->read("yellowstone");
-$machine->loadModules();
+#my $machine = CIME::XML::Machine->new({CIMEROOT=>$cimeroot,
+#                                                                       MODEL=>"cesm"});
+#$machine->read("yellowstone");
+#$machine->loadModules();
 use Data::Dumper;
 
-#print Dumper($machine->{module_system});
+my $obj = CIME::XML::Run->new($cimeroot);
+$obj->write();
+
+
+
+
 
 
 #my $files_config_spec = $components->get('FILES_CONFIG_SPEC');

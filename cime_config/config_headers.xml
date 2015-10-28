@@ -21,8 +21,8 @@
   <file name ="env_run.xml">
     <header>
     These variables MAY BE CHANGED ANYTIME during a run.
-    Additional machine speific variables that can be changed
-    during a run are contained in the env_mach_specific file
+    Additional machine specific variables that can be changed
+    during a run are contained in the env_mach_specific.xml file
     Note1: users SHOULD NOT modify BUILD_COMPETE in env_build.xml
     this is done automatically by the scripts.
     </header>

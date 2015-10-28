@@ -47,41 +47,20 @@ sub read {
 	$this->listMachines( $machfile );
 	exit -1;
     }	    
-    my $node = $machnodes[0];
-    foreach my $child ($node->findnodes("./*")) {
-	next if ($child->nodeType() == XML_COMMENT_NODE);
-
-	my $name = $child->nodeName();
-	if($name eq "mpirun"){
-	    $this->read_mpirun_node($child);
-	    next;
-	}
-
-	if($name eq "module_system"){
-	   $this->{module_system} = CIME::XML::Modules->new($child);
-	    next;
-	}
-	if($name eq "batch_system"){
-	    next;
-	}
-	if($name eq "environment_variables"){
-	    next;
-	}
-
-	my $value = $child->textContent();
-	$this->{$name} = $value;
-    }  
+    
+    $this->{xmlnode} = $machnodes[0];
 }
 
 
 
 sub read_mpirun_node
 {
-    my($this, $node) = @_;
+    my($this) = @_;
 
     my $mpilib = 'any';
     my $threaded = 'any';
     my $compiler = 'any';
+    my $node = $this->{xmlnode} or $logger->logdie("Node not initialized");
     if(defined $node->getAttribute('mpilib')){
 	$mpilib = $node->getAttribute('mpilib');
     }

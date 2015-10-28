@@ -45,8 +45,8 @@ sub read {
 
     $this->SUPER::read($file);
 
-    $this->resolve(qr(\$MODEL),$this->get('MODEL'));
-    $this->resolve(qr(\$CIMEROOT),$this->{CIMEROOT});
+    $this->resolve('MODEL');
+    $this->resolve('CIMEROOT');
 
 
 

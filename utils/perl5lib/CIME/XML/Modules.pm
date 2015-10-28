@@ -25,11 +25,27 @@ sub _init {
   
 }
 
+sub _get_module_init_path
+{
+    my ($this, $lang) = @_;
+    my $node = $this->{node};
+    if($node->hasAttribute('type'){
+	my @moduleinit= $node->findnodes(".//*");
+    	foreach my $pn (@moduleinit){
+	    my $name = $pn->nodeName();
+	    if($name eq "init_path" or $name eq "cmd_path"){
+		next unless( $lang =  $pn->getAttribute('lang'));
+		
+	    }
+		
+}
+
+
 sub read {
     my ($this, $node) = @_;
     if($node->hasAttribute('type')){
 	$this->{type} = $node->getAttribute('type');
-	my @moduleinit= $node->findnodes(".//*");
+
 	foreach my $pn (@moduleinit){
 	    my $name = $pn->nodeName();
 	    if($name eq "init_path" or $name eq "cmd_path"){
