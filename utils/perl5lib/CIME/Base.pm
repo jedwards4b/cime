@@ -7,8 +7,9 @@ use Pod::Usage;
 use base 'ToolSet';
 ToolSet->use_pragma('strict');
 ToolSet->use_pragma('warnings');
-ToolSet->export('Log::Log4perl'=>undef,
+ToolSet->export('Log::Log4perl'=>qw(get_logger),
 		'Data::Dumper'=>undef,
+		'XML::LibXML' => undef,
 		'Getopt::Long'=>qw(GetOptions),
 );
 

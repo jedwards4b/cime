@@ -23,7 +23,7 @@ my $level = Log::Log4perl::Level::to_priority($opts{loglevel});
 Log::Log4perl->easy_init({level=>$level,
 			  layout=>'%m%n'});
 
-my $logger = Log::Log4perl::get_logger();
+my $logger = get_logger();
 
 my $cimeroot = $ENV{CIMEROOT};
 

@@ -2,13 +2,12 @@ package CIME::Name;
 my $pkg_nm = __PACKAGE__;
 
 use CIME::Base;
-use Log::Log4perl;
 my $logger;
 
 our $VERSION = "v0.0.1";
 
 BEGIN{
-    $logger = Log::Log4perl::get_logger();
+    $logger = get_logger();
 }
 
 sub new {
