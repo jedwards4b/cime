@@ -52,4 +52,17 @@ Can be DEBUG (most verbose), INFO (default), WARN, ERROR, FATAL(least verbose)
 =back
 =head1 DESCRIPTION
 B<case.template> will do this...
+
+=head1 AUTHOR AND CREDITS
+
+{name and e-mail}
+
+{Other credits}
+
+=head1 COPYRIGHT AND LICENSE
+
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself. 
+
 =cut
