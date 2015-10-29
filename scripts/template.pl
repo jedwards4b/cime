@@ -53,9 +53,21 @@ cime_perl_script_template - CIME script to do something
 
 Prints a brief help message and exits.
 
-=item B<-loglevel>
+=item B<-loglevel> Set the verbosity level of this script, levels are:
 
-Can be DEBUG (most verbose), INFO (default), WARN, ERROR, FATAL(least verbose) 
+=over 4
+
+=item DEBUG (most verbose)
+
+=item INFO (default)
+
+=item WARN
+
+=item ERROR
+
+=item FATAL(least verbose) 
+
+=back
 
 =item B<-cimeroot>
 
