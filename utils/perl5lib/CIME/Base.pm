@@ -10,7 +10,6 @@ ToolSet->use_pragma('warnings');
 ToolSet->export('Log::Log4perl'=>undef,
 		'Data::Dumper'=>undef,
 		'Getopt::Long'=>qw(GetOptions),
-		'XML::LibXML'=>undef,
 );
 
 our $VERSION = "0.1";

@@ -41,7 +41,6 @@ __END__
 
 CIME::NAME a module to do this in perl
 
-
 =head1 SYNOPSIS
 
   use CIME::NAME;
@@ -57,20 +56,30 @@ A more complete description here.
 
 =head2 OPTIONS
 
-General description of options
+The following optional arguments are supported, passed in using a 
+hash reference after the required arguments to ->new()
 
 =over 4
 
 =item loglevel
 
-Sets the level of verbosity of this module, five levels are available 
-=over 4 
+Sets the level of verbosity of this module, five levels are available:
+
+=over 4
 
 =item DEBUG (most verbose)
-=item INFO  (default)
-=item WARN  (Show only messages at this level or higher)
-=iten ERROR (Error messages that are not fatal (rare))
-=item FATAL (Error messages that are accompained by a program halt.)
+
+=item INFO  (default) 
+
+=item WARN  (reason for concern but no error)
+
+=item ERROR (non-fatal errors should be rare)
+
+=item FATAL (least verbose)  
+
+=back
+
+=item another option
 
 =back
 

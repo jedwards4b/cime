@@ -1,7 +1,8 @@
 #!/user/bin/env perl
-use 5.10.0; 
 BEGIN{
     my $cimeroot = $ENV{CIMEROOT};
+#   This is the only place we should use die.  Once the perl library
+#   location is found we can use the $logger->logdie() function
     die "CIMEROOT environment variable not set" unless defined $cimeroot;
     die "CIMEROOT directory \"$cimeroot\" not found" unless (-d $cimeroot);
     unshift @INC, "$cimeroot/utils/perl5lib";
@@ -42,15 +43,28 @@ cime_perl_script_template - CIME script to do something
        -help             brief help message
        -loglevel <level> set stdout message verbosity
        -model <name>     Specifies target model system.
+       -cimeroot <path>  Path to the root directory of the cime source code
 
 =head1 OPTIONS
+
 =over 8
+
 =item B<-help>
+
 Prints a brief help message and exits.
+
 =item B<-loglevel>
-Can be DEBUG (most verbose), INFO (default), WARN, ERROR, FATAL(least verbose)    
+
+Can be DEBUG (most verbose), INFO (default), WARN, ERROR, FATAL(least verbose) 
+
+=item B<-cimeroot>
+
+Path to the root directory of the cime source code. This can also be set as an environment variable CIMEROOT.  The command line option takes precidence.  
+
 =back
+
 =head1 DESCRIPTION
+
 B<case.template> will do this...
 
 =head1 AUTHOR AND CREDITS
