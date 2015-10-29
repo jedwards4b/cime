@@ -6,9 +6,10 @@ use CIME::XML::Files;
 use CIME::XML::Modules;
 
 my $logger;
+our $VERSION = "v0.0.1";
 
 BEGIN{
-    $logger = Log::Log4perl::get_logger();
+    $logger = get_logger();
 }
 
 sub new {
@@ -140,3 +141,65 @@ sub get
 
 1;
  
+=head1 CIME::XML::Machine
+
+CIME::XML::Machine perl interface module to cime config_machines.xml files
+
+=head1 SYNOPSIS
+
+  use CIME::XML::Machine;
+
+  why??
+
+
+=head1 DESCRIPTION
+
+CIME::XML::Machine is a perl module to ...
+       
+A more complete description here.
+
+=head2 OPTIONS
+
+The following optional arguments are supported, passed in using a 
+hash reference after the required arguments to ->new()
+
+=over 4
+
+=item loglevel
+
+Sets the level of verbosity of this module, five levels are available:
+
+=over 4
+
+=item DEBUG (most verbose)
+
+=item INFO  (default) 
+
+=item WARN  (reason for concern but no error)
+
+=item ERROR (non-fatal errors should be rare)
+
+=item FATAL (least verbose)  
+
+=back
+
+=item another option
+
+=back
+
+=head1 SEE ALSO
+
+=head1 AUTHOR AND CREDITS
+
+{name and e-mail}
+
+{Other credits}
+
+=head1 COPYRIGHT AND LICENSE
+
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself. 
+
+=cut
+__END__
