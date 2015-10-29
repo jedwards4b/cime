@@ -73,6 +73,13 @@ Prints a brief help message and exits.
 
 Path to the root directory of the cime source code. This can also be set as an environment variable CIMEROOT.  The command line option takes precidence.  
 
+=item B<-model>
+
+The name of the model coupled with cime.  Allowed values are the names of the 
+directories under cime/cime_config.  
+
+=back
+
 =back
 
 =head1 DESCRIPTION
