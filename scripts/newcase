@@ -1,0 +1,233 @@
+#!/user/bin/env perl
+BEGIN{
+    my $cimeroot = $ENV{CIMEROOT};
+#   This is the only place we should use die.  Once the perl library
+#   location is found we can use the $logger->logdie() function
+    die "CIMEROOT environment variable not set" unless defined $cimeroot;
+    die "CIMEROOT directory \"$cimeroot\" not found" unless (-d $cimeroot);
+    unshift @INC, "$cimeroot/utils/perl5lib";
+    require CIME::Base;
+}
+use CIME::Base;
+
+use CIME::template;
+
+my %opts;
+$opts{loglevel}="INFO";
+
+CIME::Base->getopts(\%opts);
+
+#GetOptions("localopt=s"=>$opts{localopt});
+
+my $level = Log::Log4perl::Level::to_priority($opts{loglevel});
+Log::Log4perl->easy_init({level=>$level,
+			  layout=>'%m%n'});
+
+my $logger = get_logger();
+
+my $cimeroot = $ENV{CIMEROOT};
+
+my $obj = CIME::template->new();
+
+
+
+__END__
+=head1 create_newcase
+
+create_newcase - CIME script to create a model case
+
+=head1 SYNOPSIS
+
+    create_newcase -case casename -compset compest -res res -mach machine [options]
+
+=head1 OPTIONS
+
+=over 8
+
+=item B<-case> <name> 
+
+Specifies the case name (required).
+
+=item B<-compset> <name> 
+
+Specify a compset (required).
+
+=item B<-res> <name>
+
+Specify a grid resolution (required).
+
+=item B<-mach> <name>
+
+Specify a machine (required).
+
+=item B<-pes_file> <name>         
+
+Full pathname of pes file to use (will overwrite default settings) (optional)
+
+=item B<-project> <name>          
+
+Specify a project id for the case (optional)
+default: user-specified environment variable PROJECT or ACCOUNT
+or read from ~/.cesm_proj or ~/.ccsm_proj
+
+=item B<-compiler> <name>         
+
+Specify a compiler for the target machine (optional)
+default: default compiler for the target machine
+
+=item B<-mpilib> <name>           
+
+Specify a mpi library for the target machine (optional)
+default: default mpi library for the target machine
+allowed: openmpi, mpich, ibm, mpi-serial, etc
+redundant with _M confopts setting
+
+=item B<-mach_dir> <path>         
+
+Specify the locations of the Machines directory (optional).
+default: \$cimeroot/cime_config/$model/machines
+
+=item B<-user_mods_dir> <path>    
+
+Path to directory with user_nl_* files and xmlchange
+commands to utilize (optional). For non-test cases, this 
+can also include SourceMods
+
+=item B<-confopts> <value>  
+
+Specify some additional configuration options (optional) as follows:
+
+=over 4
+                 
+=item _AOA  = aoflux on atm grid
+
+=item _AOE  = aoflux on exch grid
+
+=item _CG   = gregorian calendar
+
+=item _D    = debug
+
+=item _E    = esmf interfaces
+
+=item _IOP* = PnetCDF IO test where * is  A(atm), C(cpl), G(glc), 
+                    I(ice), L(lnd), O(ocn), W(wav) or blank (all components)
+
+=item _L*   = set run length y, m, d, h, s, n(nsteps) plus integer 
+                                   (ie _Lm6 for 6 months) 
+
+=item _M*   = set the mpilib where * is default, mpi-serial, mpich, etc
+
+=item _N*   = set NINST_ env value to * where * is an integer
+
+=item _P*   = set pecount to specific values include 
+                T,S,M,L,X,1,1x1,16,16x1,4x4,16x1D, etc
+
+=back
+
+=item B<-petype>  <name> 
+
+Valid values are [threaded | mpionly] 
+                           Force pes to be all threaded or all mpi
+			   default: this is not set
+
+=item B<-pecount> <name>          
+
+Value of S,M,L,X1,X2 (optional). 
+                           default: M, partially redundant with confopts _P
+
+=item B<-user_compset> <name>     
+
+Long name for new user compset to use (optional)
+This assumes that all of the compset settings in the 
+long name have been defined in cime_config/config_compsets.xml
+
+=item B<-user_grid_file> <name>   
+
+Full pathname of grid file to use (optional)
+This should be a "copy" of cime_config/config_grids.xml
+with the new user grid changes added to it
+
+=item B<-user_pes_setby> <name>   
+
+Component that sets the pe-layouts and pio settings 
+For CESM this is [allactive, cam, clm, cice, cism, pop]
+
+=item B<-testlist>
+
+List valid values for tests [normally only invoked by create_test] (optional).
+
+=item B<-xmlmode> <name>
+
+Sets format of xml files; normal or expert (optional). (default is normal) 
+
+=item B<-nowarning 
+
+Turns off checking of the known_problems repository. (default is on)
+
+=item B<-sharedlibroot
+
+Used for re-using build components when building multiple cases, 
+default is \$EXEROOT
+
+=item B<-help>
+
+Prints a brief help message and exits.
+
+=item B<-loglevel> Set the verbosity level of this script, levels are:
+
+=over 4
+
+=item DEBUG (most verbose)
+
+=item INFO (default)
+
+=item WARN
+
+=item ERROR
+
+=item FATAL(least verbose) 
+
+=back
+
+=item B<-cimeroot>
+
+Path to the root directory of the cime source code. This can also be set as an environment variable CIMEROOT.  The command line option takes precidence.  
+
+=item B<-model>
+
+The name of the model coupled with cime.  Allowed values are the names of the 
+directories under cime/cime_config.  
+
+=back
+=back
+
+=head1 DESCRIPTION
+
+B<create_newcase> creates the directory $CASEROOT, which is specified by the -case option. In $CASEROOT, create_newcase installs the files and directories that are responsible for configuring, building, and running the case. 
+
+
+=head1 EXAMPLES
+
+=over 4
+
+=item  ./create_newcase -case mycase1 -res f19_g16 -compset B1850CN -mach yellowstone
+
+=item  ./create_newcase -case mycase2 -res f19_g16 -compset B1850CN -mach yellowstone -confopts _D_P16
+
+=item  ./create_newcase -case mycase5 -res f19_g16 -compset B1850CN -mach yellowstone -confopts _CG_E -pes_file mypes_file
+
+=back
+
+=head1 AUTHOR AND CREDITS
+
+{name and e-mail}
+
+{Other credits}
+
+=head1 COPYRIGHT AND LICENSE
+
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself. 
+
+=cut
