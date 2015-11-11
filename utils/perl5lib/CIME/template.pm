@@ -1,4 +1,4 @@
-package CIME::Name;
+package CIME::template;
 my $pkg_nm = __PACKAGE__;
 
 use CIME::Base;
@@ -26,11 +26,6 @@ sub _init {
 #  $this->SUPER::_init($bar, $baz);
     # Nothing to do here
 }
-
-
-
-
-
 
 1;
 

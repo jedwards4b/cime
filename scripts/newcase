@@ -8,16 +8,39 @@ BEGIN{
     unshift @INC, "$cimeroot/utils/perl5lib";
     require CIME::Base;
 }
+use Cwd qw( getcwd abs_path chdir);
 use CIME::Base;
-
-use CIME::template;
+use CIME::Case;
 
 my %opts;
 $opts{loglevel}="INFO";
 
 CIME::Base->getopts(\%opts);
 
-#GetOptions("localopt=s"=>$opts{localopt});
+GetOptions(
+    "case=s"                    => \$opts{'case'},
+    "compset=s"                 => \$opts{'compset'},
+    "confopts=s"                => \$opts{'confopts'},
+    "project=s"                 => \$opts{'project'},  
+    "compiler=s"                => \$opts{'compiler'},  
+    "mpilib=s"                  => \$opts{'mpilib'},  
+    "res=s"                     => \$opts{'res'},
+    "mach=s"                    => \$opts{'mach'},
+    "mach_dir=s"                => \$opts{'mach_dir'},
+    "model=s"                   => \$opts{'model'},
+    "pecount=s"                 => \$opts{'pecount'},
+    "petype=s"                  => \$opts{'petype'},
+    "pes_file=s"                => \$opts{'pes_file'}, 
+    "scratchroot"               => \$opts{'scratchroot'},
+    "testname=s"                => \$opts{'testname'},
+    "testlist"                  => \$opts{'testlist'},
+    "sharedlibroot=s"           => \$opts{'sharedlibroot'},
+    "user_mods_dir=s"           => \$opts{'user_mods_dir'},
+    "user_grid_file=s"          => \$opts{'user_grid_file'},
+    "user_compset=s"            => \$opts{'user_compset'},
+    "user_pes_setby=s"          => \$opts{'user_pes_setby'},
+    )  or pod2usage(2);
+pod2usage(1) if($opts{help});
 
 my $level = Log::Log4perl::Level::to_priority($opts{loglevel});
 Log::Log4perl->easy_init({level=>$level,
@@ -25,9 +48,91 @@ Log::Log4perl->easy_init({level=>$level,
 
 my $logger = get_logger();
 
-my $cimeroot = $ENV{CIMEROOT};
+my $Case = CIME::Case->new($ENV{CIMEROOT});
 
-my $obj = CIME::template->new();
+_check_input_options ($Case, \%opts);
+
+
+$Case->configure();
+
+
+
+
+
+
+
+sub _check_input_options
+{
+    my ($Case,$opts) = @_;
+
+    if (!$opts->{'testlist'}) {
+	# Check for manditory case input
+	if ($opts->{'case'}) {
+	    if (-d $opts->{'case'}) {
+		$logger->logdie("Case directory $Case->set(case} already exists ");
+	    }	 
+	    my $case = $opts->{'case'};
+
+	    if($case =~ /^\/([^\/]+)/){  # full path is given
+		$Case->set('caseroot',abs_path($case));
+		$Case->set('case',$1);
+	    }else{
+		$Case->set('caseroot',abs_path('.')."/".$case);
+		$Case->set('case',$case);
+	    }
+	    
+	} else {
+	    $logger->logdie("ERROR: create_newcase must include the input argument, -case ");
+	}
+	if ($opts->{'model'}) {
+	    $Case->set('MODEL',$opts->{'model'});
+	} else {
+	    $Case->set('MODEL','cesm');
+	}
+
+	# Check for manditory compset input
+	if ($opts->{'compset'}) {
+	    $Case->set('compset',$opts->{'compset'});
+	} else {
+	    if (!$opts->{'user_compset'}) {
+		$logger->logdie ("ERROR: create_newcase must include the input argument, -compset OR user_compset");
+	    }
+	    if (!$opts->{'user_pes_setby'}) {
+		$logger->logdie("ERROR: if the user_compset argument is specified, the user_pes_setby argument must also be specified");
+	    }
+	}
+	# Check for mandatory grid input
+	if ($opts->{'res'}) {
+	    $Case->set('grid',$opts->{'res'});
+	} else {
+	    $logger->logdie ("ERROR: create_newcase must include the input argument, -res");
+	}
+	if($opts->{mach_dir}){
+	    $Case->set('mach_dir',$opts->{mach_dir});
+	}else{
+	    $Case->set('mach_dir',"\$CIMEROOT/cime_config/\$MODEL/machines");
+	}
+	# Check for manditory machine input
+	if ($opts->{'mach'}) {
+	    $Case->set('machine', $opts->{'mach'});
+	} else {
+	    $logger->logdie ("ERROR: create_newcase must include the input argument, -mach \n");
+	}
+	# Check if machine compiler option is given
+	if ($opts->{'compiler'}) {
+	    $Case->set('compiler',$opts->{'compiler'});
+	}
+	# Check if machine mpilib option is given
+	if ($opts->{'mpilib'}) {
+	    $Case->set('mpilib', $opts->{'mpilib'});
+	}
+	# Check for pecount setting
+	if ($opts->{'pecount'}) {
+	    $Case->set('pecount', $opts->{'pecount'});
+	}
+    }
+}
+
 
 
 
@@ -155,14 +260,6 @@ For CESM this is [allactive, cam, clm, cice, cism, pop]
 =item B<-testlist>
 
 List valid values for tests [normally only invoked by create_test] (optional).
-
-=item B<-xmlmode> <name>
-
-Sets format of xml files; normal or expert (optional). (default is normal) 
-
-=item B<-nowarning 
-
-Turns off checking of the known_problems repository. (default is on)
 
 =item B<-sharedlibroot
 

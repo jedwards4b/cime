@@ -117,7 +117,9 @@ sub GetValue
     my $val;
     my $nodes = $this->{_xml}->find("//entry[\@id=\'$name\']");
     my $node = $nodes->get_node(1);
-
+    if(! defined $node) {
+	$logger->logdie("Node not defined for $name");
+    }
     if(defined $attribute and defined $id){
 	my @valnode = $node->findnodes(".//value[\@$attribute=$id]");
 	$val = $valnode[0]->textContent();
