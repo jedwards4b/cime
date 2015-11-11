@@ -48,7 +48,7 @@ Log::Log4perl->easy_init({level=>$level,
 
 my $logger = get_logger();
 
-my $Case = CIME::Case->new($ENV{CIMEROOT});
+my $Case = CIME::Case->new();
 
 _check_input_options ($Case, \%opts);
 

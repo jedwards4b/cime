@@ -115,19 +115,28 @@ sub GetValue
 {
     my($this, $name, $attribute, $id) = @_;
     my $val;
+    $logger->debug("name=$name");
     my $nodes = $this->{_xml}->find("//entry[\@id=\'$name\']");
     my $node = $nodes->get_node(1);
     if(! defined $node) {
 	$logger->logdie("Node not defined for $name");
     }
     if(defined $attribute and defined $id){
-	my @valnode = $node->findnodes(".//value[\@$attribute=$id]");
+	my @valnode = $node->findnodes(".//value[\@$attribute=\'$id\']");
+	$logger->debug("attribute $attribute id $id $#valnode");
 	$val = $valnode[0]->textContent();
     }elsif($node->hasAttribute('value')){
 	return $node->getAttribute('value');
     }else{
 	$val = $this->SetDefaultValue($name,$node);
     }
+
+    if($val =~ /\${?([^\/\$\}]+)/){
+	my $var = $1;
+	my $sub = resolve($var);
+	$val =~ s/$var/$sub/;
+    }
+
 
     return $val;
     
