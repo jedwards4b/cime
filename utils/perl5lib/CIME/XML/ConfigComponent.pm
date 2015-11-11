@@ -23,10 +23,6 @@ sub _init {
   my ($this,$files, $component) = @_;
   $this->SUPER::_init();
 
-  my $file = $files->GetValue('COMPSETS_SPEC_FILE','component',$component);
-
-  print "file = $file $component\n";
-  $this->set($component, $this->read($file); 
 }
 
 sub read {
@@ -35,6 +31,8 @@ sub read {
     $this->SUPER::read($file);
 
 }
+
+
 1;
     
 __END__

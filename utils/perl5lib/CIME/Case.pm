@@ -14,7 +14,8 @@ BEGIN{
 }
 
 sub new {
-    my ($class) = @_;
+    my ($class,$cimeroot) = @_;
+
     my $this = {};
     bless($this, $class);
     $this->_init(@_);
@@ -22,18 +23,18 @@ sub new {
 }
 
 sub _init {
-    my ($this) = @_;
-
+    my ($this,$class, $cimeroot) = @_;
+    $this->SetValue('CIMEROOT',$cimeroot);
 #  $this->SUPER::_init($bar, $baz);
     # Nothing to do here
 }
 
-sub set {
+sub SetValue {
     my($this,$id,$value) = @_;
     $this->{$id}=$value;
 }
 
-sub get {
+sub GetValue {
     my($this,$id) = @_;
     if(defined $this->{$id}){
 	return $this->{$id};
@@ -41,18 +42,25 @@ sub get {
     return undef;
 }
 
+sub GetValueResolved {
+    my($this, $name, $attribute, $id) = @_;
+
+    $logger->debug( Dumper($this));
+
+    foreach my $hkey (keys %$this){
+	$logger->info("key = $hkey");
+	$logger->info( ref($this->{$hkey})); 
+    }
+}
+
+
 sub configure {
     my($this) = @_;
 
     my $files = CIME::XML::Files->new($this);
 
+    my $drvfile = $this->GetValueResolved(CIME::XML::ConfigComponent->new($files,"drv"));
 
-    $this->set("Driver",CIME::XML::ConfigComponent->new($files,"drv"));
-
-
-					   
-					    
-    
 
 }
 

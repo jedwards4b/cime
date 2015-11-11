@@ -89,28 +89,6 @@ sub SetValue
 }
 
 
-sub resolve
-{
-    my($this, $name) = @_;
- 
-    my $val = $this->GetValue($name);
-    
-    while($val =~ /(\$[\w_]+)/){
-	my $var = $1;
-	if(defined $this->{$var}){
-	    $val =~ s/\$$this->{var}/$val/;
-	}else{
-	     my $r = $this->GetValue($var);
-	     if(defined $r){
-		 $val =~ s/\$$r/$val/;
-	     }
-	}
-    }
-    
-    print "val = $val\n";
-}
-
-
 sub GetValue
 {
     my($this, $name, $attribute, $id) = @_;
@@ -129,12 +107,6 @@ sub GetValue
 	return $node->getAttribute('value');
     }else{
 	$val = $this->SetDefaultValue($name,$node);
-    }
-
-    if($val =~ /\${?([^\/\$\}]+)/){
-	my $var = $1;
-	my $sub = resolve($var);
-	$val =~ s/$var/$sub/;
     }
 
 

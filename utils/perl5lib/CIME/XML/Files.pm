@@ -13,6 +13,10 @@ BEGIN{
 sub new {
     my ($class, $params) = @_;
     my $this = {};
+
+
+    print Dumper($params);
+
     if(defined $params->{CIMEROOT}){
 	$this->{CIMEROOT}=$params->{CIMEROOT};
     }elsif (defined $ENV{CIMEROOT}){

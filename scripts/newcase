@@ -11,7 +11,7 @@ BEGIN{
 use Cwd qw( getcwd abs_path chdir);
 use CIME::Base;
 use CIME::Case;
-
+my $cimeroot = $ENV{CIMEROOT};
 my %opts;
 $opts{loglevel}="INFO";
 
@@ -48,7 +48,7 @@ Log::Log4perl->easy_init({level=>$level,
 
 my $logger = get_logger();
 
-my $Case = CIME::Case->new();
+my $Case = CIME::Case->new($cimeroot);
 
 _check_input_options ($Case, \%opts);
 
@@ -74,25 +74,25 @@ sub _check_input_options
 	    my $case = $opts->{'case'};
 
 	    if($case =~ /^\/([^\/]+)/){  # full path is given
-		$Case->set('caseroot',abs_path($case));
-		$Case->set('case',$1);
+		$Case->SetValue('caseroot',abs_path($case));
+		$Case->SetValue('case',$1);
 	    }else{
-		$Case->set('caseroot',abs_path('.')."/".$case);
-		$Case->set('case',$case);
+		$Case->SetValue('caseroot',abs_path('.')."/".$case);
+		$Case->SetValue('case',$case);
 	    }
 	    
 	} else {
 	    $logger->logdie("ERROR: create_newcase must include the input argument, -case ");
 	}
 	if ($opts->{'model'}) {
-	    $Case->set('MODEL',$opts->{'model'});
+	    $Case->SetValue('MODEL',$opts->{'model'});
 	} else {
-	    $Case->set('MODEL','cesm');
+	    $Case->SetValue('MODEL','cesm');
 	}
 
 	# Check for manditory compset input
 	if ($opts->{'compset'}) {
-	    $Case->set('compset',$opts->{'compset'});
+	    $Case->SetValue('compset',$opts->{'compset'});
 	} else {
 	    if (!$opts->{'user_compset'}) {
 		$logger->logdie ("ERROR: create_newcase must include the input argument, -compset OR user_compset");
@@ -103,32 +103,32 @@ sub _check_input_options
 	}
 	# Check for mandatory grid input
 	if ($opts->{'res'}) {
-	    $Case->set('grid',$opts->{'res'});
+	    $Case->SetValue('grid',$opts->{'res'});
 	} else {
 	    $logger->logdie ("ERROR: create_newcase must include the input argument, -res");
 	}
 	if($opts->{mach_dir}){
-	    $Case->set('mach_dir',$opts->{mach_dir});
+	    $Case->SetValue('mach_dir',$opts->{mach_dir});
 	}else{
-	    $Case->set('mach_dir',"\$CIMEROOT/cime_config/\$MODEL/machines");
+	    $Case->SetValue('mach_dir',"\$CIMEROOT/cime_config/\$MODEL/machines");
 	}
 	# Check for manditory machine input
 	if ($opts->{'mach'}) {
-	    $Case->set('machine', $opts->{'mach'});
+	    $Case->SetValue('machine', $opts->{'mach'});
 	} else {
 	    $logger->logdie ("ERROR: create_newcase must include the input argument, -mach \n");
 	}
 	# Check if machine compiler option is given
 	if ($opts->{'compiler'}) {
-	    $Case->set('compiler',$opts->{'compiler'});
+	    $Case->SetValue('compiler',$opts->{'compiler'});
 	}
 	# Check if machine mpilib option is given
 	if ($opts->{'mpilib'}) {
-	    $Case->set('mpilib', $opts->{'mpilib'});
+	    $Case->SetValue('mpilib', $opts->{'mpilib'});
 	}
 	# Check for pecount setting
 	if ($opts->{'pecount'}) {
-	    $Case->set('pecount', $opts->{'pecount'});
+	    $Case->SetValue('pecount', $opts->{'pecount'});
 	}
     }
 }
