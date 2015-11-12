@@ -10,7 +10,7 @@ my $logger;
 our $VERSION = "v0.0.1";
 
 BEGIN{
-    $logger = get_logger();
+    $logger = get_logger("CIME::Case");
 }
 
 sub new {

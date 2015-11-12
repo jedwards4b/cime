@@ -5,15 +5,33 @@ use warnings;
 use Getopt::Long qw(GetOptions :config pass_through auto_help);
 use Pod::Usage;
 use base 'ToolSet';
+use Log::Log4perl qw(get_logger);
 ToolSet->use_pragma('strict');
 ToolSet->use_pragma('warnings');
-ToolSet->export('Log::Log4perl'=>qw(get_logger),
+ToolSet->export('Log::Log4perl'=>qw(get_logger ),
 		'Data::Dumper'=>undef,
 		'XML::LibXML' => undef,
 		'Getopt::Long'=>qw(GetOptions),
 );
 
 our $VERSION = "0.1";
+
+
+
+$SIG{__DIE__} = sub {
+   if($^S) {
+      # We're in an eval {} and don't want log
+      # this message but catch it later
+      return;
+   }
+   $Log::Log4perl::caller_depth++;
+   my $logger = get_logger("");
+   $logger->fatal(@_);
+   die @_; # Now terminate really
+};
+
+
+
 
 sub new {
      my $class = shift();
@@ -25,9 +43,17 @@ sub new {
 }
 
 sub _init {
-  my ($this, $foo, $bar, $baz) = @_;
-  $this->SUPER::_init($bar, $baz);
-  $$this{foo} = $foo;
+  my ($this) = @_;
+  $this->SUPER::_init();
+  
+  Log::Log4perl->init(\q{
+        log4perl.category         = FATAL, Logfile
+        log4perl.appender.Logfile = Log::Log4perl::Appender::File
+        log4perl.appender.Logfile.filename = fatal_errors.log
+        log4perl.appender.Logfile.layout = \
+                   Log::Log4perl::Layout::PatternLayout
+        log4perl.appender.Logfile.layout.ConversionPattern = %F{1}-%L (%M)> %m%n
+    });
 }
 
 

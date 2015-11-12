@@ -44,7 +44,7 @@ pod2usage(1) if($opts{help});
 
 my $level = Log::Log4perl::Level::to_priority($opts{loglevel});
 Log::Log4perl->easy_init({level=>$level,
-			  layout=>'%m%n'});
+			  layout=>'%F{1}:%m%n'});
 
 my $logger = get_logger();
 

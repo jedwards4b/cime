@@ -9,7 +9,7 @@ my $encoding = "UTF-8";
 my $xmlversion = "1.0";
 
 BEGIN{
-    $logger = get_logger();
+    $logger = get_logger("CIME::XML::GenericEntry");
 }
 
 sub new {
