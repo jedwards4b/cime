@@ -35,34 +35,93 @@ sub SetValue {
 }
 
 sub GetValue {
-    my($this,$id) = @_;
+    my($this,$id, $attribute, $name) = @_;
+    my $val;
     if(defined $this->{$id}){
-	return $this->{$id};
+	$val =  $this->{$id};
+    }else{
+	foreach my $hkey (keys %$this){
+	    my $tref = ref ($this->{$hkey});
+	    if(ref( $this->{$hkey}) =~ "CIME::XML"){
+		$val =  $this->{$hkey}->GetValue($id, $attribute, $name);
+	    }
+	}
     }
-    return undef;
+    return $val;
 }
 
-sub GetValueResolved {
-    my($this, $name, $attribute, $id) = @_;
+sub GetResolvedValue {
+    my($this, $val) = @_;
 
-    $logger->debug( Dumper($this));
-
-    foreach my $hkey (keys %$this){
-	$logger->info("key = $hkey");
-	$logger->info( ref($this->{$hkey})); 
+#find and resolve any variable references.    
+    my @cnt = $val =~ /\$/g;
+    
+    for(my $i=0; $i<= $#cnt; $i++){
+	if($val =~ /^[^\$]*\$([^\$\}\/]+)/){
+	    my $var = $1;
+	    my $rvar = $this->GetValue($var);
+	    $val =~ s/\$$var/$rvar/;
+	}
     }
+    
+    return $val;
+
 }
 
 
 sub configure {
     my($this) = @_;
 
-    my $files = CIME::XML::Files->new($this);
+    $this->{files} = CIME::XML::Files->new($this);
 
-    my $drvfile = $this->GetValueResolved(CIME::XML::ConfigComponent->new($files,"drv"));
+    my $compset_files = $this->{files}->GetValues("COMPSETS_SPEC_FILE","component");
+
+# Find the compset longname and target component
+    my $target_comp;
+    foreach my $comp (keys %$compset_files){
+	my $file = $this->GetResolvedValue($compset_files->{$comp});
+	$this->{"config_$comp"} = CIME::XML::ConfigComponent->new($file);
+	my $compset = $this->{"config_$comp"}->CompsetMatch($this->GetValue("COMPSET"));
+	if(defined $compset){
+	    $logger->info("Found compset $compset");
+	    $this->SetValue("COMPSET",$compset);
+	    $target_comp = $comp;
+	    last;
+	}
+
+    }
+    if(!defined $target_comp){
+	$logger->logdie("Could not find a compset match for ".$this->GetValue("COMPSET"));
+    }
+
+    $this->Compset_Components();
+
+    print Dumper($this);
+    
+}
+
+sub Compset_Components
+{
+    my($this) = @_;
+    my $compset_longname = $this->GetValue("COMPSET");
+    
+    my @elements = split /_/, $compset_longname;
+
+    foreach my $element (@elements){
+	next if($element =~ /^\d+$/); # ignore the initial date
+	my @element_components = split /%/, $element;
+	my $component = lc $element_components[0];
+	if ($component =~ m/\d+/) {
+	    $component =~ s/\d//g;
+	}
+	push (@{$this->{compset_components}}, $component);
+    }	
+
+    
 
 
 }
+
 
 
 

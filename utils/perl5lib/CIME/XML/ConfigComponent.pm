@@ -11,18 +11,19 @@ BEGIN{
 }
 
 sub new {
-    my ($class, $files, $component) = @_;
+    my ($class, $file) = @_;
     my $this = {};
 
     bless($this, $class);
-    $this->_init($files,$component);
+    $this->_init($file);
     return $this;
 }
 
 sub _init {
-  my ($this,$files, $component) = @_;
+  my ($this,$file) = @_;
   $this->SUPER::_init();
-
+  $this->{filename} = $file;
+  $this->read($file);
 }
 
 sub read {
@@ -32,6 +33,50 @@ sub read {
 
 }
 
+sub CompsetMatch
+{
+    
+    my($this,$compset_request) = @_;
+    my $compset_longname;
+    # Look for a match for compset_request in this components config_compsets.xml file
+    my @alias_nodes = $this->{_xml}->findnodes(".//compset[alias=\"$compset_request\"]");
+    if (@alias_nodes) {
+	if ($#alias_nodes > 0) {
+	    $logger->logdie("ERROR create_newcase: more than one match for alias element in file $this->{filename} ");
+	} else {
+	    my @name_nodes = $alias_nodes[0]->childNodes();
+	    foreach my $name_node (@name_nodes) {
+		my $debug = $name_node->nodeName();
+		$logger->debug("Node name is $debug");
+		if ($name_node->nodeName() eq 'lname') {
+		    $compset_longname = $name_node->textContent();
+		}		    
+	    }
+	}
+    } 
+    if(! defined $compset_longname){
+# If no alias match - then determine if there is a match for the longname
+	my @lname_nodes = $this->{_xml}->findnodes(".//compset[lname=\"$compset_request\"]");
+	if (@lname_nodes) {
+	    if ($#lname_nodes > 0) {
+		$logger->logdie("ERROR create_newcase: more than one match for lname element in file $this->{filename}");
+	    } else {
+		my @name_nodes = $lname_nodes[0]->childNodes();
+		foreach my $name_node (@name_nodes) {
+		    my $debug = $name_node->nodeName();
+		    if ($name_node->nodeName() eq 'lname') {
+			$compset_longname = $name_node->textContent();
+		    }		    
+		}
+	    }
+	} 
+    }
+
+
+
+    return $compset_longname;
+    
+}
 
 1;
     

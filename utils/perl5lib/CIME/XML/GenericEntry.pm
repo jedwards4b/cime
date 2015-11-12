@@ -14,15 +14,19 @@ BEGIN{
 
 sub new {
     my ($class, $file) = @_;
-     my $this = {};
+    my $this = {};
      
-     bless($this, $class);
-     $this->_init(@_);
-     return $this;
+    bless($this, $class);
+    $this->_init(@_);
+    return $this;
 }
 
 sub _init {
   my ($this, $file) = @_;
+
+  if(defined $file and -f $file){
+      $this->read($file);
+  }
 
 
 #  $this->SUPER::_init($bar, $baz);
@@ -76,6 +80,8 @@ sub SetValue
 {
     my($this, $id, $val) = @_;
 
+    $logger->debug("id $id val $val");
+
     my $node;
 
     if(ref($id)){
@@ -97,7 +103,8 @@ sub GetValue
     my $nodes = $this->{_xml}->find("//entry[\@id=\'$name\']");
     my $node = $nodes->get_node(1);
     if(! defined $node) {
-	$logger->logdie("Node not defined for $name");
+	$logger->info("Node not defined for $name");
+	return undef;
     }
     if(defined $attribute and defined $id){
 	my @valnode = $node->findnodes(".//value[\@$attribute=\'$id\']");
@@ -109,10 +116,29 @@ sub GetValue
 	$val = $this->SetDefaultValue($name,$node);
     }
 
-
     return $val;
     
 }
+
+sub GetValues {
+    my ($this, $id, $att) = @_;
+    my $values;
+
+    my $nodes = $this->{_xml}->find("//entry[\@id=\'$id\']");
+    my $node = $nodes->get_node(1);
+    my @valnodes = $node->findnodes(".//value");
+    $logger->debug("Found $#valnodes valnodes");
+    foreach my $vnode ( @valnodes ){
+	my $attval = $vnode->getAttribute($att);
+	$logger->debug("Att $att $attval");
+	my $txt = $vnode->textContent();
+	$values->{$attval} = $txt;
+    }
+    return $values;
+}
+
+
+
 
 sub GetNode {
     my ($this, $nodename, $attributes) = @_;
