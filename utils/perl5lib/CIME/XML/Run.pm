@@ -37,22 +37,11 @@ sub _init {
 
 
 
-
-sub GetElements {
-    my ($this, $thatxml) = @_;
-
-    
-
-}
-
-
-
 sub write {
     my ($this) = @_;
 
 
     $this->SUPER::write("env_run.xml",$headernode);
-
     
 }
 
