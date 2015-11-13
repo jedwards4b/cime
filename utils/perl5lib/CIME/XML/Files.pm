@@ -7,7 +7,7 @@ use parent 'CIME::XML::GenericEntry';
 my $logger;
 
 BEGIN{
-    $logger = get_logger();
+    $logger = get_logger("CIME::XML::Files");
 }
 
 sub new {

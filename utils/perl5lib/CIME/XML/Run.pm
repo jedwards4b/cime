@@ -12,12 +12,12 @@ our $VERSION = "v0.0.1";
 
 
 BEGIN{
-    $logger = get_logger();
+    $logger = get_logger("CIME::XML::Run");
 }
 
 sub new {
-     my ($class, $cimeroot) = @_;
-     my $this = {CIMEROOT=>$cimeroot};
+     my ($class, $params) = @_;
+     my $this = {CIMEROOT=>$params->{CIMEROOT}};
      
      bless($this, $class);
      $this->_init(@_);
@@ -30,6 +30,7 @@ sub _init {
 
 }
 
+
 sub write {
     my ($this) = @_;
 
@@ -38,7 +39,6 @@ sub write {
     my $headernode = $headerobj->GetHeaderNode("env_run.xml");
 
     $this->SUPER::write("env_run.xml",$headernode);
-
     
 }
 

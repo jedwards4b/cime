@@ -3,6 +3,7 @@ my $pkg_nm = __PACKAGE__;
 
 use CIME::Base;
 use CIME::XML::Files;
+use CIME::XML::Grids;
 use CIME::XML::ConfigComponent;
 
 my $logger;
@@ -96,9 +97,19 @@ sub configure {
 
     $this->Compset_Components();
 
+    my $grids_file = $this->GetValue('GRIDS_SPEC_FILE');
+
+    $this->{grid_file} = CIME::XML::Grids->new($grids_file);
+    
+    $this->SetValue("GRID", $this->getGridLongname());
+
+
+    
     print Dumper($this);
     
 }
+
+
 
 sub Compset_Components
 {
