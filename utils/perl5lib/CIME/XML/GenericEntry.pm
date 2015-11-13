@@ -26,6 +26,9 @@ sub _init {
 
   if(defined $file and -f $file){
       $this->read($file);
+  }else{
+    $this->{_xml} = XML::LibXML->new();
+      
   }
 
 
@@ -41,7 +44,7 @@ sub read{
 	$logger->logdie("Could not find or open file $file");
     }
     $logger->debug("Opening file $file to read");
-    $this->{_xml} = XML::LibXML->new( no_blanks => 1)->parse_file($file);
+    $this->{_xml} = XML::LibXML->new( (no_blanks => 1, validation=>1))->parse_file($file);
 
 }
 
@@ -137,7 +140,19 @@ sub GetValues {
     return $values;
 }
 
-
+sub GetElementsfromChildContent {
+    my ($this, $childname, $childcontent) = @_;
+    my @parents;
+    my @nodes = $this->{_xml}->findnodes("//$childname");
+    foreach my $node (@nodes){
+	my $content = $node->textContent();
+	if($childcontent =~ /$content/){
+	    push(@parents, $node->parentNode());
+	}
+    }
+    my $nodelist = XML::LibXML::NodeList(@parents);
+    return ($nodelist);
+}
 
 
 sub GetNode {
