@@ -2,6 +2,7 @@ package CIME::XML::GenericEntry;
 my $pkg_nm = __PACKAGE__;
 
 use CIME::Base;
+use XML::LibXML::NodeList;
 
 my $logger;
 our $VERSION = "v0.0.1";
@@ -44,7 +45,8 @@ sub read{
 	$logger->logdie("Could not find or open file $file");
     }
     $logger->debug("Opening file $file to read");
-    $this->{_xml} = XML::LibXML->new( (no_blanks => 1, validation=>1))->parse_file($file);
+#    $this->{_xml} = XML::LibXML->new( (no_blanks => 1, validation=>1))->parse_file($file);
+    $this->{_xml} = XML::LibXML->new( (no_blanks => 1, ))->parse_file($file);
 
 }
 
@@ -143,14 +145,33 @@ sub GetValues {
 sub GetElementsfromChildContent {
     my ($this, $childname, $childcontent) = @_;
     my @parents;
-    my @nodes = $this->{_xml}->findnodes("//$childname");
+    $logger->info(ref($this)." GetElementsfromChildContent $childname $childcontent");
+
+    print Dumper($this);
+
+    my @nodes = $this->{_xml}->findnodes("//entry");
+
+    $logger->info("Got $#nodes");
+
+
     foreach my $node (@nodes){
-	my $content = $node->textContent();
+	my @nodeid = $node->attributes();
+	$logger->info("Found node @nodeid");
+	my @cnodes = $node->findnodes(".//$childname");
+	if($#cnodes != 0) {
+	    $logger->warn("Unexpected number of matches for $childname $#cnodes @nodeid");
+	}
+	my $content = $cnodes[0]->textContent();
+	$logger->info(" Checking $content");
 	if($childcontent =~ /$content/){
-	    push(@parents, $node->parentNode());
+	    push(@parents, $node);
 	}
     }
-    my $nodelist = XML::LibXML::NodeList(@parents);
+    $logger->info("Found $#parents parents $childname $childcontent");
+    my $nodelist = undef;
+    if($#parents){
+	$nodelist = XML::LibXML::NodeList->new(@parents);
+    }
     return ($nodelist);
 }
 
@@ -182,6 +203,24 @@ sub GetNode {
     }
     return undef;
 }
+
+sub AddNodesByGroup{
+    my($this, $nodelist) = @_;
+
+    foreach my $node (XML::LibXML::NodeList::get_nodelist($nodelist)){
+	print $node->textContent();
+    }
+
+
+
+
+}
+
+
+
+
+
+
 
 
 1;

@@ -3,7 +3,7 @@ my $pkg_nm = __PACKAGE__;
 
 use CIME::Base;
 use CIME::XML::Files;
-use CIME::XML::Grids;
+use CIME::XML::Run;
 use CIME::XML::ConfigComponent;
 
 my $logger;
@@ -97,11 +97,33 @@ sub configure {
 
     $this->Compset_Components();
 
-    my $grids_file = $this->GetValue('GRIDS_SPEC_FILE');
 
-    $this->{grid_file} = CIME::XML::Grids->new($grids_file);
+# Fix this, we shouldn't need to hardcode these nor be required to have all of these components
+# nor should they be order dependent
+    my @components = qw(DRV ATM LND ICE OCN ROF GLC WAV);
+
+    foreach my $comp (@components){
+	my $file;
+	my $compcomp = shift @{$this->{compset_components}};
+	if($comp eq "DRV"){
+	    $file = $this->{files}->GetValue('CONFIG_'.$comp.'_FILE');
+	}else{
+	    print "For $compcomp\n";
+	    $file = $this->{files}->GetValue('CONFIG_'.$comp.'_FILE', "component", $compcomp );
+	}
+	$file = $this->GetResolvedValue($file);
+	
+	print "Here $file\n";
+    }
+
+
+
+
+#    my $grids_file = $this->GetValue('GRIDS_SPEC_FILE');
+
+#    $this->{grid_file} = CIME::XML::Grids->new($grids_file);
     
-    $this->SetValue("GRID", $this->getGridLongname());
+#    $this->SetValue("GRID", $this->getGridLongname());
 
 
     
@@ -117,6 +139,9 @@ sub Compset_Components
     my $compset_longname = $this->GetValue("COMPSET");
     
     my @elements = split /_/, $compset_longname;
+
+# add the driver explicitly - may need to change this if we have more than one.
+    push (@{$this->{compset_components}}, 'drv');
 
     foreach my $element (@elements){
 	next if($element =~ /^\d+$/); # ignore the initial date

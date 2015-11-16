@@ -28,7 +28,7 @@ sub _init {
   my ($this, $file) = @_;
 
   $this->SUPER::_init($file);
-  if(! -f $file){
+  if(defined $file and ! -f $file){
     my $headerobj = CIME::XML::Headers->new($this->{CIMEROOT});
     my $headernode = $headerobj->GetHeaderNode("env_run.xml");
     $this->{_xml}->createElement($headernode);
@@ -36,12 +36,10 @@ sub _init {
 }
 
 
-
 sub write {
     my ($this) = @_;
 
-
-    $this->SUPER::write("env_run.xml",$headernode);
+    $this->SUPER::write("env_run.xml",$this->{_xml});
     
 }
 

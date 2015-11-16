@@ -72,7 +72,7 @@ sub _check_input_options
 	# Check for manditory case input
 	if ($opts->{'case'}) {
 	    if (-d $opts->{'case'}) {
-		$logger->logdie("Case directory $Case->set(case} already exists ");
+		$logger->logdie("Case directory $opts->{case} already exists ");
 	    }	 
 	    my $case = $opts->{'case'};
 
