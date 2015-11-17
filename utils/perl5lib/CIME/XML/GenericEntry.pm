@@ -28,8 +28,7 @@ sub _init {
   if(defined $file and -f $file){
       $this->read($file);
   }else{
-    $this->{_xml} = XML::LibXML->new();
-      
+    $this->{_xml} = XML::LibXML::Document->new($xmlversion, $encoding);      
   }
 
 
@@ -51,11 +50,11 @@ sub read{
 }
 
 sub write{
-    my($this, $file, $node) = @_;
+    my($this, $file) = @_;
 
     my $doc = XML::LibXML::Document->createDocument( $xmlversion, $encoding );
 
-    $doc->setDocumentElement($node);
+    $doc->setDocumentElement($this->{_xml}->documentElement());
     $logger->info("Writing file $file");
     $doc->toFile($file, 2);
 
@@ -145,29 +144,27 @@ sub GetValues {
 sub GetElementsfromChildContent {
     my ($this, $childname, $childcontent) = @_;
     my @parents;
-    $logger->info(ref($this)." GetElementsfromChildContent $childname $childcontent");
-
-    print Dumper($this);
+    $logger->debug(ref($this)." GetElementsfromChildContent $childname $childcontent");
 
     my @nodes = $this->{_xml}->findnodes("//entry");
 
-    $logger->info("Got $#nodes");
+    $logger->debug("Got $#nodes");
 
 
     foreach my $node (@nodes){
 	my @nodeid = $node->attributes();
-	$logger->info("Found node @nodeid");
+	$logger->debug("Found node @nodeid");
 	my @cnodes = $node->findnodes(".//$childname");
 	if($#cnodes != 0) {
 	    $logger->warn("Unexpected number of matches for $childname $#cnodes @nodeid");
 	}
 	my $content = $cnodes[0]->textContent();
-	$logger->info(" Checking $content");
+	$logger->debug(" Checking $content");
 	if($childcontent =~ /$content/){
 	    push(@parents, $node);
 	}
     }
-    $logger->info("Found $#parents parents $childname $childcontent");
+    $logger->debug("Found $#parents parents $childname $childcontent");
     my $nodelist = undef;
     if($#parents){
 	$nodelist = XML::LibXML::NodeList->new(@parents);
@@ -204,21 +201,37 @@ sub GetNode {
     return undef;
 }
 
-sub AddNodesByGroup{
-    my($this, $nodelist) = @_;
+sub AddElementsByGroup
+{
+    my($this, $srcdoc, $file) = @_;
 
-    foreach my $node (XML::LibXML::NodeList::get_nodelist($nodelist)){
-	print $node->textContent();
+    # Add elements from srcdoc to the env_run.xml file under the appropriate
+    # group element.  Add the group if it does not already exist, remove group and
+    # file children from the entry
+
+    my $nodelist = $srcdoc->GetElementsfromChildContent('file' ,$file);
+    my $root = $this->{_xml}->getDocumentElement();
+
+    foreach my $node ($nodelist->get_nodelist()){
+	my $childnode = ${$node->findnodes(".//file")}[0];
+	$node->removeChild($childnode);
+        $childnode = ${$node->find(".//group")}[0];
+	my $groupname = $childnode->textContent();
+	$node->removeChild($childnode);
+
+	my $groupnode = ${$root->findnodes("//$groupname")}[0];
+	if(!defined $groupnode){
+	    $groupnode = $this->{_xml}->createElement($groupname);
+	    $root->addChild($groupnode);
+	}
+	my $id = $node->getAttribute("id");
+	$logger->debug("Adding $id  to group ",$groupnode->nodeName());
+	
+	$groupnode->addChild($node);
+
     }
 
-
-
-
 }
-
-
-
-
 
 
 

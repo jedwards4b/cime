@@ -3,7 +3,7 @@ my $pkg_nm = __PACKAGE__;
 
 use CIME::Base;
 use CIME::XML::Files;
-use CIME::XML::Run;
+use CIME::XML::env_run;
 use CIME::XML::ConfigComponent;
 
 my $logger;
@@ -15,7 +15,7 @@ BEGIN{
 }
 
 sub new {
-    my ($class,$cimeroot) = @_;
+    my ($class,$cimeroot, $caseroot) = @_;
 
     my $this = {};
     bless($this, $class);
@@ -24,10 +24,24 @@ sub new {
 }
 
 sub _init {
-    my ($this,$class, $cimeroot) = @_;
+    my ($this,$class, $cimeroot,$caseroot) = @_;
+
     $this->SetValue('CIMEROOT',$cimeroot);
+
+    $this->InitCaseXML();
+
 #  $this->SUPER::_init($bar, $baz);
     # Nothing to do here
+}
+
+sub InitCaseXML{
+    my($this) = @_;
+
+    my $caseroot = $this->GetValue('CASEROOT');
+    if(defined ($caseroot)){
+	$caseroot = $this->GetResolvedValue($caseroot);
+	$this->{env_run} = CIME::XML::env_run->new($this->GetValue('CIMEROOT'), $caseroot."/env_run.xml");
+    }
 }
 
 sub SetValue {
@@ -73,6 +87,8 @@ sub GetResolvedValue {
 sub configure {
     my($this) = @_;
 
+    $this->InitCaseXML();
+
     $this->{files} = CIME::XML::Files->new($this);
 
     my $compset_files = $this->{files}->GetValues("COMPSETS_SPEC_FILE","component");
@@ -81,8 +97,10 @@ sub configure {
     my $target_comp;
     foreach my $comp (keys %$compset_files){
 	my $file = $this->GetResolvedValue($compset_files->{$comp});
-	$this->{"config_$comp"} = CIME::XML::ConfigComponent->new($file);
-	my $compset = $this->{"config_$comp"}->CompsetMatch($this->GetValue("COMPSET"));
+
+# does config_comp need to be part of the object or can it be a local?
+#	$this->{"config_$comp"} = CIME::XML::ConfigComponent->new($file);
+	my $compset = CIME::XML::ConfigComponent->new($file)->CompsetMatch($this->GetValue("COMPSET"));
 	if(defined $compset){
 	    $logger->info("Found compset $compset");
 	    $this->SetValue("COMPSET",$compset);
@@ -112,10 +130,15 @@ sub configure {
 	    $file = $this->{files}->GetValue('CONFIG_'.$comp.'_FILE', "component", $compcomp );
 	}
 	$file = $this->GetResolvedValue($file);
+
+	my $configcomp = CIME::XML::ConfigComponent->new($file);
+
 	
-	print "Here $file\n";
+	$this->{env_run}->AddElementsByGroup($configcomp);
+	last;
     }
 
+    $this->{env_run}->write();
 
 
 
@@ -152,10 +175,6 @@ sub Compset_Components
 	}
 	push (@{$this->{compset_components}}, $component);
     }	
-
-    
-
-
 }
 
 
