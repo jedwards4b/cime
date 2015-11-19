@@ -49,7 +49,7 @@ sub getGridLongname
     }
     
     # set the compset grid alias and longname
-    foreach my $node ($grid_node->childNodes()) {
+    foreach my $node ($grid_node->findnodes(".//*")) {
 	my $name = $node->nodeName();
 	my $value = $node->textContent();
 	if ($name eq 'lname') {$grid_longname   = $node->textContent();}

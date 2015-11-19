@@ -92,8 +92,8 @@ Print a brief help message and exits.
     
 =back
 =head1 DESCRIPTION
-B<This program> will read the given input file(s) and do something
-useful with the contents thereof.
+B<Base> contains the boiler plate code that will be used by every perl module and 
+progam in the CIME system.
 =cut
 
 

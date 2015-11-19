@@ -44,13 +44,9 @@ sub CompsetMatch
 	if ($#alias_nodes > 0) {
 	    $logger->logdie("ERROR create_newcase: more than one match for alias element in file $this->{filename} ");
 	} else {
-	    my @name_nodes = $alias_nodes[0]->childNodes();
+	    my @name_nodes = $alias_nodes[0]->findnodes(".//lname");
 	    foreach my $name_node (@name_nodes) {
-		my $debug = $name_node->nodeName();
-		$logger->debug("Node name is $debug");
-		if ($name_node->nodeName() eq 'lname') {
-		    $compset_longname = $name_node->textContent();
-		}		    
+		$compset_longname = $name_node->textContent();
 	    }
 	}
     } 
@@ -61,12 +57,9 @@ sub CompsetMatch
 	    if ($#lname_nodes > 0) {
 		$logger->logdie("ERROR create_newcase: more than one match for lname element in file $this->{filename}");
 	    } else {
-		my @name_nodes = $lname_nodes[0]->childNodes();
+		my @name_nodes = $lname_nodes[0]->findnodes(".//lname");
 		foreach my $name_node (@name_nodes) {
-		    my $debug = $name_node->nodeName();
-		    if ($name_node->nodeName() eq 'lname') {
-			$compset_longname = $name_node->textContent();
-		    }		    
+		    $compset_longname = $name_node->textContent();
 		}
 	    }
 	} 
