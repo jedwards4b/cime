@@ -4,7 +4,7 @@
    <xsl:output method="xml" indent="no" encoding="UTF-8"/>
    <xsl:strip-space elements="*"/>
    <xsl:preserve-space elements="xsl:text"/>
-
+   <xsl:preserve-space elements="desc"/>
    <!-- Copy comments, and elements recursively. -->
 
    <xsl:template match="*|comment()">
@@ -86,7 +86,7 @@
       <xsl:if test="string-length($text) &gt; 0">
          <xsl:choose>
            <xsl:when test="substring($text, 1, 1) = '&#xA;'">
-             <xsl:text disable-output-escaping="yes"> </xsl:text>
+             <xsl:text disable-output-escaping="yes"> &#10;</xsl:text>
            </xsl:when>
 
             <xsl:otherwise>
