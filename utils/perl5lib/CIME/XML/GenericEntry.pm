@@ -28,13 +28,15 @@ sub _init {
 
   if(defined $file and -f $file){
       $this->read($file);
-  }else{
+  }elsif(defined $file){
     $this->{_xml} = XML::LibXML::Document->new($xmlversion, $encoding);      
+    $this->{root} = $this->{_xml}->createElement('file');
+    $file =~ /([^\/]+).xml/;
+    my $id = $1;
+    $this->{root}->setAttribute("id",$id);
+
   }
 
-
-#  $this->SUPER::_init($bar, $baz);
-  # Nothing to do here
 }
 
 
@@ -55,7 +57,7 @@ sub write{
 
     my $doc = XML::LibXML::Document->createDocument( $xmlversion, $encoding );
 
-    $doc->setDocumentElement($this->{_xml}->documentElement());
+    $doc->setDocumentElement($this->{root});
     $logger->info("Writing file $file");
 
     my $xslt = XML::LibXSLT->new();
@@ -220,9 +222,9 @@ sub AddElementsByGroup
     # Add elements from srcdoc to the $file under the appropriate
     # group element.  Add the group if it does not already exist, remove group and
     # file children from each entry, set the default value
-
+    my %groups;
     my $nodelist = $srcdoc->GetElementsfromChildContent('file' ,$file);
-    my $root = $this->{_xml}->getDocumentElement();
+#    my $root = $this->{_xml}->getDocumentElement();
     if(defined $nodelist){
 	foreach my $node ($nodelist->get_nodelist()){
 	    my $childnode = ${$node->findnodes(".//file")}[0];
@@ -230,17 +232,19 @@ sub AddElementsByGroup
 	    $childnode = ${$node->find(".//group")}[0];
 	    my $groupname = $childnode->textContent();
 	    $node->removeChild($childnode);
-
-	    my $groupnode = ${$root->findnodes("//group[\@id=\"$groupname\"]")}[0];
-	    if(!defined $groupnode){
-		$groupnode = $this->{_xml}->createElement("group");
+	    
+#	    my $groupnode = ${$this->{root}->findnodes("//file/group[\@id=\"$groupname\"]")}[0];
+	    if(!defined $groups{$groupname}){
+		$logger->debug("Defining group ",$groupname);
+		my $groupnode = $this->{_xml}->createElement("group");
 		$groupnode->setAttribute("id",$groupname);
-		$root->addChild($groupnode);
+		$this->{root}->addChild($groupnode);
+		$groups{$groupname}=$groupnode;
 	    }
 	    my $id = $node->getAttribute("id");
 	    $logger->debug("Adding $id  to group ",$groupname);
 	    $this->SetDefaultValue($node);
-	    $groupnode->addChild($node);
+	    $groups{$groupname}->addChild($node);
 
 	}
     }

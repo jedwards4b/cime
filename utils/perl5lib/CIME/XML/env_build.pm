@@ -1,4 +1,4 @@
-package CIME::XML::env_run;
+package CIME::XML::env_build;
 my $pkg_nm = __PACKAGE__;
 
 use CIME::Base;
@@ -12,7 +12,7 @@ our $VERSION = "v0.0.1";
 
 
 BEGIN{
-    $logger = get_logger("CIME::XML::env_run");
+    $logger = get_logger("CIME::XML::env_build");
 }
 
 sub new {
@@ -34,9 +34,10 @@ sub _init {
 	  $this->read($file);
       }else{
 	  my $headerobj = CIME::XML::Headers->new($this->{CIMEROOT});
-	  my $headernode = $headerobj->GetHeaderNode("env_run.xml");	  
-	  $this->{root}->addChild($headernode);
-	  
+	  my $headernode = $headerobj->GetHeaderNode("env_build.xml");	  
+#	  my $newheader = $this->{_xml}->createElement('header');
+#	  $this->{_xml}->addChild($headernode);
+	  $this->{root}->addChild($headernode);	  
       }	  
   }
 }
@@ -46,11 +47,11 @@ sub AddElementsByGroup
 {
     my($this, $srcdoc) = @_;
 
-    # Add elements from srcdoc to the env_run.xml file under the appropriate
+    # Add elements from srcdoc to the env_build.xml file under the appropriate
     # group element.  Add the group if it does not already exist, remove group and
     # file children from the entry
 
-    $this->SUPER::AddElementsByGroup($srcdoc,"env_run.xml");
+    $this->SUPER::AddElementsByGroup($srcdoc,"env_build.xml");
     
 }
 
@@ -60,26 +61,26 @@ sub AddElementsByGroup
 sub write {
     my ($this) = @_;
 
-    $this->SUPER::write("env_run.xml");
+    $this->SUPER::write("env_build.xml");
     
 }
 
 1;
  
-=head1 CIME::XML::env_run
+=head1 CIME::XML::env_build
 
-CIME::XML::env_run a module interface to the file env_run.xml in the case directory
+CIME::XML::env_build a module interface to the file env_build.xml in the case directory
 
 =head1 SYNOPSIS
 
-  use CIME::XML::env_run;
+  use CIME::XML::env_build;
 
   why??
 
 
 =head1 DESCRIPTION
 
-CIME::XML::env_run is a perl module to ...
+CIME::XML::env_build is a perl module to ...
        
 A more complete description here.
 
@@ -114,7 +115,7 @@ Sets the level of verbosity of this module, five levels are available:
 
 =head1 SEE ALSO
 
-CIME::XML::env_run inherits from CIME::XML::GenericEntry, please see the description of that module 
+CIME::XML::env_build inherits from CIME::XML::GenericEntry, please see the description of that module 
 for inherited interfaces.   
 
 =head1 AUTHOR AND CREDITS
