@@ -34,10 +34,10 @@ sub _init {
 	  $this->read($file);
       }else{
 	  my $headerobj = CIME::XML::Headers->new($this->{CIMEROOT});
-	  my $headernode = $headerobj->GetHeaderNode("env_run.xml");
-	  
+	  my $headernode = $headerobj->GetHeaderNode("env_run.xml");	  
 	  my $newheader = $this->{_xml}->createElement('header');
 	  $this->{_xml}->addChild($headernode);
+	  
       }	  
   }
 }

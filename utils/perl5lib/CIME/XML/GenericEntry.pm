@@ -3,6 +3,7 @@ my $pkg_nm = __PACKAGE__;
 
 use CIME::Base;
 use XML::LibXML::NodeList;
+use XML::LibXSLT;
 
 my $logger;
 our $VERSION = "v0.0.1";
@@ -56,7 +57,16 @@ sub write{
 
     $doc->setDocumentElement($this->{_xml}->documentElement());
     $logger->info("Writing file $file");
-    $doc->toFile($file, 2);
+
+    my $xslt = XML::LibXSLT->new();
+    $xslt->max_depth(5000);
+    my $style = XML::LibXML->load_xml(location=>"$this->{CIMEROOT}/cime_config/case_xml.xsl");
+    my $stylesheet = $xslt->parse_stylesheet($style);
+    $doc = $stylesheet->transform($doc);
+    open(F,">$file");
+    print F $stylesheet->output_as_bytes($doc);
+    close (F);
+#    $doc->toFile($file, 0);
 
 }
 
@@ -74,6 +84,8 @@ sub SetDefaultValue
 	my $nodes = $this->{_xml}->find("//entry[\@id=\'$id\']");
         $node = $nodes->get_node(1);
     }
+    
+
     my $val = $node->find(".//default_value");
     $node->setAttribute("value",$val);
     return $val;
@@ -205,32 +217,33 @@ sub AddElementsByGroup
 {
     my($this, $srcdoc, $file) = @_;
 
-    # Add elements from srcdoc to the env_run.xml file under the appropriate
+    # Add elements from srcdoc to the $file under the appropriate
     # group element.  Add the group if it does not already exist, remove group and
-    # file children from the entry
+    # file children from each entry, set the default value
 
     my $nodelist = $srcdoc->GetElementsfromChildContent('file' ,$file);
     my $root = $this->{_xml}->getDocumentElement();
+    if(defined $nodelist){
+	foreach my $node ($nodelist->get_nodelist()){
+	    my $childnode = ${$node->findnodes(".//file")}[0];
+	    $node->removeChild($childnode);
+	    $childnode = ${$node->find(".//group")}[0];
+	    my $groupname = $childnode->textContent();
+	    $node->removeChild($childnode);
 
-    foreach my $node ($nodelist->get_nodelist()){
-	my $childnode = ${$node->findnodes(".//file")}[0];
-	$node->removeChild($childnode);
-        $childnode = ${$node->find(".//group")}[0];
-	my $groupname = $childnode->textContent();
-	$node->removeChild($childnode);
+	    my $groupnode = ${$root->findnodes("//group[\@id=\"$groupname\"]")}[0];
+	    if(!defined $groupnode){
+		$groupnode = $this->{_xml}->createElement("group");
+		$groupnode->setAttribute("id",$groupname);
+		$root->addChild($groupnode);
+	    }
+	    my $id = $node->getAttribute("id");
+	    $logger->debug("Adding $id  to group ",$groupname);
+	    $this->SetDefaultValue($node);
+	    $groupnode->addChild($node);
 
-	my $groupnode = ${$root->findnodes("//$groupname")}[0];
-	if(!defined $groupnode){
-	    $groupnode = $this->{_xml}->createElement($groupname);
-	    $root->addChild($groupnode);
 	}
-	my $id = $node->getAttribute("id");
-	$logger->debug("Adding $id  to group ",$groupnode->nodeName());
-	
-	$groupnode->addChild($node);
-
     }
-
 }
 
 

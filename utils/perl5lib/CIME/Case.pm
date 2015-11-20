@@ -4,6 +4,8 @@ my $pkg_nm = __PACKAGE__;
 use CIME::Base;
 use CIME::XML::Files;
 use CIME::XML::env_run;
+use CIME::XML::env_case;
+use CIME::XML::env_build;
 use CIME::XML::ConfigComponent;
 
 my $logger;
@@ -41,6 +43,8 @@ sub InitCaseXML{
     if(defined ($caseroot)){
 	$caseroot = $this->GetResolvedValue($caseroot);
 	$this->{env_run} = CIME::XML::env_run->new($this->GetValue('CIMEROOT'), $caseroot."/env_run.xml");
+	$this->{env_case} = CIME::XML::env_case->new($this->GetValue('CIMEROOT'), $caseroot."/env_case.xml");
+	$this->{env_build} = CIME::XML::env_build->new($this->GetValue('CIMEROOT'), $caseroot."/env_build.xml");
     }
 }
 
@@ -119,10 +123,11 @@ sub configure {
 # Fix this, we shouldn't need to hardcode these nor be required to have all of these components
 # nor should they be order dependent
     my @components = qw(DRV ATM LND ICE OCN ROF GLC WAV);
-
+    my @compcomp = @{$this->{compset_components}};
     foreach my $comp (@components){
 	my $file;
-	my $compcomp = shift @{$this->{compset_components}};
+	
+	my $compcomp = shift @compcomp;
 	if($comp eq "DRV"){
 	    $file = $this->{files}->GetValue('CONFIG_'.$comp.'_FILE');
 	}else{
@@ -135,10 +140,14 @@ sub configure {
 
 	
 	$this->{env_run}->AddElementsByGroup($configcomp);
-	last;
+	$this->{env_case}->AddElementsByGroup($configcomp);
+	$this->{env_build}->AddElementsByGroup($configcomp);
+	
     }
 
     $this->{env_run}->write();
+    $this->{env_case}->write();
+    $this->{env_build}->write();
 
 
 
