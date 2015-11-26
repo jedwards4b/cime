@@ -16,7 +16,7 @@ sub new {
     my $this = {};
   
     bless($this, $class);
-    $this->_init(@_);
+    $this->_init($file);
     return $this;
 }
 
@@ -28,14 +28,14 @@ sub _init {
 #-------------------------------------------------------------------------------
 sub getGridLongname
 {
-    my ($this, $grid_input) = @_;
+    my ($this, $grid_input, $compset) = @_;
 
     my ($grid_longname, $grid_shortname, $grid_aliasname);
     my $compset_match;
 
-    my @nodes_alias = $this->{_xml}->findnodes(".//grid[alias=\"$grid_input\"]");
-    my @nodes_sname = $this->{_xml}->findnodes(".//grid[sname=\"$grid_input\"]");
-    my @nodes_lname = $this->{_xml}->findnodes(".//grid[lname=\"$grid_input\"]");
+    my @nodes_alias = $this->{_xml}->findnodes("//grid[alias=\"$grid_input\"]");
+    my @nodes_sname = $this->{_xml}->findnodes("//grid[sname=\"$grid_input\"]");
+    my @nodes_lname = $this->{_xml}->findnodes("//grid[lname=\"$grid_input\"]");
 
     my $grid_node;
     if (@nodes_alias) {
@@ -61,13 +61,15 @@ sub getGridLongname
     # Assume the following order for specifying a grid name
     #  a%aname_l%lname_oi%oiname_r%rname_m%mname_g%gname_w%wname
 
-    $grid_longname =~ /(a%)(.+)(_l%)/ ; $compgrid{'atm'}  = $2;
-    $grid_longname =~ /(l%)(.+)(_oi%)/; $compgrid{'lnd'}  = $2;
-    $grid_longname =~ /(oi%)(.+)(_r%)/; $compgrid{'ocn'}  = $2; $compgrid{'ice'} = $2;
-    $grid_longname =~ /(r%)(.+)(_m%)/ ; $compgrid{'rof'}  = $2; 
-    $grid_longname =~ /(g%)(.+)(_w%)/ ; $compgrid{'glc'}  = $2; 
-    $grid_longname =~ /(w%)(.+)$/     ; $compgrid{'wav'}  = $2; 
-    $grid_longname =~ /(m%)(.+)(_g%)/ ; $compgrid{'mask'} = $2; 
+    $grid_longname =~ /(a%)(.+)(_l%)/ ; $this->{compgrid}{'atm'}  = $2;
+    $grid_longname =~ /(l%)(.+)(_oi%)/; $this->{compgrid}{'lnd'}  = $2;
+    $grid_longname =~ /(oi%)(.+)(_r%)/; 
+    $this->{compgrid}{ocn}  = $2; 
+    $this->{compgrid}{ice} = $this->{compgrid}{ocn};
+    $grid_longname =~ /(r%)(.+)(_m%)/ ; $this->{compgrid}{'rof'}  = $2; 
+    $grid_longname =~ /(g%)(.+)(_w%)/ ; $this->{compgrid}{'glc'}  = $2; 
+    $grid_longname =~ /(w%)(.+)$/     ; $this->{compgrid}{'wav'}  = $2; 
+    $grid_longname =~ /(m%)(.+)(_g%)/ ; $this->{compgrid}{'mask'} = $2; 
 
     my @nodes = $this->{_xml}->findnodes(".//grid[lname=\"$grid_longname\"]");
     if ($#nodes != 0) {
@@ -75,9 +77,8 @@ sub getGridLongname
     } 
     my $attr = $nodes[0]->getAttribute('compset');
     if (defined $attr) {
-	my $compset = $config->get('COMPSET');
 	if ($compset !~ m/$attr/) {
-	    die "ERROR ConfigCompsetGrid::getGridLongame $grid_longname is not supported for $compset \n";
+	    $logger->logdie("ERROR: CIME::XML::Grids::getGridLongame $grid_longname is not supported for $compset");
 	}
     }
 

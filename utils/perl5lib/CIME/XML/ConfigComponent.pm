@@ -33,6 +33,22 @@ sub read {
 
 }
 
+sub GetValue {
+    my($this, $name, $attribute, $id) = @_;
+    if($name eq "components"){
+	my @components;
+	my @compnodes = $this->{_xml}->findnodes("//components/comp");
+	foreach my $node (@compnodes){
+	    push(@components,$node->textContent());
+	}
+	return @components; 
+    }else{
+	$this->SUPER->GetValue($name, $attribute, $id);
+    }
+    
+}
+
+
 sub CompsetMatch
 {
     

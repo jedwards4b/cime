@@ -96,19 +96,28 @@ sub SetDefaultValue
 
 sub SetValue
 {
-    my($this, $id, $val) = @_;
+    my($this, $id, $value) = @_;
 
-    $logger->debug("id $id val $val");
+    $logger->debug("id $id val $value");
 
     my $node;
+    my $val;
 
     if(ref($id)){
 	$node = $id;
     }else{
-	my $nodes = $this->{_xml}->find("//entry[\@id=\'$id\']");
-        $node = $nodes->get_node(1);
+
+	$node=$this->GetNode("entry",{id=>$id,value=>"UNSET"});
+
+#	my @nodes = $this->{_xml}->findnodes("//file/group/entry[\@id=\"$id\"]");
+#	print "HERE $#nodes\n";
+#        $node = $nodes[0];
     }
-    $node->setAttribute("value",$val);
+    if(defined $node){
+	$logger->debug("SetValue: ".ref($this)." id=$id value=$value");	
+	$node->setAttribute("value",$value);
+	$val = $value;
+    }
     return $val;
 }
 
@@ -127,7 +136,12 @@ sub GetValue
     if(defined $attribute and defined $id){
 	my @valnode = $node->findnodes(".//value[\@$attribute=\'$id\']");
 	$logger->debug("attribute $attribute id $id $#valnode");
-	$val = $valnode[0]->textContent();
+	if($#valnode==0){
+	    $val = $valnode[0]->textContent();
+	}else{
+	    $logger->warn("No match for $attribute=$id");
+	}
+
     }elsif($node->hasAttribute('value')){
 	return $node->getAttribute('value');
     }else{
@@ -201,6 +215,7 @@ sub GetNode {
 		$xpath .= " and ";
 	    }
 	    $xpath.="\@$id=\'$attributes->{$id}\'";
+	    $cnt++;
 	}
 	$xpath .= "]";
     }

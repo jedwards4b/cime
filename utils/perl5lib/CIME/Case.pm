@@ -7,6 +7,7 @@ use CIME::XML::env_run;
 use CIME::XML::env_case;
 use CIME::XML::env_build;
 use CIME::XML::ConfigComponent;
+use CIME::XML::Grids;
 
 my $logger;
 
@@ -15,6 +16,9 @@ our $VERSION = "v0.0.1";
 BEGIN{
     $logger = get_logger("CIME::Case");
 }
+
+my @casefiles = qw(env_run env_case env_build env_mach_pes);
+
 
 sub new {
     my ($class,$cimeroot, $caseroot) = @_;
@@ -40,18 +44,35 @@ sub InitCaseXML{
     my($this) = @_;
 
     my $caseroot = $this->GetValue('CASEROOT');
+    
     if(defined ($caseroot)){
+	# Create objects for each XML file in the case directory
 	$caseroot = $this->GetResolvedValue($caseroot);
 	$this->{env_run} = CIME::XML::env_run->new($this->GetValue('CIMEROOT'), $caseroot."/env_run.xml");
 	$this->{env_case} = CIME::XML::env_case->new($this->GetValue('CIMEROOT'), $caseroot."/env_case.xml");
 	$this->{env_build} = CIME::XML::env_build->new($this->GetValue('CIMEROOT'), $caseroot."/env_build.xml");
+	# needs env_mach_pes.xml
+	# 
     }
 }
 
 sub SetValue {
     my($this,$id,$value) = @_;
-    $this->{$id}=$value;
+    
+    my $val;
+    foreach my $file (@casefiles){
+	if(defined $this->{$file}){
+	    $val = $this->{$file}->SetValue($id,$value);
+	}
+	last if(defined $val);
+    }
+    if(!defined $val){
+	$this->{$id}=$value;
+    }
 }
+
+# Given an xml id and optionally an attribute and name return the unique value associated with that 
+# name, this value may contain unresolved variables 
 
 sub GetValue {
     my($this,$id, $attribute, $name) = @_;
@@ -69,10 +90,16 @@ sub GetValue {
     return $val;
 }
 
+
+# Resolve any unresolved variables in a given string.
+
 sub GetResolvedValue {
     my($this, $val) = @_;
 
 #find and resolve any variable references.    
+    if(! defined $val){
+	$logger->logdie("GetResolvedValue called without an argument");
+    }
     my @cnt = $val =~ /\$/g;
     
     for(my $i=0; $i<= $#cnt; $i++){
@@ -88,6 +115,11 @@ sub GetResolvedValue {
 }
 
 
+#
+# configure 
+#
+#
+
 sub configure {
     my($this) = @_;
 
@@ -99,14 +131,17 @@ sub configure {
 
 # Find the compset longname and target component
     my $target_comp;
+    my $compset = $this->GetValue("COMPSET");
+    $logger->info("Compset requested: $compset");
     foreach my $comp (keys %$compset_files){
 	my $file = $this->GetResolvedValue($compset_files->{$comp});
 
 # does config_comp need to be part of the object or can it be a local?
 #	$this->{"config_$comp"} = CIME::XML::ConfigComponent->new($file);
-	my $compset = CIME::XML::ConfigComponent->new($file)->CompsetMatch($this->GetValue("COMPSET"));
+
+	my $compset = CIME::XML::ConfigComponent->new($file)->CompsetMatch($compset);
 	if(defined $compset){
-	    $logger->info("Found compset $compset");
+	    $logger->info("Compset longname: $compset");
 	    $this->SetValue("COMPSET",$compset);
 	    $target_comp = $comp;
 	    last;
@@ -117,27 +152,36 @@ sub configure {
 	$logger->logdie("Could not find a compset match for ".$this->GetValue("COMPSET"));
     }
 
+
+# Get the list of component classes supported by this drv
+    my $file = $this->{files}->GetValue('CONFIG_DRV_FILE');
+    $file = $this->GetResolvedValue($file);
+    my $configcomp = CIME::XML::ConfigComponent->new($file);
+    my @components = $configcomp->GetValue('components');
+    $logger->debug( "components are @components");
+
+# Find the specific components for this case 
     $this->Compset_Components();
 
 
-# Fix this, we shouldn't need to hardcode these nor be required to have all of these components
-# nor should they be order dependent
-    my @components = qw(DRV ATM LND ICE OCN ROF GLC WAV);
+    
+#    my @components = qw(DRV ATM LND ICE OCN ROF GLC WAV);
     my @compcomp = @{$this->{compset_components}};
+
+    if($#components != $#compcomp){
+	$logger->logdie("General and specific component counts dont match");
+    }
+
     foreach my $comp (@components){
 	my $file;
-	
 	my $compcomp = shift @compcomp;
 	if($comp eq "DRV"){
-	    $file = $this->{files}->GetValue('CONFIG_'.$comp.'_FILE');
+	    # $file and $configcomp already defined above
 	}else{
-	    print "For $compcomp\n";
 	    $file = $this->{files}->GetValue('CONFIG_'.$comp.'_FILE', "component", $compcomp );
+	    $file = $this->GetResolvedValue($file);
+	    $configcomp = CIME::XML::ConfigComponent->new($file);
 	}
-	$file = $this->GetResolvedValue($file);
-
-	my $configcomp = CIME::XML::ConfigComponent->new($file);
-
 	
 	$this->{env_run}->AddElementsByGroup($configcomp);
 	$this->{env_case}->AddElementsByGroup($configcomp);
@@ -145,21 +189,27 @@ sub configure {
 	
     }
 
-    $this->{env_run}->write();
-    $this->{env_case}->write();
+#    $this->{env_run}->write();
+#    $this->{env_case}->write();
+#    $this->{env_build}->write();
+
+    my $grids_file = $this->GetResolvedValue($this->{files}->GetValue('GRIDS_SPEC_FILE'));
+    
+    
+    $logger->debug("Opening grid file $grids_file");
+
+    $this->{grid_file} = CIME::XML::Grids->new($grids_file);
+    my $grid = $this->GetValue('GRID');
+    $logger->info("Grid requested: $grid");
+
+    $grid = $this->{grid_file}->getGridLongname($grid, $compset);
+    
+    $logger->info("Grid Longname: $grid");
+
+    $this->SetValue("GRID", $grid);
+
+    
     $this->{env_build}->write();
-
-
-
-#    my $grids_file = $this->GetValue('GRIDS_SPEC_FILE');
-
-#    $this->{grid_file} = CIME::XML::Grids->new($grids_file);
-    
-#    $this->SetValue("GRID", $this->getGridLongname());
-
-
-    
-    print Dumper($this);
     
 }
 
@@ -173,7 +223,8 @@ sub Compset_Components
     my @elements = split /_/, $compset_longname;
 
 # add the driver explicitly - may need to change this if we have more than one.
-    push (@{$this->{compset_components}}, 'drv');
+
+    push(@{$this->{compset_components}},'drv');
 
     foreach my $element (@elements){
 	next if($element =~ /^\d+$/); # ignore the initial date
