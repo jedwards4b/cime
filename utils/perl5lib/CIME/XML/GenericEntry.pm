@@ -59,7 +59,9 @@ sub write{
 
     $doc->setDocumentElement($this->{root});
     $logger->info("Writing file $file");
-
+# Here we use a style-sheet to format the case xml files. 
+# This can be done from the command line with xsltproc for testing and tuning the 
+# style file.  
     my $xslt = XML::LibXSLT->new();
     $xslt->max_depth(5000);
     my $style = XML::LibXML->load_xml(location=>"$this->{CIMEROOT}/cime_config/case_xml.xsl");
@@ -107,7 +109,7 @@ sub SetValue
 	$node = $id;
     }else{
 
-	$node=$this->GetNode("entry",{id=>$id,value=>"UNSET"});
+	$node=$this->GetNode("file/group/entry",{id=>$id,});
 
 #	my @nodes = $this->{_xml}->findnodes("//file/group/entry[\@id=\"$id\"]");
 #	print "HERE $#nodes\n";
@@ -126,9 +128,13 @@ sub GetValue
 {
     my($this, $name, $attribute, $id) = @_;
     my $val;
-    $logger->debug("name=$name");
+    $logger->debug("name=$name file:".ref($this));
     my $nodes = $this->{_xml}->find("//entry[\@id=\'$name\']");
+#    my @nodes = $this->{_xml}->findnodes("//entry[\@id=\"$name\"]");
+#    print ref($this)." nodes = $#nodes\n";
+#    my $node;
     my $node = $nodes->get_node(1);
+
     if(! defined $node) {
 	$logger->info("Node not defined for $name");
 	return undef;
@@ -219,9 +225,16 @@ sub GetNode {
 	}
 	$xpath .= "]";
     }
-    my @nodesmatched = $this->{_xml}->findnodes($xpath);
+    
+    $logger->debug("XPATH = $xpath");
+    my @nodesmatched;
+    if(defined $this->{root}){
+	@nodesmatched = $this->{root}->findnodes($xpath);
+    }else{
+	@nodesmatched = $this->{_xml}->findnodes($xpath);   
+    }
     if($#nodesmatched < 0){
-	$logger->warn("$xpath did not match any nodes");
+	$logger->debug("$xpath did not match any nodes");
     }elsif($#nodesmatched>0){
 	$logger->warn("$xpath matches mulitiple nodes");
     }else{
@@ -229,6 +242,64 @@ sub GetNode {
     }
     return undef;
 }
+
+sub PrintEntry
+{
+    my($this, $id, $opts) = @_;
+    my $found;
+    my $node = $this->GetNode("entry",{id=>$id});
+    if(defined $node){
+	$found = 1;
+	if($opts->{fileonly}){
+	    ref($this) =~ /CIME::XML::(.*)/;
+	    my $file = $1.".xml";
+	    print "$id is defined in $file\n";
+
+	}
+	my $value = $node->getAttribute("value");
+	if(!(defined $opts->{noexpandxml}) || $opts->{noexpandxml}==0){
+	    $value = $this->GetResolvedValue($value);
+	}
+	if($opts->{value}){
+	    print $value;
+	    return $found;
+	}
+	print "$id = $value\n";
+	if($opts->{valonly}){
+	    return $found;
+	}	
+	my @fields = $node->findnodes(".//*");
+	foreach my $fld (@fields){
+	    print "  ".$fld->nodeName().":  ".$fld->textContent()."\n";
+	} 
+
+
+    }
+    return $found;
+}
+
+sub GetResolvedValue {
+    my($this, $val) = @_;
+
+#find and resolve any variable references.    
+    if(! defined $val){
+	$logger->logdie("GetResolvedValue called without an argument");
+    }
+    my @cnt = $val =~ /\$/g;
+    
+    for(my $i=0; $i<= $#cnt; $i++){
+	if($val =~ /^[^\$]*\$([^\$\}\/]+)/){
+	    my $var = $1;
+	    my $rvar = $this->GetValue($var);
+	    $val =~ s/\$$var/$rvar/;
+	}
+    }
+    
+    return $val;
+
+}
+
+
 
 sub AddElementsByGroup
 {

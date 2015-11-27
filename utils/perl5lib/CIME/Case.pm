@@ -25,25 +25,23 @@ sub new {
 
     my $this = {};
     bless($this, $class);
-    $this->_init(@_);
+    $this->_init($cimeroot, $caseroot);
     return $this;
 }
 
 sub _init {
-    my ($this,$class, $cimeroot,$caseroot) = @_;
+    my ($this,$cimeroot,$caseroot) = @_;
 
     $this->SetValue('CIMEROOT',$cimeroot);
 
-    $this->InitCaseXML();
+    $this->InitCaseXML($caseroot);
 
 #  $this->SUPER::_init($bar, $baz);
     # Nothing to do here
 }
 
 sub InitCaseXML{
-    my($this) = @_;
-
-    my $caseroot = $this->GetValue('CASEROOT');
+    my($this,$caseroot) = @_;
     
     if(defined ($caseroot)){
 	# Create objects for each XML file in the case directory
@@ -85,10 +83,27 @@ sub GetValue {
 	    if(ref( $this->{$hkey}) =~ "CIME::XML"){
 		$val =  $this->{$hkey}->GetValue($id, $attribute, $name);
 	    }
+	    last if defined $val;
 	}
     }
     return $val;
 }
+
+sub PrintEntry
+{
+    my ($this,$id,$opts) = @_;
+    
+    my $found;
+    foreach my $hkey (keys %$this){
+	my $tref = ref ($this->{$hkey});
+	if(ref( $this->{$hkey}) =~ "CIME::XML"){
+	    $found =  $this->{$hkey}->PrintEntry($id, $opts);
+	}
+	last if defined $found;
+    }
+
+}
+
 
 
 # Resolve any unresolved variables in a given string.
@@ -208,9 +223,17 @@ sub configure {
 
     $this->SetValue("GRID", $grid);
 
+
     
+}
+
+
+sub WriteCaseXML{
+    my($this) = @_;
     $this->{env_build}->write();
-    
+    $this->{env_case}->write();
+    $this->{env_run}->write();
+#    $this->{env_mach_pes}->write();
 }
 
 

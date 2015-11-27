@@ -59,7 +59,9 @@ _check_input_options ($Case, \%opts);
 $Case->configure();
 
 
+$Case->WriteCaseXML();
 
+#$Case->WriteCase();
 
 
 
