@@ -20,6 +20,8 @@
     compset       (Regular expression for compsets that are required to match for this grid) (optional)
   </help>
 
+  <gridname_spec>a%(.+)_l%(.+)_oi%(.+)_r%(.+)_m%(.+)_g%(.+)_w%(.+)</gridname_spec>
+
   <grids>
     <grid compset="DATM.+DROF">
       <lname>a%gx1v6_l%gx1v6_oi%gx1v6_r%rx1_m%gx1v6_g%null_w%null</lname>

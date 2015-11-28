@@ -56,7 +56,6 @@ sub _init {
     });
 }
 
-
 sub getopts {
     my ($self, $opts) = @_;
     # Set default values here, 

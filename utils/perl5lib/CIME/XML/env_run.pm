@@ -35,8 +35,7 @@ sub _init {
       }else{
 	  my $headerobj = CIME::XML::Headers->new($this->{CIMEROOT});
 	  my $headernode = $headerobj->GetHeaderNode("env_run.xml");	  
-	  $this->{root}->addChild($headernode);
-	  
+	  $this->{root}->addChild($headernode);	  
       }	  
   }
 }

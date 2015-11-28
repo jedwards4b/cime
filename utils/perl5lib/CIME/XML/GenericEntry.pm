@@ -55,9 +55,6 @@ sub read{
 sub write{
     my($this, $file) = @_;
 
-    my $doc = XML::LibXML::Document->createDocument( $xmlversion, $encoding );
-
-    $doc->setDocumentElement($this->{root});
     $logger->info("Writing file $file");
 # Here we use a style-sheet to format the case xml files. 
 # This can be done from the command line with xsltproc for testing and tuning the 
@@ -66,11 +63,11 @@ sub write{
     $xslt->max_depth(5000);
     my $style = XML::LibXML->load_xml(location=>"$this->{CIMEROOT}/cime_config/case_xml.xsl");
     my $stylesheet = $xslt->parse_stylesheet($style);
-    $doc = $stylesheet->transform($doc);
+    $this->{_xml} = $stylesheet->transform($this->{_xml});
     open(F,">$file");
-    print F $stylesheet->output_as_bytes($doc);
+    print F $stylesheet->output_as_bytes($this->{_xml});
     close (F);
-#    $doc->toFile($file, 0);
+
 
 }
 
@@ -108,12 +105,7 @@ sub SetValue
     if(ref($id)){
 	$node = $id;
     }else{
-
-	$node=$this->GetNode("file/group/entry",{id=>$id,});
-
-#	my @nodes = $this->{_xml}->findnodes("//file/group/entry[\@id=\"$id\"]");
-#	print "HERE $#nodes\n";
-#        $node = $nodes[0];
+	$node=$this->GetNode("entry",{id=>$id,});
     }
     if(defined $node){
 	$logger->debug("SetValue: ".ref($this)." id=$id value=$value");	
@@ -128,6 +120,7 @@ sub GetValue
 {
     my($this, $name, $attribute, $id) = @_;
     my $val;
+
     $logger->debug("name=$name file:".ref($this));
     my $nodes = $this->{_xml}->find("//entry[\@id=\'$name\']");
 #    my @nodes = $this->{_xml}->findnodes("//entry[\@id=\"$name\"]");
@@ -136,7 +129,7 @@ sub GetValue
     my $node = $nodes->get_node(1);
 
     if(! defined $node) {
-	$logger->info("Node not defined for $name");
+	$logger->debug("Node not defined for $name");
 	return undef;
     }
     if(defined $attribute and defined $id){
@@ -206,6 +199,12 @@ sub GetElementsfromChildContent {
     return ($nodelist);
 }
 
+sub is_valid_name {
+    my($this,$name) = @_;
+    my $node = $this->GetNode("entry",{id=>$name});
+    defined $node ? 1 : 0;
+}    
+
 
 sub GetNode {
     my ($this, $nodename, $attributes) = @_;
@@ -228,11 +227,12 @@ sub GetNode {
     
     $logger->debug("XPATH = $xpath");
     my @nodesmatched;
-    if(defined $this->{root}){
-	@nodesmatched = $this->{root}->findnodes($xpath);
-    }else{
+#    if(defined $this->{root}){
+#	@nodesmatched = $this->{root}->findnodes($xpath);
+#    }elsif(defined $this->{_xml}){
 	@nodesmatched = $this->{_xml}->findnodes($xpath);   
-    }
+#    }
+
     if($#nodesmatched < 0){
 	$logger->debug("$xpath did not match any nodes");
     }elsif($#nodesmatched>0){
@@ -250,12 +250,6 @@ sub PrintEntry
     my $node = $this->GetNode("entry",{id=>$id});
     if(defined $node){
 	$found = 1;
-	if($opts->{fileonly}){
-	    ref($this) =~ /CIME::XML::(.*)/;
-	    my $file = $1.".xml";
-	    print "$id is defined in $file\n";
-
-	}
 	my $value = $node->getAttribute("value");
 	if(!(defined $opts->{noexpandxml}) || $opts->{noexpandxml}==0){
 	    $value = $this->GetResolvedValue($value);
@@ -264,10 +258,20 @@ sub PrintEntry
 	    print $value;
 	    return $found;
 	}
-	print "$id = $value\n";
+	my $file;
+	ref($this) =~ /CIME::XML::(.*)/;
+	$file = $1.".xml";
+
+	print "$id = $value\n" unless($opts->{fileonly});
+
 	if($opts->{valonly}){
 	    return $found;
 	}	
+	print "  file: $file\n";
+	if($opts->{fileonly}){
+	    return $found;
+	}
+	
 	my @fields = $node->findnodes(".//*");
 	foreach my $fld (@fields){
 	    print "  ".$fld->nodeName().":  ".$fld->textContent()."\n";
@@ -279,12 +283,30 @@ sub PrintEntry
 }
 
 sub GetResolvedValue {
-    my($this, $val) = @_;
+    my($this, $val, $reccnt) = @_;
+
+    if(defined $reccnt){
+	if($reccnt>10){
+	    $logger->logdie("Too many levels of recursion in ".ref($this)."::GetResolvedValue for $val");
+	}
+	$reccnt++;
+    }else{
+	$reccnt=0;
+    }
 
 #find and resolve any variable references.    
     if(! defined $val){
 	$logger->logdie("GetResolvedValue called without an argument");
     }
+    if($val =~ /^(.*)\$ENV{(.*)}(.*)$/){
+	if(defined $ENV{$2}){
+	    $val = $1.$ENV{$2}.$3;
+	}else{
+	    $logger->warn("Could not resolve environment variable $2");
+	    return $val;
+	}
+    }
+
     my @cnt = $val =~ /\$/g;
     
     for(my $i=0; $i<= $#cnt; $i++){
@@ -293,6 +315,10 @@ sub GetResolvedValue {
 	    my $rvar = $this->GetValue($var);
 	    $val =~ s/\$$var/$rvar/;
 	}
+    }
+    # There is a possibility of infinite recursion here, $reccnt prevents that
+    if($val =~ /\$/){
+	$val = $this->GetResolvedValue($val,$reccnt);
     }
     
     return $val;
@@ -310,6 +336,7 @@ sub AddElementsByGroup
     # file children from each entry, set the default value
     my %groups;
     my $nodelist = $srcdoc->GetElementsfromChildContent('file' ,$file);
+    
 #    my $root = $this->{_xml}->getDocumentElement();
     if(defined $nodelist){
 	foreach my $node ($nodelist->get_nodelist()){
@@ -318,6 +345,13 @@ sub AddElementsByGroup
 	    $childnode = ${$node->find(".//group")}[0];
 	    my $groupname = $childnode->textContent();
 	    $node->removeChild($childnode);
+
+	    my @valuesnodes = $node->findnodes(".//values");
+	    if(@valuesnodes){
+		foreach my $value (@valuesnodes){
+		    $node->removeChild($value);
+		}
+	    }
 	    
 #	    my $groupnode = ${$this->{root}->findnodes("//file/group[\@id=\"$groupname\"]")}[0];
 	    if(!defined $groups{$groupname}){
@@ -331,9 +365,18 @@ sub AddElementsByGroup
 	    $logger->debug("Adding $id  to group ",$groupname);
 	    $this->SetDefaultValue($node);
 	    $groups{$groupname}->addChild($node);
-
+	    
 	}
     }
+    my $parser = new XML::LibXML();
+#
+# Reparse the modified document
+#
+    $this->{_xml} = $parser->parse_string($this->{root}->toString());
+
+
+
+
 }
 
 

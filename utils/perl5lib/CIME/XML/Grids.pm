@@ -2,7 +2,7 @@ package CIME::XML::Grids;
 my $pkg_nm = __PACKAGE__;
 
 use CIME::Base;
-use parent 'CIME::XML::GenericEntry';
+#use parent 'CIME::XML::GenericEntry';
 my $logger;
 
 our $VERSION = "v0.0.1";
@@ -22,8 +22,15 @@ sub new {
 
 sub _init {
     my ($this, $file) = @_;
-    $this->SUPER::_init($file);
+    
+    if(! -f $file){
+	$logger->logdie("Could not find or open file $file");
+    }
+    $logger->debug("Opening file $file to read");
+    $this->{_xml} = XML::LibXML->new( (no_blanks => 1, ))->parse_file($file);
+
 }
+
 
 #-------------------------------------------------------------------------------
 sub getGridLongname
@@ -85,7 +92,114 @@ sub getGridLongname
     return ($grid_longname);
 }
 
+sub GetComponentGridSettings{
+    my($this,$comp,$compgrid,$mask) = @_;
+    my $settings;
+    my @nodes = $this->{_xml}->findnodes("//domain[\@name=\"$compgrid\"]");
+    
+    my $node = $nodes[0];
+    $settings->{GRID} = $compgrid;
+    $settings->{NX} = ${$node->findnodes(".//nx")}[0]->textContent();
+    $settings->{NY} = ${$node->findnodes(".//ny")}[0]->textContent();
+    my @pathnode;
+    if ($comp eq 'ATM' || $comp eq 'LND'){
+	$settings->{DOMAIN_FILE} = ${$node->findnodes(".//file[\@lnd_mask=\"$mask\"]")}[0]->textContent();
+	@pathnode = $node->findnodes(".//path[\@lnd_mask=\"$mask\"]");
+    }elsif($comp eq 'ICE' || $comp eq 'OCN') {
+	$settings->{DOMAIN_FILE} = ${$node->findnodes(".//file[\@ocn_mask=\"$mask\"]")}[0]->textContent();
+	@pathnode = $node->findnodes(".//path[\@ocn_mask=\"$mask\"]");
+    }
+    if( @pathnode){
+	$settings->{DOMAIN_PATH} = $pathnode[0]->textContent();
+    }
+	
+    return $settings;
+}
 
+sub GetGridMaps
+{
+    my($this, $comp1, $comp1grid, $comp2, $comp2grid) = @_;
+    my $gridmaps;
+    
+    my @nodes = $this->{_xml}->findnodes("//gridmap[\@${comp1}_grid=\"$comp1grid\" and \@${comp2}_grid=\"$comp2grid\"]");
+
+    if(@nodes){
+	my $gmapnode = $nodes[0];
+	foreach my $node ( $gmapnode->findnodes(".//*") ){
+	    $gridmaps->{$node->nodeName}=$node->textContent();
+	}
+    }
+    return($gridmaps);
+
+}
+
+sub GetValue{
+    my($this, $nodename, $attributes) = @_;
+
+    my $xpath = "//$nodename";
+
+    if(defined $attributes){
+	my $cnt = 0;
+	foreach my $id (keys %$attributes){
+	    if($cnt==0){
+		$xpath .="[";
+	    }else{
+		$xpath .= " and ";
+	    }
+	    $xpath.="\@$id=\'$attributes->{$id}\'";
+	    $cnt++;
+	}
+	$xpath .= "]";
+    }
+    
+    $logger->debug("XPATH = $xpath");
+
+    my @nodesmatched = $this->{_xml}->findnodes($xpath);   
+
+    if($#nodesmatched < 0){
+	$logger->debug("$xpath did not match any nodes");
+    }elsif($#nodesmatched>0){
+	$logger->warn("$xpath matches mulitiple nodes");
+    }else{
+	return $nodesmatched[0]->textContent();
+    }
+    return undef;
+
+}
+
+
+
+sub GetComponentGrids{
+    my($this, $gridname) = @_;
+    my $compgrid;
+    my ($atmgrid, $lndgrid, $ocnicegrid, $runoffgrid, $mask, $glcgrid, $wavgrid);
+# Problem here - this pattern restricts us to only one gridname spec
+# Need to figure out how to generalize
+#    my $pattern = $this->GetValue("gridname_spec");
+    if($gridname =~ /a%(.+)_l%(.+)_oi%(.+)_r%(.+)_m%(.+)_g%(.+)_w%(.+)$/){
+	$atmgrid=$1;
+	$lndgrid=$2;
+	$ocnicegrid=$3;
+	$runoffgrid=$4;
+	$mask=$5;
+	$glcgrid=$6;
+	$wavgrid=$7;
+	
+	
+	$compgrid->{ATM} = $this->GetComponentGridSettings("ATM",$atmgrid, $mask);
+	$compgrid->{LND} = $this->GetComponentGridSettings("LND",$lndgrid, $mask);
+	$compgrid->{OCN} = $this->GetComponentGridSettings("OCN",$ocnicegrid, $mask);
+	$compgrid->{ICE} = $this->GetComponentGridSettings("ICE",$ocnicegrid, $mask);
+	$compgrid->{ROF} = $this->GetComponentGridSettings("ROF",$runoffgrid, $mask);
+	$compgrid->{GLC} = $this->GetComponentGridSettings("GLC",$glcgrid, $mask);
+	$compgrid->{WAV} = $this->GetComponentGridSettings("WAV",$wavgrid, $mask);
+
+
+    }else{
+	$logger->logdie("Gridname $gridname did not fit expected pattern");
+    } 
+    return $compgrid;
+}
     
 
 

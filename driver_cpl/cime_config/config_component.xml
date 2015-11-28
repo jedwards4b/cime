@@ -19,7 +19,6 @@
     <comp>WAV</comp>
   </components>
 
-
   <entry id="COMP_CPL"> 
     <type>char</type>
     <valid_values>cpl</valid_values>
@@ -650,16 +649,16 @@
   <entry id="OS"> 
     <type>char</type>
     <valid_values></valid_values>
-    <default_value>USERDEFINED_required_macros</default_value>
+    <default_value>UNSET</default_value>
     <group>build_macros</group>
     <file>env_build.xml</file>
-    <desc>Operating system - DO NOT EDIT UNLESS for userdefined machine - ignored once Macros has been created.</desc>
+    <desc>Operating system - DO NOT EDIT UNLESS for userdefined machine.</desc>
   </entry>
 
   <entry id="COMPILERS"> 
     <type>char</type>
     <valid_values></valid_values>  
-    <default_value></default_value> 
+    <default_value>UNSET</default_value> 
     <group>build_macros</group>
     <file>env_build.xml</file>
     <desc>Set in $CIMEROOT/machines/config_machines.xml for each supported machine.
@@ -669,7 +668,7 @@
   <entry id="COMPILER"> 
     <type>char</type>
     <valid_values></valid_values>
-    <default_value></default_value>
+    <default_value>UNSET</default_value>
     <group>build_macros</group>
     <file>env_build.xml</file>
     <desc>Machine compiler (must match one the supported compilers)
@@ -700,7 +699,7 @@
   <entry id="MPILIB"> 
     <type>char</type>
     <valid_values></valid_values>  
-    <default_value>USERDEFINED_required_macros</default_value>
+    <default_value>UNSET</default_value>
     <group>build_macros</group>
     <file>env_build.xml</file>
     <desc>mpi library (must match one of the supported libraries) - 
@@ -1777,15 +1776,15 @@
 
   <entry id="MACHINES_FILE">
     <type>char</type>
-    <default_value></default_value>
+    <default_value>$MACHDIR/config_machines.xml</default_value>
     <group>case_def</group>
     <file>env_case.xml</file>
-    <desc>full pathname of file specifying supported machines location</desc>
+    <desc>full path to file specifying supported machines location</desc>
   </entry>
 
   <entry id="MACHDIR">
     <type>char</type>
-    <default_value></default_value>
+    <default_value>$CIMEROOT/cime_config/$MODEL/machines</default_value>
     <group>case_def</group>
     <file>env_case.xml</file>
     <desc>Machines directory location</desc>

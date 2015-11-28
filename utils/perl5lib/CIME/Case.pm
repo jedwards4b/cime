@@ -8,6 +8,7 @@ use CIME::XML::env_case;
 use CIME::XML::env_build;
 use CIME::XML::ConfigComponent;
 use CIME::XML::Grids;
+use CIME::XML::Machines;
 
 my $logger;
 
@@ -17,7 +18,8 @@ BEGIN{
     $logger = get_logger("CIME::Case");
 }
 
-my @casefiles = qw(env_run env_case env_build env_mach_pes);
+my @casefiles = qw(env_run env_case env_build );
+#env_mach_pes);
 
 
 sub new {
@@ -33,25 +35,70 @@ sub _init {
     my ($this,$cimeroot,$caseroot) = @_;
 
     $this->SetValue('CIMEROOT',$cimeroot);
-
-    $this->InitCaseXML($caseroot);
-
+    if(defined $caseroot){
+	$this->InitCaseXML($caseroot);
+    }
 #  $this->SUPER::_init($bar, $baz);
     # Nothing to do here
 }
 
+# This is repeated in GenericEntry - how can we define in just one place?
+sub GetResolvedValue {
+    my($this, $val, $reccnt) = @_;
+
+    if(defined $reccnt){
+	if($reccnt>10){
+	    $logger->logdie("Too many levels of recursion in ".ref($this)."::GetResolvedValue for $val");
+	}
+	$reccnt++;
+    }else{
+	$reccnt=0;
+    }
+
+#find and resolve any variable references.    
+    if(! defined $val){
+	$logger->logdie("GetResolvedValue called without an argument");
+    }
+
+    if($val =~ /^(.*)\$ENV{(.*)}(.*)$/){
+	if(defined $ENV{$2}){
+	    $val = $1.$ENV{$2}.$3;
+	}else{
+	    $logger->warn("Could not resolve environment variable $2");
+	    return $val;
+	}
+    }
+
+    my @cnt = $val =~ /\$/g;
+    
+    for(my $i=0; $i<= $#cnt; $i++){
+	if($val =~ /^[^\$]*\$([^\$\}\/]+)/){
+	    my $var = $1;
+	    my $rvar = $this->GetValue($var);
+	    $val =~ s/\$$var/$rvar/;
+	}
+    }
+    # There is a possibility of infinite recursion here, need an error check.
+    if($val =~ /\$/){
+	$val = $this->GetResolvedValue($val,$reccnt);
+    }
+    
+    return $val;
+
+}
+
+
 sub InitCaseXML{
     my($this,$caseroot) = @_;
     
-    if(defined ($caseroot)){
-	# Create objects for each XML file in the case directory
-	$caseroot = $this->GetResolvedValue($caseroot);
-	$this->{env_run} = CIME::XML::env_run->new($this->GetValue('CIMEROOT'), $caseroot."/env_run.xml");
-	$this->{env_case} = CIME::XML::env_case->new($this->GetValue('CIMEROOT'), $caseroot."/env_case.xml");
-	$this->{env_build} = CIME::XML::env_build->new($this->GetValue('CIMEROOT'), $caseroot."/env_build.xml");
-	# needs env_mach_pes.xml
-	# 
-    }
+    # Create objects for each XML file in the case directory
+    $caseroot = $this->GetResolvedValue($caseroot);
+    $this->{env_run} = CIME::XML::env_run->new($this->GetValue('CIMEROOT'), $caseroot."/env_run.xml");
+    $this->{env_case} = CIME::XML::env_case->new($this->GetValue('CIMEROOT'), $caseroot."/env_case.xml");
+    $this->{env_build} = CIME::XML::env_build->new($this->GetValue('CIMEROOT'), $caseroot."/env_build.xml");
+    # needs env_mach_pes.xml
+    # 
+
 }
 
 sub SetValue {
@@ -60,13 +107,18 @@ sub SetValue {
     my $val;
     foreach my $file (@casefiles){
 	if(defined $this->{$file}){
+	    $logger->debug("Looking for $id in $file");
 	    $val = $this->{$file}->SetValue($id,$value);
 	}
-	last if(defined $val);
+	if(defined $val){
+	    $logger->debug("Found $id in $file, set to $val");
+	    return 1;
+	}
     }
     if(!defined $val){
 	$this->{$id}=$value;
     }
+    return undef;
 }
 
 # Given an xml id and optionally an attribute and name return the unique value associated with that 
@@ -75,12 +127,14 @@ sub SetValue {
 sub GetValue {
     my($this,$id, $attribute, $name) = @_;
     my $val;
+
     if(defined $this->{$id}){
 	$val =  $this->{$id};
     }else{
 	foreach my $hkey (keys %$this){
 	    my $tref = ref ($this->{$hkey});
 	    if(ref( $this->{$hkey}) =~ "CIME::XML"){
+		$logger->debug("Looking for $id in $tref");
 		$val =  $this->{$hkey}->GetValue($id, $attribute, $name);
 	    }
 	    last if defined $val;
@@ -88,6 +142,13 @@ sub GetValue {
     }
     return $val;
 }
+
+sub is_valid_name{
+    my($this,$name) = @_;
+    defined $this->GetValue($name) ? 1: 0;
+    
+}
+
 
 sub PrintEntry
 {
@@ -106,30 +167,6 @@ sub PrintEntry
 
 
 
-# Resolve any unresolved variables in a given string.
-
-sub GetResolvedValue {
-    my($this, $val) = @_;
-
-#find and resolve any variable references.    
-    if(! defined $val){
-	$logger->logdie("GetResolvedValue called without an argument");
-    }
-    my @cnt = $val =~ /\$/g;
-    
-    for(my $i=0; $i<= $#cnt; $i++){
-	if($val =~ /^[^\$]*\$([^\$\}\/]+)/){
-	    my $var = $1;
-	    my $rvar = $this->GetValue($var);
-	    $val =~ s/\$$var/$rvar/;
-	}
-    }
-    
-    return $val;
-
-}
-
-
 #
 # configure 
 #
@@ -138,17 +175,20 @@ sub GetResolvedValue {
 sub configure {
     my($this) = @_;
 
-    $this->InitCaseXML();
+    my $caseroot = $this->GetValue("CASEROOT");
 
-    $this->{files} = CIME::XML::Files->new($this);
+    $this->InitCaseXML($caseroot);
 
-    my $compset_files = $this->{files}->GetValues("COMPSETS_SPEC_FILE","component");
+    my $files = CIME::XML::Files->new($this);
+
+    my $compset_files = $files->GetValues("COMPSETS_SPEC_FILE","component");
 
 # Find the compset longname and target component
     my $target_comp;
     my $compset = $this->GetValue("COMPSET");
     $logger->info("Compset requested: $compset");
     foreach my $comp (keys %$compset_files){
+	$logger->debug("comp = $comp $compset_files->{$comp}");
 	my $file = $this->GetResolvedValue($compset_files->{$comp});
 
 # does config_comp need to be part of the object or can it be a local?
@@ -169,7 +209,7 @@ sub configure {
 
 
 # Get the list of component classes supported by this drv
-    my $file = $this->{files}->GetValue('CONFIG_DRV_FILE');
+    my $file = $files->GetValue('CONFIG_DRV_FILE');
     $file = $this->GetResolvedValue($file);
     my $configcomp = CIME::XML::ConfigComponent->new($file);
     my @components = $configcomp->GetValue('components');
@@ -193,47 +233,213 @@ sub configure {
 	if($comp eq "DRV"){
 	    # $file and $configcomp already defined above
 	}else{
-	    $file = $this->{files}->GetValue('CONFIG_'.$comp.'_FILE', "component", $compcomp );
+	    my $config_file = 'CONFIG_'.$comp.'_FILE';
+	    $file = $files->GetValue($config_file, "component", $compcomp );
+	    $this->SetValue($config_file,$file);
 	    $file = $this->GetResolvedValue($file);
 	    $configcomp = CIME::XML::ConfigComponent->new($file);
 	}
-	
-	$this->{env_run}->AddElementsByGroup($configcomp);
-	$this->{env_case}->AddElementsByGroup($configcomp);
-	$this->{env_build}->AddElementsByGroup($configcomp);
-	
+	$this->AddElementsByGroup($configcomp);
     }
+    $this->AddElementsByGroup($files);
+# All of the elements of the case xml files are now defined and default values are
+# set.   Now we can move the command line values from the object hash to the XML
+    foreach my $var (keys %$this){
+	next if(ref($this->{$var}));  #skip references
+	my $found = $this->SetValue($var,$this->{$var});
+	if($found){
+	    # we've successfully updated the xml var, delete the hash entry
+	    delete $this->{$var};
+	}
+    }
+# Set any additional command line configuration options
+    $this->SetConfOpts();
+# Set any other values here
+    $this->SetValue("USER", $ENV{USER});
 
-#    $this->{env_run}->write();
-#    $this->{env_case}->write();
-#    $this->{env_build}->write();
-
-    my $grids_file = $this->GetResolvedValue($this->{files}->GetValue('GRIDS_SPEC_FILE'));
     
+        
+    my $grids_file = $this->GetValue('GRIDS_SPEC_FILE');
+    $grids_file = $this->GetResolvedValue($grids_file);
     
     $logger->debug("Opening grid file $grids_file");
 
-    $this->{grid_file} = CIME::XML::Grids->new($grids_file);
+    my $grid_file = CIME::XML::Grids->new($grids_file);
+
     my $grid = $this->GetValue('GRID');
     $logger->info("Grid requested: $grid");
 
-    $grid = $this->{grid_file}->getGridLongname($grid, $compset);
+    $grid = $grid_file->getGridLongname($grid, $compset);
     
     $logger->info("Grid Longname: $grid");
 
     $this->SetValue("GRID", $grid);
 
-
+    my $compgrids = $grid_file->GetComponentGrids($grid);
     
+    foreach my $comp (keys $compgrids){
+ 	foreach my $setting (keys $compgrids->{$comp}){
+	    $this->SetValue("${comp}_${setting}",$compgrids->{$comp}{$setting});
+	}
+    }
+    # Get all the inter component mapping files
+    # start at 1 to skip coupler
+    for(my $i=1; $i<=$#components; $i++){
+	my $comp1 = $components[$i];
+	for(my $j=$i+1; $j <= $#components; $j++){
+	    my $comp2 = $components[$j];
+	    my $maps = $grid_file->GetGridMaps(lc($comp1),$compgrids->{$comp1}{GRID},lc($comp2),$compgrids->{$comp2}{GRID});
+	    if(defined $maps){
+		foreach my $mapname (keys $maps){
+		    $this->SetValue($mapname, $maps->{$mapname});
+		}
+	    }
+	}
+    }
+    if(grep("xrof",@{$this->{compset_components}})){
+	my $floodMode = $grid_file->GetValue("XROF_FLOOD_MODE",{ocn_grid=>$compgrids->{OCN}{GRID},
+								lnd_grid=>$compgrids->{LND}{GRID},
+								rof_grid=>$compgrids->{ROF}{GRID}});
+	if(defined $floodMode){
+	    $this->SetValue("XROF_FLOOD_MODE",$floodMode);
+	}
+    }
+    my $machfile = $this->GetValue('MACHINES_FILE');
+    $machfile = $this->GetResolvedValue($machfile);
+    $logger->info("Machine file is $machfile");
+    my $machine = CIME::XML::Machines->new($machfile, $this->GetValue('MACH'));
+
+    my $compiler = $this->GetValue('COMPILER');      #check for a user defined value
+    $compiler = $machine->getCompiler($compiler);    #get the default value or confirm the user defined value is valid
+    $this->SetValue("COMPILER",$compiler);           #set the updated value
+    $logger->info("Compiler is $compiler");
+
+    my $mpilib = $this->GetValue('MPILIB');
+    $mpilib = $machine->getMPIlib($mpilib);
+    $this->SetValue("MPILIB",$mpilib);
+    $logger->info("MPILIB is $mpilib");
+    
+    my @ids = $machine->getNodeNames();
+    foreach my $id (@ids){
+# these are exceptions to be handled elsewhere
+	next if($id eq "mpirun");
+	next if($id eq "COMPILERS");
+	next if($id eq "MPILIBS");
+	next if($id eq "environment_variables");
+	next if($id eq "module_system");
+
+	my $val = $machine->getValue($id);
+	$this->SetValue($id,$val);
+    }    
+    
+}
+
+sub SetConfOpts{
+    my ($this) = @_;
+
+    if(defined $this->{confopts}){
+	my $coptions = $this->{confopts};
+	delete $this->{confopts};
+	$logger->debug( "  confopts = $coptions");
+
+	if ($coptions =~ "_D" || $coptions =~ "_ED") {
+	    $this->SetValue('DEBUG', "TRUE");
+	    $logger->debug("    confopts DEBUG ON ");
+	}
+	if ($coptions =~ "_E" || $coptions =~ "_DE") {
+	    $this->SetValue('USE_ESMF_LIB', "TRUE");
+	    $this->SetValue('COMP_INTERFACE', "ESMF");
+	    $logger->debug("    confopts COMP_INTERFACE ESMF set ");
+	}
+# 
+	if ($coptions =~ "_P") {
+	    my $popt = $coptions;
+	    if($popt =~ /.*_P([A-Za-z0-9]*)_?.*/){
+		my $pecount = $1;
+		$this->SetValue("pecount",$pecount);
+		$logger->debug("    confopts pecount set to $pecount");
+	    }else{
+		$logger->logdie("Error parsing confopts pecount");
+	    }
+	    
+	}
+	if ($coptions =~ "_M") {
+	    my $mopt = $coptions;
+	    my $mpilib;
+	    if($mopt =~ /.*_M([A-Za-z0-9\-]*)_?.*/){
+		$mpilib = $1;
+		$this->SetValue("MPILIB",$mpilib);
+		$logger->debug("    mpilib set to $mpilib ");
+	    }else{
+		$logger->logdie( "M option found but no MPILIB provided");
+	    }
+	}
+	if ($coptions =~ "_L") {
+	    my $lopt = $coptions;
+	    $lopt =~ s/.*_L([A-Za-z0-9]*)_?.*/$1/;
+	    my $loptc = substr($lopt,0,1);
+	    my $lopti = substr($lopt,1);
+	    my $lopts = 'unknown';
+	    if ($loptc =~ "y") {$lopts = 'nyears'}
+	    if ($loptc =~ "m") {$lopts = 'nmonths'}
+	    if ($loptc =~ "d") {$lopts = 'ndays'}
+	    if ($loptc =~ "h") {$lopts = 'nhours'}
+	    if ($loptc =~ "s") {$lopts = 'nseconds'}
+	    if ($loptc =~ "n") {$lopts = 'nsteps'}
+	    if ($lopts =~ "unknown") {
+		$logger->logdie(" _L confopts run length undefined, only y m d h s n allowed");
+	    }
+	    $this->SetValue('STOP_OPTION', $lopts);
+	    $this->SetValue('STOP_N', $lopti);
+	    $logger->debug("    confopts run length set to $lopt . $lopts . $lopti ");
+	}
+	if ($coptions =~ "_N") {
+	    my $nopt = $coptions;
+	    $nopt =~ s/.*_N([0-9]*)_?.*/$1/;
+	    $this->SetValue('NINST_ATM', $nopt);
+	    $this->SetValue('NINST_LND', $nopt);
+	    $this->SetValue('NINST_OCN', $nopt);
+	    $this->SetValue('NINST_ICE', $nopt);
+	    $this->SetValue('NINST_GLC', $nopt);
+	    $this->SetValue('NINST_ROF', $nopt);
+	    $this->SetValue('NINST_WAV', $nopt);
+	    $logger->debug("    confopts instances set to $nopt ");
+	}
+	if ($coptions =~ "_CG") {
+	    $this->SetValue('CALENDAR', "GREGORIAN");
+	    $logger->debug("    confopts CALENDAR set to GREGORIAN ");
+	}
+	if ($coptions =~ "_AOA") {
+	    $this->SetValue('AOFLUX_GRID', "atm");
+	    $logger->debug("    confopts AOFLUX_GRID set to atm ");
+	}
+	if ($coptions =~ "_AOE") {
+	    $this->SetValue('AOFLUX_GRID', "exch");
+	    $logger->debug("    confopts AOFLUX_GRID set to exch ");
+	}
+	
+
+	
+    }
+
+}
+
+
+
+sub AddElementsByGroup{
+    my ($this, $configcomp) = @_;
+    foreach my $casefile (@casefiles){
+	$this->{$casefile}->AddElementsByGroup($configcomp);
+    }
 }
 
 
 sub WriteCaseXML{
     my($this) = @_;
-    $this->{env_build}->write();
-    $this->{env_case}->write();
-    $this->{env_run}->write();
-#    $this->{env_mach_pes}->write();
+    foreach my $casefile (@casefiles){
+	$this->{$casefile}->write();
+    }
+
 }
 
 

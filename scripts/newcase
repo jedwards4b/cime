@@ -55,9 +55,7 @@ my $Case = CIME::Case->new($cimeroot);
 
 _check_input_options ($Case, \%opts);
 
-
 $Case->configure();
-
 
 $Case->WriteCaseXML();
 
@@ -69,6 +67,9 @@ $Case->WriteCaseXML();
 sub _check_input_options
 {
     my ($Case,$opts) = @_;
+    
+    # Values in uppercase here have a direct correspondence to Entries in the case XML files
+    # Values in lowercase will need to have further handling
 
     if (!$opts->{'testlist'}) {
 	# Check for manditory case input
@@ -100,6 +101,15 @@ sub _check_input_options
 	} else {
 	    $Case->SetValue('MODEL','cesm');
 	}
+
+	if($opts->{user_grid_file}){
+	    if(-f $opts->{user_grid_file}){
+		$Case->SetValue("GRIDS_SPEC_FILE",$opts->{user_grid_file});
+	    }else{
+		$logger->logdie("$opts->{user_grid_file} could not be found");
+	    }
+	}
+
 
 	# Check for manditory compset input
 	if ($opts->{'compset'}) {
@@ -139,6 +149,11 @@ sub _check_input_options
 	if ($opts->{'pecount'}) {
 	    $Case->SetValue('pecount', $opts->{'pecount'});
 	}
+	if ($opts->{confopts}){
+	    $Case->SetValue('confopts',$opts->{confopts});
+	}
+
+
     }
 }
 

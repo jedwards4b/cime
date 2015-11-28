@@ -42,6 +42,46 @@ sub _init {
   }
 }
 
+sub AAAGetNode{
+    my($this, $nodename, $attributes) = @_;
+
+    my $xpath = "//$nodename";
+
+    if(defined $attributes){
+	my $cnt = 0;
+	foreach my $id (keys %$attributes){
+	    if($cnt==0){
+		$xpath .="[";
+	    }else{
+		$xpath .= " and ";
+	    }
+	    $xpath.="\@$id=\'$attributes->{$id}\'";
+	    $cnt++;
+	}
+	$xpath .= "]";
+    }
+    
+    $logger->debug("XPATH = $xpath");
+    my @nodesmatched;
+#    if(defined $this->{root}){
+#	@nodesmatched = $this->{root}->findnodes($xpath);
+#    }elsif(defined $this->{_xml}){
+#	@nodesmatched = $this->{_xml}->findnodes("//");   
+	@nodesmatched = $this->{_xml}->getElementById("GRID");   
+    print "match: @nodesmatched\n";
+#    }
+
+    if($#nodesmatched < 0){
+	$logger->debug("$xpath did not match any nodes - really");
+    }elsif($#nodesmatched>0){
+	$logger->warn("$xpath matches mulitiple nodes");
+    }else{
+	return $nodesmatched[0];
+    }
+    return undef;
+    
+}
+
 
 sub AddElementsByGroup
 {
