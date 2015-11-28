@@ -43,13 +43,13 @@ sub _init {
 
 sub AddElementsByGroup
 {
-    my($this, $srcdoc) = @_;
+    my($this, $srcdoc, $attlist) = @_;
 
     # Add elements from srcdoc to the env_run.xml file under the appropriate
     # group element.  Add the group if it does not already exist, remove group and
     # file children from the entry
 
-    $this->SUPER::AddElementsByGroup($srcdoc,"env_run.xml");
+    $this->SUPER::AddElementsByGroup($srcdoc,$attlist, "env_run.xml");
     
 }
 

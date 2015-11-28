@@ -55,7 +55,7 @@
   
   <entry id="COMPSETS_SPEC_FILE">
     <type>char</type>
-    <default_value>unset</default_value>
+    <default_value>UNSET</default_value>
     <values>
       <value component="allactive">$CIMEROOT/cime_config/$MODEL/allactive/config_compsets.xml</value>
       <value component="drv"      >$CIMEROOT/driver_cpl/cime_config/config_compsets.xml</value>
@@ -72,7 +72,7 @@
 
   <entry id="PES_SPEC_FILE">
     <type>char</type>
-    <default_value>unset</default_value>
+    <default_value>UNSET</default_value>
     <values>
       <value component="allactive">$CIMEROOT/cime_config/$MODEL//allactive/config_pes.xml</value>
       <value component="drv"      >$CIMEROOT/driver_cpl/cime_config/config_pes.xml</value>
@@ -89,7 +89,7 @@
 
   <entry id="TESTS_SPEC_FILE">
     <type>char</type>
-    <default_value>unset</default_value>
+    <default_value>UNSET</default_value>
     <values>
       <value component="allactive">$CIMEROOT/cime_config/$MODEL/allactive/testlist_allactive.xml</value>
       <value component="drv"      >$CIMEROOT/driver_cpl/cime_config/testdefs/testlist_drv.xml</value>
@@ -106,7 +106,7 @@
 
   <entry id="TESTS_MODS_DIR">
     <type>char</type>
-    <default_value>unset</default_value>
+    <default_value>UNSET</default_value>
     <values>
       <value component="allactive">$CIMEROOT/cime_config/$MODEL//allactive/testmods_dirs</value>
       <value component="drv"      >$CIMEROOT/driver_cpl/cime_config/testdefs/testmods_dirs</value>
@@ -125,7 +125,7 @@
 
   <entry id="USER_MODS_DIR">
     <type>char</type>
-    <default_value>unset</default_value>
+    <default_value>UNSET</default_value>
     <values>
       <value component="allactive">$CIMEROOT/cime_config/$MODEL/allactive/usermods_dirs</value>
       <value component="drv"      >$CIMEROOT/driver_cpl/cime_config/usermods_dirs</value>
@@ -156,7 +156,7 @@
 
   <entry id="CONFIG_ATM_FILE">
     <type>char</type>
-    <default_value>unset</default_value>
+    <default_value>UNSET</default_value>
     <values>
       <value component="cam" >$SRCROOT/components/cam/cime_config/config_component.xml</value>
       <value component="datm">$CIMEROOT/components/data_comps/datm/cime_config/config_component.xml</value>
@@ -170,7 +170,7 @@
 
   <entry id="CONFIG_LND_FILE">
     <type>char</type>
-    <default_value>unset</default_value>
+    <default_value>UNSET</default_value>
     <values>
       <value component="vic" >$CIMEROOT/cime_config/$MODEL//vic/config_component.xml</value>
       <value component="clm" >$SRCROOT/components/clm/cime_config/config_component.xml</value>
@@ -185,7 +185,7 @@
 
   <entry id="CONFIG_ROF_FILE">
     <type>char</type>
-    <default_value>unset</default_value>
+    <default_value>UNSET</default_value>
     <values>
       <value component="rtm"	>$SRCROOT/components/rtm/cime_config/config_component.xml</value>
       <value component="mosart"	>$SRCROOT/components/mosart/cime_config/config_component.xml</value>
@@ -200,7 +200,7 @@
 
   <entry id="CONFIG_ICE_FILE">
     <type>char</type>
-    <default_value>unset</default_value>
+    <default_value>UNSET</default_value>
     <values>
       <value component="cice">$SRCROOT/components/cice/cime_config/config_component.xml</value>
       <value component="dice">$CIMEROOT/components/data_comps/dice/cime_config/config_component.xml</value>
@@ -214,7 +214,7 @@
 
   <entry id="CONFIG_OCN_FILE">
     <type>char</type>
-    <default_value>unset</default_value>
+    <default_value>UNSET</default_value>
     <values>
       <value component="pop"  >$SRCROOT/components/pop/cime_config/config_component.xml</value>
       <value component="aquap">$SRCROOT/components/aquap/cime_config/config_component.xml</value>
@@ -229,7 +229,7 @@
 
   <entry id="CONFIG_GLC_FILE">
     <type>char</type>
-    <default_value>unset</default_value>
+    <default_value>UNSET</default_value>
     <values>
       <value component="cism">$SRCROOT/components/cism/cime_config/config_component.xml</value>
       <value component="dglc">$CIMEROOT/components/data_comps/dglc/cime_config/config_component.xml</value>
@@ -243,7 +243,7 @@
 
   <entry id="CONFIG_WAV_FILE">
     <type>char</type>
-    <default_value>unset</default_value>
+    <default_value>UNSET</default_value>
     <values>
       <value component="ww"  >$SRCROOT/components/ww3/cime_config/config_component.xml</value>
       <value component="dwav">$CIMEROOT/components/data_comps/dwav/cime_config/config_component.xml</value>

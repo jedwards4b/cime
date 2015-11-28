@@ -75,20 +75,35 @@ sub write{
 
 sub SetDefaultValue
 {
-    my($this, $id) = @_;
-
+    my($this, $id, $attlist) = @_;
+    
     my $node;
-
+    my $val;
     if(ref($id)){
 	$node = $id;
+	$id = $node->getAttribute("id");
     }else{
 	my $nodes = $this->{_xml}->find("//entry[\@id=\'$id\']");
         $node = $nodes->get_node(1);
     }
-    
+    my @valnodes = $node->findnodes(".//values");
+    if(@valnodes and defined $attlist){
+	foreach my $attid (keys %$attlist){
+	    my $attval = $attlist->{$attid};
+	    my @defvalnodes = $valnodes[0]->findnodes(".//value[\@$attid=\"$attval\"]");
+	    if(@defvalnodes){
+		$val = $defvalnodes[0]->textContent();
+	    }
+	}
 
-    my $val = $node->find(".//default_value");
-    $node->setAttribute("value",$val);
+    }else{
+	$val = $node->find(".//default_value");
+    }
+    if(defined $val){
+	$node->setAttribute("value",$val);
+    }else{
+	$logger->debug("Could not find suitable default for $id");
+    }
     return $val;
 }
 
@@ -227,11 +242,7 @@ sub GetNode {
     
     $logger->debug("XPATH = $xpath");
     my @nodesmatched;
-#    if(defined $this->{root}){
-#	@nodesmatched = $this->{root}->findnodes($xpath);
-#    }elsif(defined $this->{_xml}){
-	@nodesmatched = $this->{_xml}->findnodes($xpath);   
-#    }
+    @nodesmatched = $this->{_xml}->findnodes($xpath);   
 
     if($#nodesmatched < 0){
 	$logger->debug("$xpath did not match any nodes");
@@ -329,15 +340,14 @@ sub GetResolvedValue {
 
 sub AddElementsByGroup
 {
-    my($this, $srcdoc, $file) = @_;
+    my($this, $srcdoc, $attlist, $file) = @_;
 
     # Add elements from srcdoc to the $file under the appropriate
     # group element.  Add the group if it does not already exist, remove group and
     # file children from each entry, set the default value
     my %groups;
     my $nodelist = $srcdoc->GetElementsfromChildContent('file' ,$file);
-    
-#    my $root = $this->{_xml}->getDocumentElement();
+
     if(defined $nodelist){
 	foreach my $node ($nodelist->get_nodelist()){
 	    my $childnode = ${$node->findnodes(".//file")}[0];
@@ -346,14 +356,6 @@ sub AddElementsByGroup
 	    my $groupname = $childnode->textContent();
 	    $node->removeChild($childnode);
 
-	    my @valuesnodes = $node->findnodes(".//values");
-	    if(@valuesnodes){
-		foreach my $value (@valuesnodes){
-		    $node->removeChild($value);
-		}
-	    }
-	    
-#	    my $groupnode = ${$this->{root}->findnodes("//file/group[\@id=\"$groupname\"]")}[0];
 	    if(!defined $groups{$groupname}){
 		$logger->debug("Defining group ",$groupname);
 		my $groupnode = $this->{_xml}->createElement("group");
@@ -361,24 +363,36 @@ sub AddElementsByGroup
 		$this->{root}->addChild($groupnode);
 		$groups{$groupname}=$groupnode;
 	    }
+
+	    $this->SetDefaultValue($node, $attlist);
+
+	    my @valuesnodes = $node->findnodes(".//values");
+	    if(@valuesnodes){
+		foreach my $values (@valuesnodes){
+		    $node->removeChild($values);
+		}
+	    }
+
 	    my $id = $node->getAttribute("id");
 	    $logger->debug("Adding $id  to group ",$groupname);
-	    $this->SetDefaultValue($node);
 	    $groups{$groupname}->addChild($node);
 	    
 	}
     }
+
+}
+
+
+sub ReparseXML{
+    my ($this) = @_;
+
     my $parser = new XML::LibXML();
 #
 # Reparse the modified document
 #
     $this->{_xml} = $parser->parse_string($this->{root}->toString());
 
-
-
-
 }
-
 
 
 

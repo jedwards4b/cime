@@ -57,6 +57,12 @@ _check_input_options ($Case, \%opts);
 
 $Case->configure();
 
+my $caseroot = $Case->GetValue('CASEROOT');
+
+mkdir $caseroot, 0755;
+
+chdir $caseroot;
+
 $Case->WriteCaseXML();
 
 #$Case->WriteCase();

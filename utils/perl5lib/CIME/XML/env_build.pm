@@ -85,13 +85,13 @@ sub AAAGetNode{
 
 sub AddElementsByGroup
 {
-    my($this, $srcdoc) = @_;
+    my($this, $srcdoc, $attlist) = @_;
 
     # Add elements from srcdoc to the env_build.xml file under the appropriate
     # group element.  Add the group if it does not already exist, remove group and
     # file children from the entry
 
-    $this->SUPER::AddElementsByGroup($srcdoc,"env_build.xml");
+    $this->SUPER::AddElementsByGroup($srcdoc,$attlist, "env_build.xml");
     
 }
 

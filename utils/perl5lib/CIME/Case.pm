@@ -6,6 +6,7 @@ use CIME::XML::Files;
 use CIME::XML::env_run;
 use CIME::XML::env_case;
 use CIME::XML::env_build;
+use CIME::XML::env_batch;
 use CIME::XML::ConfigComponent;
 use CIME::XML::Grids;
 use CIME::XML::Machines;
@@ -18,9 +19,8 @@ BEGIN{
     $logger = get_logger("CIME::Case");
 }
 
-my @casefiles = qw(env_run env_case env_build );
+my @casefiles = qw(env_run env_case env_build env_batch);
 #env_mach_pes);
-
 
 sub new {
     my ($class,$cimeroot, $caseroot) = @_;
@@ -95,7 +95,8 @@ sub InitCaseXML{
     $caseroot = $this->GetResolvedValue($caseroot);
     $this->{env_run} = CIME::XML::env_run->new($this->GetValue('CIMEROOT'), $caseroot."/env_run.xml");
     $this->{env_case} = CIME::XML::env_case->new($this->GetValue('CIMEROOT'), $caseroot."/env_case.xml");
-    $this->{env_build} = CIME::XML::env_build->new($this->GetValue('CIMEROOT'), $caseroot."/env_build.xml");
+    $this->{env_build} = CIME::XML::env_build->new($this->GetValue('CIMEROOT'), $caseroot."/env_build.xml");    
+    $this->{env_batch} = CIME::XML::env_batch->new($this->GetValue('CIMEROOT'), $caseroot."/env_batch.xml");
     # needs env_mach_pes.xml
     # 
 
@@ -207,7 +208,7 @@ sub configure {
 	$logger->logdie("Could not find a compset match for ".$this->GetValue("COMPSET"));
     }
 
-
+    
 # Get the list of component classes supported by this drv
     my $file = $files->GetValue('CONFIG_DRV_FILE');
     $file = $this->GetResolvedValue($file);
@@ -216,32 +217,33 @@ sub configure {
     $logger->debug( "components are @components");
 
 # Find the specific components for this case 
-    $this->Compset_Components();
-
-
-    
-#    my @components = qw(DRV ATM LND ICE OCN ROF GLC WAV);
-    my @compcomp = @{$this->{compset_components}};
+    my @compcomp = $this->Compset_Components();
 
     if($#components != $#compcomp){
 	$logger->logdie("General and specific component counts dont match");
     }
 
+#   attributes used for multi valued defaults
+    my $attlist = {component=>$target_comp};
+
+
     foreach my $comp (@components){
 	my $file;
 	my $compcomp = shift @compcomp;
-	if($comp eq "DRV"){
-	    # $file and $configcomp already defined above
-	}else{
+	if($comp ne "DRV"){  # DRV was handled above
 	    my $config_file = 'CONFIG_'.$comp.'_FILE';
 	    $file = $files->GetValue($config_file, "component", $compcomp );
 	    $this->SetValue($config_file,$file);
 	    $file = $this->GetResolvedValue($file);
 	    $configcomp = CIME::XML::ConfigComponent->new($file);
 	}
-	$this->AddElementsByGroup($configcomp);
+	$this->AddElementsByGroup($configcomp, $attlist);
     }
-    $this->AddElementsByGroup($files);
+
+    $this->AddElementsByGroup($files, $attlist);
+
+    $this->ReparseXML();
+    
 # All of the elements of the case xml files are now defined and default values are
 # set.   Now we can move the command line values from the object hash to the XML
     foreach my $var (keys %$this){
@@ -256,8 +258,6 @@ sub configure {
     $this->SetConfOpts();
 # Set any other values here
     $this->SetValue("USER", $ENV{USER});
-
-    
         
     my $grids_file = $this->GetValue('GRIDS_SPEC_FILE');
     $grids_file = $this->GetResolvedValue($grids_file);
@@ -296,7 +296,7 @@ sub configure {
 	    }
 	}
     }
-    if(grep("xrof",@{$this->{compset_components}})){
+    if(grep("xrof",@components)){
 	my $floodMode = $grid_file->GetValue("XROF_FLOOD_MODE",{ocn_grid=>$compgrids->{OCN}{GRID},
 								lnd_grid=>$compgrids->{LND}{GRID},
 								rof_grid=>$compgrids->{ROF}{GRID}});
@@ -427,9 +427,9 @@ sub SetConfOpts{
 
 
 sub AddElementsByGroup{
-    my ($this, $configcomp) = @_;
+    my ($this, $configcomp, $attlist ) = @_;
     foreach my $casefile (@casefiles){
-	$this->{$casefile}->AddElementsByGroup($configcomp);
+	$this->{$casefile}->AddElementsByGroup($configcomp, $attlist);
     }
 }
 
@@ -438,6 +438,14 @@ sub WriteCaseXML{
     my($this) = @_;
     foreach my $casefile (@casefiles){
 	$this->{$casefile}->write();
+    }
+
+}
+
+sub ReparseXML{
+    my($this) = @_;
+    foreach my $casefile (@casefiles){
+	$this->{$casefile}->ReparseXML();
     }
 
 }
@@ -452,8 +460,9 @@ sub Compset_Components
     my @elements = split /_/, $compset_longname;
 
 # add the driver explicitly - may need to change this if we have more than one.
+    my @components;
 
-    push(@{$this->{compset_components}},'drv');
+    push(@components,'drv');
 
     foreach my $element (@elements){
 	next if($element =~ /^\d+$/); # ignore the initial date
@@ -462,8 +471,9 @@ sub Compset_Components
 	if ($component =~ m/\d+/) {
 	    $component =~ s/\d//g;
 	}
-	push (@{$this->{compset_components}}, $component);
+	push (@components, $component);
     }	
+    return @components;
 }
 
 
