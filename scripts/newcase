@@ -1,6 +1,6 @@
 #!/user/bin/env perl
 BEGIN{
-    use Cwd qw( getcwd abs_path chdir);
+    use Cwd qw(getcwd abs_path chdir);
 # create_newcase can only be run from the cime/scripts directory
     my $cimeroot = abs_path("../");
 #   This is the only place we should use die.  Once the perl library
@@ -10,13 +10,16 @@ BEGIN{
     unshift @INC, "$cimeroot/utils/perl5lib";
     require CIME::Base;
 }
-use Cwd qw( getcwd abs_path chdir);
+
 use CIME::Base;
 use CIME::Case;
 # need to reinitialize cimeroot
 my $cimeroot = abs_path("../");
 my %opts;
 $opts{loglevel}="INFO";
+
+# Save commandline
+my $commandline = "create_newcase @ARGV";
 
 CIME::Base->getopts(\%opts);
 
@@ -57,16 +60,132 @@ _check_input_options ($Case, \%opts);
 
 $Case->configure();
 
-my $caseroot = $Case->GetValue('CASEROOT');
-
-mkdir $caseroot, 0755;
-
-chdir $caseroot;
+_create_caseroot($Case);
 
 $Case->WriteCaseXML();
 
 #$Case->WriteCase();
 
+#-------------------------------------------------------------------------------
+sub _create_caseroot
+{
+    # Create caseroot directory and all necessary sub directories
+    my ($Case) = @_;
+
+    my $caseroot = $Case->GetValue('CASEROOT');
+
+    $logger->info( "Creating $caseroot ");
+    if(! -e $caseroot){
+	mkdir ("$caseroot") or $logger->logdie("Failed to create $caseroot directory");
+    }
+    chdir ("$caseroot");
+
+    # Create relevant directories in $caseroot
+    my @newdirs = qw(. SourceMods LockedFiles Buildconf Tools);
+    foreach my $newdir ( @newdirs ) {
+	mkpath($newdir); 
+    }
+
+    # Open a new README.case file in $caseroot
+    my $file = "$caseroot/README.case";
+    my $fh = IO::File->new($file, '>' ) or $logger->logdie( "can't open file: $file\n");
+    print $fh "$commandline\n\n\n";
+    $fh->close;
+
+    # Copy README/disclaimer file 
+    #TODO - this needs to be updated
+    #$sysmod = "cp $cimeroot/scripts/README $caseroot/README.science_support";
+    #system($sysmod) == 0 or $logger->logdie( "ERROR: $sysmod failed: $?\n");
+
+    _create_caseroot_sourcemods($Case);  
+    _create_caseroot_tools($Case);
+#    _create_caseroot_files($Case);
+}
+
+
+
+#-------------------------------------------------------------------------------
+sub _create_caseroot_sourcemods
+{
+    my ($Case) = @_;  
+
+    my $caseroot   = $Case->GetValue('CASEROOT');
+    my $cimeroot   = $Case->GetValue('CIMEROOT');
+
+    my @components = $Case->Compset_Components();
+
+    # Create sourcemods
+    foreach my $comp (@components)  {
+	mkpath("$caseroot/SourceMods/src.$comp"); 
+
+	# Note: this is CESM specific given that we are referencing cism explitly
+	if ($comp eq 'cism') {
+	    mkpath("$caseroot/SourceMods/src.cism/glimmer-cism");
+	    open(README, ">", "$caseroot/SourceMods/src.$comp/README") or
+		$logger->logdie( "cannot open > $caseroot/SourceMods/src.cism/README: $!");
+	    print README
+		"Put source mods for the glimmer-cism library in the glimmer-cism subdirectory.\n",
+		"This includes any files that are in the glimmer-cism subdirectory of $cimeroot/../components/cism.\n\n",
+		"Anything else (e.g., mods to source_glc or drivers) goes in this directory, NOT in glimmer-cism/.\n";
+	    close(README);
+	}
+
+    }
+    mkpath("$caseroot/SourceMods/src.share"); 
+    mkpath("$caseroot/SourceMods/src.drv"); 
+}
+
+sub _create_caseroot_tools
+{
+    # Copy relevant files into $caseroot
+    my ($Case) = @_;
+
+    my $cimeroot = $Case->GetValue('CIMEROOT');
+    my $caseroot = $Case->GetValue('CASEROOT');
+
+    my $sysmod;
+
+    my @files = (
+	"$cimeroot/scripts/Tools/case_setup", 
+	"$cimeroot/scripts/Tools/testcase_setup", 
+	"$cimeroot/scripts/Tools/check_input_data", 
+	"$cimeroot/scripts/Tools/archive_metadata.sh", 
+	"$cimeroot/scripts/Tools/check_case", 
+	"$cimeroot/scripts/Tools/create_production_test", 
+	"$cimeroot/scripts/Tools/xmlchange",
+	"$cimeroot/scripts/Tools/xmlquery",
+	"$cimeroot/scripts/Tools/st_archive", 
+	"$cimeroot/scripts/Tools/README.post_process", 
+	); 
+
+    foreach my $file (@files) {
+	cp($file,"$caseroot/"); 
+    }
+
+    chmod 0755, "$caseroot/create_production_test";
+    
+    my $machines_dir  = $Case->GetValue('MACHDIR');
+    $machines_dir = $Case->GetResolvedValue($machines_dir);
+    my $model = $Case->GetValue('MODEL');
+    
+    # Copy relevant files into $caseroot/Tools/
+    @files = ("$cimeroot/cime_config/${model}/archive.xml",
+	      "$cimeroot/cime_config/${model}/archive.xsd",
+	      "$cimeroot/scripts/Tools/check_lockedfiles", 
+	      "$cimeroot/scripts/Tools/lt_archive.sh", 
+	      "$cimeroot/scripts/Tools/st_archive", 
+	      "$cimeroot/scripts/Tools/getTiming", 
+	      "$cimeroot/scripts/Tools/compare_namelists.pl",
+	      "$machines_dir/taskmaker.pl", 
+	      "$machines_dir/Makefile",
+	      "$machines_dir/mkSrcfiles", 
+	      "$machines_dir/mkDepends"); 
+    
+    foreach my $file (@files) {
+	
+	cp($file, "$caseroot/Tools/") or $logger->warn("Could not copy $file to case"); 
+    }
+}
 
 
 

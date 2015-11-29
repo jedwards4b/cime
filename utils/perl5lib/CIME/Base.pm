@@ -11,6 +11,8 @@ ToolSet->use_pragma('warnings');
 ToolSet->export('Log::Log4perl'=>qw(get_logger ),
 		'Data::Dumper'=>undef,
 		'XML::LibXML' => undef,
+		'File::Path' =>qw(mkpath),
+                'File::Copy' =>qw(cp),
 		'Getopt::Long'=>qw(GetOptions),
 );
 
