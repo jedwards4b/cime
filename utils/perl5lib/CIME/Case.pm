@@ -188,24 +188,26 @@ sub configure {
     my $target_comp;
     my $compset = $this->GetValue("COMPSET");
     $logger->info("Compset requested: $compset");
+    my $compset_longname;
     foreach my $comp (keys %$compset_files){
 	$logger->debug("comp = $comp $compset_files->{$comp}");
 	my $file = $this->GetResolvedValue($compset_files->{$comp});
 
 # does config_comp need to be part of the object or can it be a local?
 #	$this->{"config_$comp"} = CIME::XML::ConfigComponent->new($file);
-
-	my $compset = CIME::XML::ConfigComponent->new($file)->CompsetMatch($compset);
-	if(defined $compset){
-	    $logger->info("Compset longname: $compset");
-	    $this->SetValue("COMPSET",$compset);
+	
+	$compset_longname = CIME::XML::ConfigComponent->new($file)->CompsetMatch($compset);
+	if(defined $compset_longname){
+	    $logger->info("Compset longname: $compset_longname");
+	    $this->SetValue("COMPSET",$compset_longname);
 	    $target_comp = $comp;
 	    last;
 	}
 
     }
+
     if(!defined $target_comp){
-	$logger->logdie("Could not find a compset match for ".$this->GetValue("COMPSET"));
+	$logger->logdie("Could not find a compset match for ".$compset);
     }
 
     
@@ -233,7 +235,7 @@ sub configure {
     my $grid = $this->GetValue('GRID');
     $logger->info("Grid requested: $grid");
 
-    $grid = $grid_file->getGridLongname($grid, $compset);
+    $grid = $grid_file->getGridLongname($grid, $compset_longname);
     
     $logger->info("Grid Longname: $grid");
 
@@ -274,11 +276,8 @@ sub configure {
     }
 
 
-
-
-
 #   attributes used for multi valued defaults
-    my $attlist = {component=>$target_comp};
+    my $attlist = {component=>$target_comp, compset=>$compset_longname, grid=>$grid};
 
     foreach my $comp (@components){
 	my $file;

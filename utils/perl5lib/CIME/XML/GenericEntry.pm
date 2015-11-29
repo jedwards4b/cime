@@ -90,13 +90,33 @@ sub SetDefaultValue
     if(@valnodes and defined $attlist){
 	foreach my $attid (keys %$attlist){
 	    my $attval = $attlist->{$attid};
-	    my @defvalnodes = $valnodes[0]->findnodes(".//value[\@$attid=\"$attval\"]");
-	    if(@defvalnodes){
-		$val = $defvalnodes[0]->textContent();
+	    my @defvalnodes = $valnodes[0]->findnodes(".//value");
+	    foreach my $valnode (@defvalnodes){
+		# Because we use regular expressions in the attributes we
+		# need to bring them in to check them.
+		if($valnode->hasAttributes){
+		    my @atts = $valnode->attributes();
+		    foreach my $att (@atts){
+			my $name = $att->nodeName();
+			my $attval = $att->value();
+			if(defined $attlist->{$name}){
+			    if($attlist->{$name} =~ /$attval/){
+				$val = $valnode->textContent();
+				$logger->debug("id $id val=$val");
+			    }
+			}
+		    }
+		}else{
+		    $logger->logdie("value node without an attribute found in $id");
+		}
+
 	    }
+
 	}
 
-    }else{
+    }
+
+    if(!defined $val){   # Set default if  there is one.
 	$val = $node->find(".//default_value");
     }
     if(defined $val){
