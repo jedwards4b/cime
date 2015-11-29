@@ -17,7 +17,7 @@ ToolSet->export('Log::Log4perl'=>qw(get_logger ),
 );
 
 our $VERSION = "0.1";
-
+our @EXPORT = qw( trim ltrim rtrim );
 
 
 $SIG{__DIE__} = sub {
@@ -72,6 +72,12 @@ sub getopts {
     pod2usage(1) if($opts->{help});
     
 }
+
+sub ltrim { my $s = shift; $s =~ s/^\s+//;       return $s };
+sub rtrim { my $s = shift; $s =~ s/\s+$//;       return $s };
+sub  trim { my $s = shift; $s =~ s/^\s+|\s+$//g; return $s };
+
+
 1;
     
 __END__

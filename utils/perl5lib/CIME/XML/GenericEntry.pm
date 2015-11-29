@@ -259,10 +259,11 @@ sub PrintEntry
     my($this, $id, $opts) = @_;
     my $found;
     my $node = $this->GetNode("entry",{id=>$id});
-    if(defined $node){
+    if(defined $node and $node->hasAttribute("value")){
 	$found = 1;
-	my $value = $node->getAttribute("value");
-	if(!(defined $opts->{noexpandxml}) || $opts->{noexpandxml}==0){
+	my $value = trim($node->getAttribute("value"));
+	
+	if(defined $value && !(defined $opts->{noexpandxml}) || $opts->{noexpandxml}==0){
 	    $value = $this->GetResolvedValue($value);
 	}
 	if($opts->{value}){
@@ -289,6 +290,8 @@ sub PrintEntry
 	} 
 
 
+    }elsif(defined $node){
+	$logger->warn("Found $id with no value defined");
     }
     return $found;
 }
@@ -307,6 +310,7 @@ sub GetResolvedValue {
 
 #find and resolve any variable references.    
     if(! defined $val){
+	$logger->logcluck();
 	$logger->logdie("GetResolvedValue called without an argument");
     }
     if($val =~ /^(.*)\$ENV{(.*)}(.*)$/){
