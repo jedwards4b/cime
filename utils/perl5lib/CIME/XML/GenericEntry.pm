@@ -201,14 +201,14 @@ sub GetElementsfromChildContent {
 	    $logger->warn("Unexpected number of matches for $childname $#cnodes @nodeid");
 	}
 	my $content = $cnodes[0]->textContent();
-	$logger->debug(" Checking $content");
 	if($childcontent =~ /$content/){
+	    $logger->debug("  Adding @nodeid to $content");
 	    push(@parents, $node);
 	}
     }
     $logger->debug("Found $#parents parents $childname $childcontent");
     my $nodelist = undef;
-    if($#parents){
+    if(@parents){
 	$nodelist = XML::LibXML::NodeList->new(@parents);
     }
     return ($nodelist);
@@ -337,7 +337,6 @@ sub GetResolvedValue {
 }
 
 
-
 sub AddElementsByGroup
 {
     my($this, $srcdoc, $attlist, $file) = @_;
@@ -345,7 +344,7 @@ sub AddElementsByGroup
     # Add elements from srcdoc to the $file under the appropriate
     # group element.  Add the group if it does not already exist, remove group and
     # file children from each entry, set the default value
-    my %groups;
+
     my $nodelist = $srcdoc->GetElementsfromChildContent('file' ,$file);
 
     if(defined $nodelist){
@@ -356,12 +355,12 @@ sub AddElementsByGroup
 	    my $groupname = $childnode->textContent();
 	    $node->removeChild($childnode);
 
-	    if(!defined $groups{$groupname}){
+	    if(!defined $this->{groups}{$groupname}){
 		$logger->debug("Defining group ",$groupname);
 		my $groupnode = $this->{_xml}->createElement("group");
 		$groupnode->setAttribute("id",$groupname);
 		$this->{root}->addChild($groupnode);
-		$groups{$groupname}=$groupnode;
+		$this->{groups}{$groupname}=$groupnode;
 	    }
 
 	    $this->SetDefaultValue($node, $attlist);
@@ -375,7 +374,7 @@ sub AddElementsByGroup
 
 	    my $id = $node->getAttribute("id");
 	    $logger->debug("Adding $id  to group ",$groupname);
-	    $groups{$groupname}->addChild($node);
+	    $this->{groups}{$groupname}->addChild($node);
 	    
 	}
     }
@@ -385,13 +384,11 @@ sub AddElementsByGroup
 
 sub ReparseXML{
     my ($this) = @_;
-
     my $parser = new XML::LibXML();
 #
 # Reparse the modified document
 #
     $this->{_xml} = $parser->parse_string($this->{root}->toString());
-
 }
 
 

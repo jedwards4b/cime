@@ -224,7 +224,9 @@ sub configure {
     }
 
 #   attributes used for multi valued defaults
-    my $attlist = {component=>$target_comp};
+    my $attlist = {component=>$target_comp,
+                    compset=>$compset,
+    };
 
 
     foreach my $comp (@components){
