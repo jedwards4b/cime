@@ -223,11 +223,62 @@ sub configure {
 	$logger->logdie("General and specific component counts dont match");
     }
 
-#   attributes used for multi valued defaults
-    my $attlist = {component=>$target_comp,
-                    compset=>$compset,
-    };
+    my $grids_file = $files->GetValue('GRIDS_SPEC_FILE');
+    $grids_file = $this->GetResolvedValue($grids_file);
+    
+    $logger->debug("Opening grid file $grids_file");
 
+    my $grid_file = CIME::XML::Grids->new($grids_file);
+
+    my $grid = $this->GetValue('GRID');
+    $logger->info("Grid requested: $grid");
+
+    $grid = $grid_file->getGridLongname($grid, $compset);
+    
+    $logger->info("Grid Longname: $grid");
+
+    $this->SetValue("GRID", $grid);
+
+    my $compgrids = $grid_file->GetComponentGrids($grid);
+    
+    foreach my $comp (keys $compgrids){
+ 	foreach my $setting (keys $compgrids->{$comp}){
+	    $this->SetValue("${comp}_${setting}",$compgrids->{$comp}{$setting});
+	}
+    }
+
+
+    # Get all the inter component mapping files
+    # start at 1 to skip coupler
+    for(my $i=1; $i<=$#components; $i++){
+	my $comp1 = $components[$i];
+	for(my $j=$i+1; $j <= $#components; $j++){
+	    my $comp2 = $components[$j];
+	    my $maps = $grid_file->GetGridMaps(lc($comp1),$compgrids->{$comp1}{GRID},lc($comp2),$compgrids->{$comp2}{GRID});
+	    if(defined $maps){
+		foreach my $mapname (keys $maps){
+		    $this->SetValue($mapname, $maps->{$mapname});
+		}
+	    }
+	}
+    }
+
+# This is too specific to CESM 
+    if(grep("xrof",@components)){
+	my $floodMode = $grid_file->GetValue("XROF_FLOOD_MODE",{ocn_grid=>$compgrids->{OCN}{GRID},
+								lnd_grid=>$compgrids->{LND}{GRID},
+								rof_grid=>$compgrids->{ROF}{GRID}});
+	if(defined $floodMode){
+	    $this->SetValue("XROF_FLOOD_MODE",$floodMode);
+	}
+    }
+
+
+
+
+
+#   attributes used for multi valued defaults
+    my $attlist = {component=>$target_comp};
 
     foreach my $comp (@components){
 	my $file;
@@ -261,51 +312,7 @@ sub configure {
 # Set any other values here
     $this->SetValue("USER", $ENV{USER});
         
-    my $grids_file = $this->GetValue('GRIDS_SPEC_FILE');
-    $grids_file = $this->GetResolvedValue($grids_file);
-    
-    $logger->debug("Opening grid file $grids_file");
 
-    my $grid_file = CIME::XML::Grids->new($grids_file);
-
-    my $grid = $this->GetValue('GRID');
-    $logger->info("Grid requested: $grid");
-
-    $grid = $grid_file->getGridLongname($grid, $compset);
-    
-    $logger->info("Grid Longname: $grid");
-
-    $this->SetValue("GRID", $grid);
-
-    my $compgrids = $grid_file->GetComponentGrids($grid);
-    
-    foreach my $comp (keys $compgrids){
- 	foreach my $setting (keys $compgrids->{$comp}){
-	    $this->SetValue("${comp}_${setting}",$compgrids->{$comp}{$setting});
-	}
-    }
-    # Get all the inter component mapping files
-    # start at 1 to skip coupler
-    for(my $i=1; $i<=$#components; $i++){
-	my $comp1 = $components[$i];
-	for(my $j=$i+1; $j <= $#components; $j++){
-	    my $comp2 = $components[$j];
-	    my $maps = $grid_file->GetGridMaps(lc($comp1),$compgrids->{$comp1}{GRID},lc($comp2),$compgrids->{$comp2}{GRID});
-	    if(defined $maps){
-		foreach my $mapname (keys $maps){
-		    $this->SetValue($mapname, $maps->{$mapname});
-		}
-	    }
-	}
-    }
-    if(grep("xrof",@components)){
-	my $floodMode = $grid_file->GetValue("XROF_FLOOD_MODE",{ocn_grid=>$compgrids->{OCN}{GRID},
-								lnd_grid=>$compgrids->{LND}{GRID},
-								rof_grid=>$compgrids->{ROF}{GRID}});
-	if(defined $floodMode){
-	    $this->SetValue("XROF_FLOOD_MODE",$floodMode);
-	}
-    }
     my $machfile = $this->GetValue('MACHINES_FILE');
     $machfile = $this->GetResolvedValue($machfile);
     $logger->info("Machine file is $machfile");
@@ -323,7 +330,7 @@ sub configure {
     
     my @ids = $machine->getNodeNames();
     foreach my $id (@ids){
-# these are exceptions to be handled elsewhere
+# these are exceptions handled elsewhere
 	next if($id eq "mpirun");
 	next if($id eq "COMPILERS");
 	next if($id eq "MPILIBS");
@@ -434,7 +441,6 @@ sub AddElementsByGroup{
 	$this->{$casefile}->AddElementsByGroup($configcomp, $attlist);
     }
 }
-
 
 sub WriteCaseXML{
     my($this) = @_;
