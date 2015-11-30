@@ -208,11 +208,13 @@ sub configure {
 	# setting up a new config_comp object for that compset file
 	$logger->debug("comp = $comp $compset_files->{$comp}");
 	my $file = $this->GetResolvedValue($compset_files->{$comp});
-
 	# does config_comp need to be part of the object or can it be a local?
 	#	$this->{"config_$comp"} = CIME::XML::ConfigComponent->new($file);
-	
-	$compset_longname = CIME::XML::ConfigComponent->new($file)->CompsetMatch($compset);
+	if(-f $file){
+	    $compset_longname = CIME::XML::ConfigComponent->new($file)->CompsetMatch($compset);
+	}else{
+	    $logger->warn("Could not find or open file $file");
+	}
 	if(defined $compset_longname){
 	    $logger->info("Compset longname: $compset_longname");
 	    $this->SetValue("COMPSET",$compset_longname);
@@ -271,8 +273,8 @@ sub configure {
     my $compgrids = $grid_file->GetComponentGrids($grid);
     
     # Set the grid values in the Case $this to the component grids
-    foreach my $comp (keys $compgrids){
- 	foreach my $setting (keys $compgrids->{$comp}){
+    foreach my $comp (keys %$compgrids){
+ 	foreach my $setting (keys %{$compgrids->{$comp}}){
 	    $this->SetValue("${comp}_${setting}",$compgrids->{$comp}{$setting});
 	}
     }
@@ -285,7 +287,7 @@ sub configure {
 	    my $comp2 = $components[$j];
 	    my $maps = $grid_file->GetGridMaps(lc($comp1),$compgrids->{$comp1}{GRID},lc($comp2),$compgrids->{$comp2}{GRID});
 	    if(defined $maps){
-		foreach my $mapname (keys $maps){
+		foreach my $mapname (keys %$maps){
 		    $this->SetValue($mapname, $maps->{$mapname});
 		}
 	    }

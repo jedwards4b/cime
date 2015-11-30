@@ -44,7 +44,7 @@ sub read{
     my ($this, $file) = @_;
     
     if(! -f $file){
-	$logger->logdie("Could not find or open file $file");
+	$logger->logcroak("Could not find or open file $file");
     }
     $logger->debug("Opening file $file to read");
     #    $this->{_xml} = XML::LibXML->new( (no_blanks => 1, validation=>1))->parse_file($file);
@@ -57,9 +57,11 @@ sub write{
     my($this, $file) = @_;
 
     $logger->info("Writing file $file");
-# Here we use a style-sheet to format the case xml files. 
-# This can be done from the command line with xsltproc for testing and tuning the 
-# style file.  
+
+    # Here we use a style-sheet to format the case xml files. 
+    # This can be done from the command line with xsltproc for testing and tuning the 
+    # style file.  
+
     my $xslt = XML::LibXSLT->new();
     $xslt->max_depth(5000);
     my $style = XML::LibXML->load_xml(location=>"$this->{CIMEROOT}/cime_config/case_xml.xsl");
