@@ -113,7 +113,7 @@ sub SetValue {
 	}
 	if(defined $val){
 	    $logger->debug("Found $id in $file, set to $val");
-	    return 1;
+	    return $val;
 	}
     }
     if(!defined $val){
@@ -192,11 +192,11 @@ sub configure {
     foreach my $comp (keys %$compset_files){
 	$logger->debug("comp = $comp $compset_files->{$comp}");
 	my $file = $this->GetResolvedValue($compset_files->{$comp});
-
-# does config_comp need to be part of the object or can it be a local?
-#	$this->{"config_$comp"} = CIME::XML::ConfigComponent->new($file);
-	
-	$compset_longname = CIME::XML::ConfigComponent->new($file)->CompsetMatch($compset);
+	if(-f $file){
+	    $compset_longname = CIME::XML::ConfigComponent->new($file)->CompsetMatch($compset);
+	}else{
+	    $logger->warn("Could not find or open file $file");
+	}
 	if(defined $compset_longname){
 	    $logger->info("Compset longname: $compset_longname");
 	    $this->SetValue("COMPSET",$compset_longname);
@@ -209,7 +209,6 @@ sub configure {
     if(!defined $target_comp){
 	$logger->logdie("Could not find a compset match for ".$compset);
     }
-
     
 # Get the list of component classes supported by this drv
     my $file = $files->GetValue('CONFIG_DRV_FILE');

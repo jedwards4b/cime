@@ -48,10 +48,8 @@ sub GetValue {
     
 }
 
-
 sub CompsetMatch
 {
-    
     my($this,$compset_request) = @_;
     my $compset_longname;
     # Look for a match for compset_request in this components config_compsets.xml file

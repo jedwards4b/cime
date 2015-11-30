@@ -44,7 +44,7 @@ sub read{
     my ($this, $file) = @_;
     
     if(! -f $file){
-	$logger->logdie("Could not find or open file $file");
+	$logger->logcroak("Could not find or open file $file");
     }
     $logger->debug("Opening file $file to read");
 #    $this->{_xml} = XML::LibXML->new( (no_blanks => 1, validation=>1))->parse_file($file);
@@ -86,6 +86,7 @@ sub SetDefaultValue
 	my $nodes = $this->{_xml}->find("//entry[\@id=\'$id\']");
         $node = $nodes->get_node(1);
     }
+
     my @valnodes = $node->findnodes(".//values");
     if(@valnodes and defined $attlist){
 	foreach my $attid (keys %$attlist){
