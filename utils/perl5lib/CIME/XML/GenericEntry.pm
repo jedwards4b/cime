@@ -47,7 +47,8 @@ sub read{
 	$logger->logdie("Could not find or open file $file");
     }
     $logger->debug("Opening file $file to read");
-#    $this->{_xml} = XML::LibXML->new( (no_blanks => 1, validation=>1))->parse_file($file);
+    #    $this->{_xml} = XML::LibXML->new( (no_blanks => 1, validation=>1))->parse_file($file);
+    # Note that {_xml} is just a pointer to the parsed libxml parser
     $this->{_xml} = XML::LibXML->new( (no_blanks => 1, ))->parse_file($file);
 
 }
@@ -79,6 +80,8 @@ sub SetDefaultValue
     
     my $node;
     my $val;
+
+    # Note that id can be either the entry attribute OR the xml node
     if(ref($id)){
 	$node = $id;
 	$id = $node->getAttribute("id");
@@ -86,6 +89,9 @@ sub SetDefaultValue
 	my $nodes = $this->{_xml}->find("//entry[\@id=\'$id\']");
         $node = $nodes->get_node(1);
     }
+
+    # If the node contains a value section, look through the values and the attribute list
+    # and assign the appropriate value based on the contents of the attribute list
     my @valnodes = $node->findnodes(".//values");
     if(@valnodes and defined $attlist){
 	foreach my $attid (keys %$attlist){
@@ -116,6 +122,7 @@ sub SetDefaultValue
 
     }
 
+    # If there was not a value set above, look for a default value node
     if(!defined $val){   # Set default if  there is one.
 	$val = $node->find(".//default_value");
     }
@@ -373,12 +380,18 @@ sub AddElementsByGroup
 
     if(defined $nodelist){
 	foreach my $node ($nodelist->get_nodelist()){
+
+	    # The xml schema for config_component.xml has a <file> element
+	    # The following determines if the value of the <file> element is
+	    # identical to $file
+
 	    my $childnode = ${$node->findnodes(".//file")}[0];
 	    $node->removeChild($childnode);
 	    $childnode = ${$node->find(".//group")}[0];
 	    my $groupname = $childnode->textContent();
 	    $node->removeChild($childnode);
 
+	    # If group does not exist, then create the group
 	    if(!defined $this->{groups}{$groupname}){
 		$logger->debug("Defining group ",$groupname);
 		my $groupnode = $this->{_xml}->createElement("group");
@@ -387,8 +400,10 @@ sub AddElementsByGroup
 		$this->{groups}{$groupname}=$groupnode;
 	    }
 
+	    # Set the default value 
 	    $this->SetDefaultValue($node, $attlist);
 
+	    # If there were values nodes, remove those also
 	    my @valuesnodes = $node->findnodes(".//values");
 	    if(@valuesnodes){
 		foreach my $values (@valuesnodes){
@@ -396,6 +411,7 @@ sub AddElementsByGroup
 		}
 	    }
 
+	    # Add element to group
 	    my $id = $node->getAttribute("id");
 	    $logger->debug("Adding $id  to group ",$groupname);
 	    $this->{groups}{$groupname}->addChild($node);
@@ -409,9 +425,9 @@ sub AddElementsByGroup
 sub ReparseXML{
     my ($this) = @_;
     my $parser = new XML::LibXML();
-#
-# Reparse the modified document
-#
+    #
+    # Reparse the modified document
+    #
     $this->{_xml} = $parser->parse_string($this->{root}->toString());
 }
 

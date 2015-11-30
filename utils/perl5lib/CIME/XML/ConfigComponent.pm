@@ -51,7 +51,6 @@ sub GetValue {
 
 sub CompsetMatch
 {
-    
     my($this,$compset_request) = @_;
     my $compset_longname;
     # Look for a match for compset_request in this components config_compsets.xml file
@@ -67,7 +66,7 @@ sub CompsetMatch
 	}
     } 
     if(! defined $compset_longname){
-# If no alias match - then determine if there is a match for the longname
+	# If no alias match - then determine if there is a match for the longname
 	my @lname_nodes = $this->{_xml}->findnodes(".//compset[lname=\"$compset_request\"]");
 	if (@lname_nodes) {
 	    if ($#lname_nodes > 0) {
@@ -80,11 +79,7 @@ sub CompsetMatch
 	    }
 	} 
     }
-
-
-
     return $compset_longname;
-    
 }
 
 1;

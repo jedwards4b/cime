@@ -19,11 +19,15 @@ BEGIN{
     $logger = get_logger("CIME::Case");
 }
 
+# TODO (mvertens, 2015-12) env_mach_pes.xml, env_test.xml and archive.xml still need to be added
 my @casefiles = qw(env_run env_case env_build env_batch);
 #env_mach_pes);
 
 sub new {
     my ($class,$cimeroot, $caseroot) = @_;
+
+    # if $caseroot is not defined - then an empty object is initialized
+    # if $caseroot is defined - then all the xml files in $caseroot are read
 
     my $this = {};
     bless($this, $class);
@@ -55,7 +59,7 @@ sub GetResolvedValue {
 	$reccnt=0;
     }
 
-#find and resolve any variable references.    
+    #find and resolve any variable references.    
     if(! defined $val){
 	$logger->logdie("GetResolvedValue called without an argument");
     }
@@ -87,14 +91,13 @@ sub GetResolvedValue {
 
 }
 
-
 sub InitCaseXML{
     my($this,$caseroot) = @_;
     
     # Create objects for each XML file in the case directory
     $caseroot = $this->GetResolvedValue($caseroot);
-    $this->{env_run} = CIME::XML::env_run->new($this->GetValue('CIMEROOT'), $caseroot."/env_run.xml");
-    $this->{env_case} = CIME::XML::env_case->new($this->GetValue('CIMEROOT'), $caseroot."/env_case.xml");
+    $this->{env_run}   = CIME::XML::env_run->new($this->GetValue('CIMEROOT'), $caseroot."/env_run.xml");
+    $this->{env_case}  = CIME::XML::env_case->new($this->GetValue('CIMEROOT'), $caseroot."/env_case.xml");
     $this->{env_build} = CIME::XML::env_build->new($this->GetValue('CIMEROOT'), $caseroot."/env_build.xml");    
     $this->{env_batch} = CIME::XML::env_batch->new($this->GetValue('CIMEROOT'), $caseroot."/env_batch.xml");
     # needs env_mach_pes.xml
@@ -103,6 +106,12 @@ sub InitCaseXML{
 }
 
 sub SetValue {
+    # If a file has not been defined, set an id/value pair in the Case hash, this will be used later
+    # Note that in create_newcase, when this is called and are setting the command line options
+    # none of these files have been defined
+    # If a file has been defined, and the variable is in the file, then that value will be set in the file
+    # object
+
     my($this,$id,$value) = @_;
     
     my $val;
@@ -113,7 +122,7 @@ sub SetValue {
 	}
 	if(defined $val){
 	    $logger->debug("Found $id in $file, set to $val");
-	    return 1;
+	    return $val;
 	}
     }
     if(!defined $val){
@@ -166,8 +175,6 @@ sub PrintEntry
 
 }
 
-
-
 #
 # configure 
 #
@@ -178,23 +185,32 @@ sub configure {
 
     my $caseroot = $this->GetValue("CASEROOT");
 
+    # create empty instances of all the case xml file objects
     $this->InitCaseXML($caseroot);
 
+    # This reads the config_files file for the target model and gets an internal parser for it
     my $files = CIME::XML::Files->new($this);
 
+    # Notice that this is GetValues rather than GetValue
+    # This fills the $compset_file hash reference with a value for each component
     my $compset_files = $files->GetValues("COMPSETS_SPEC_FILE","component");
 
-# Find the compset longname and target component
+    # Find the compset longname 
     my $target_comp;
     my $compset = $this->GetValue("COMPSET");
     $logger->info("Compset requested: $compset");
     my $compset_longname;
+
+    # Find the target component - the component whose compset file contained an entry that
+    # matched the compset longname
     foreach my $comp (keys %$compset_files){
+	# loop through each component in the $compset_files hash and 
+	# setting up a new config_comp object for that compset file
 	$logger->debug("comp = $comp $compset_files->{$comp}");
 	my $file = $this->GetResolvedValue($compset_files->{$comp});
 
-# does config_comp need to be part of the object or can it be a local?
-#	$this->{"config_$comp"} = CIME::XML::ConfigComponent->new($file);
+	# does config_comp need to be part of the object or can it be a local?
+	#	$this->{"config_$comp"} = CIME::XML::ConfigComponent->new($file);
 	
 	$compset_longname = CIME::XML::ConfigComponent->new($file)->CompsetMatch($compset);
 	if(defined $compset_longname){
@@ -210,45 +226,56 @@ sub configure {
 	$logger->logdie("Could not find a compset match for ".$compset);
     }
 
-    
-# Get the list of component classes supported by this drv
+    # Get the list of component classes supported by this drv
+    # Note that GetValue always returns an unresolved value
     my $file = $files->GetValue('CONFIG_DRV_FILE');
     $file = $this->GetResolvedValue($file);
+
+    # Create configcomp object from the CONFIG_DRV_FILE
     my $configcomp = CIME::XML::ConfigComponent->new($file);
     my @components = $configcomp->GetValue('components');
     $logger->debug( "components are @components");
 
-# Find the specific components for this case 
+    # Find the specific components for this case 
     my @compcomp = $this->Compset_Components();
 
+    # Make sure that the number of specific components matches the number of general components
     if($#components != $#compcomp){
 	$logger->logdie("General and specific component counts dont match");
     }
 
+    # Find the grid files
     my $grids_file = $files->GetValue('GRIDS_SPEC_FILE');
     $grids_file = $this->GetResolvedValue($grids_file);
     
     $logger->debug("Opening grid file $grids_file");
 
+    # Create a grid file object
     my $grid_file = CIME::XML::Grids->new($grids_file);
 
+    # Grid was a required object for create_newcase so retreive this from the case object
+    # $grid is whatever was passed in to create_newcase
+    # Note that the value of GRID in the xml file object is initially set as the input argument
     my $grid = $this->GetValue('GRID');
     $logger->info("Grid requested: $grid");
 
+    # Determine grid longname
     $grid = $grid_file->getGridLongname($grid, $compset_longname);
-    
     $logger->info("Grid Longname: $grid");
 
+    # Set the value of GRID in the xml file object to the xml long name
     $this->SetValue("GRID", $grid);
 
+    # Take the grid longname and split it up into the various component grid names 
+    # Note that $compgrids is a pointer to a hash
     my $compgrids = $grid_file->GetComponentGrids($grid);
     
+    # Set the grid values in the Case $this to the component grids
     foreach my $comp (keys $compgrids){
  	foreach my $setting (keys $compgrids->{$comp}){
 	    $this->SetValue("${comp}_${setting}",$compgrids->{$comp}{$setting});
 	}
     }
-
 
     # Get all the inter component mapping files
     # start at 1 to skip coupler
@@ -265,7 +292,7 @@ sub configure {
 	}
     }
 
-# This is too specific to CESM 
+    # TODO (jedwards, 2015-12) This is too specific to CESM - must be generalized
     if(grep("xrof",@components)){
 	my $floodMode = $grid_file->GetValue("XROF_FLOOD_MODE",{ocn_grid=>$compgrids->{OCN}{GRID},
 								lnd_grid=>$compgrids->{LND}{GRID},
@@ -276,7 +303,7 @@ sub configure {
     }
 
 
-#   attributes used for multi valued defaults
+    # attributes used for multi valued defaults ($attlist is a hash reference)
     my $attlist = {component=>$target_comp, compset=>$compset_longname, grid=>$grid};
 
     foreach my $comp (@components){
@@ -284,33 +311,37 @@ sub configure {
 	my $compcomp = shift @compcomp;
 	if($comp ne "DRV"){  # DRV was handled above
 	    my $config_file = 'CONFIG_'.$comp.'_FILE';
+
+	    # Determine and open config_component.xml file for each each component
 	    $file = $files->GetValue($config_file, "component", $compcomp );
 	    $this->SetValue($config_file,$file);
 	    $file = $this->GetResolvedValue($file);
 	    $configcomp = CIME::XML::ConfigComponent->new($file);
 	}
+	# For each component file add the groups and group elemenets
 	$this->AddElementsByGroup($configcomp, $attlist);
     }
 
+    # Add the group and elements for the config_files.xml 
     $this->AddElementsByGroup($files, $attlist);
 
     $this->ReparseXML();
     
-# All of the elements of the case xml files are now defined and default values are
-# set.   Now we can move the command line values from the object hash to the XML
+    # All of the elements of the case xml files are now defined and default values are
+    # set.   Now we can move the command line values from the object hash to the XML
     foreach my $var (keys %$this){
-	next if(ref($this->{$var}));  #skip references
+	next if(ref($this->{$var}));  #skip references in Case hash
 	my $found = $this->SetValue($var,$this->{$var});
 	if($found){
-	    # we've successfully updated the xml var, delete the hash entry
+	    # we've successfully updated the xml var, delete the Case hash entry
 	    delete $this->{$var};
 	}
     }
-# Set any additional command line configuration options
+    # Set any additional command line configuration options
     $this->SetConfOpts();
-# Set any other values here
+
+    # Set any other values here
     $this->SetValue("USER", $ENV{USER});
-        
 
     my $machfile = $this->GetValue('MACHINES_FILE');
     $machfile = $this->GetResolvedValue($machfile);
@@ -329,7 +360,7 @@ sub configure {
     
     my @ids = $machine->getNodeNames();
     foreach my $id (@ids){
-# these are exceptions handled elsewhere
+	# these are exceptions handled elsewhere
 	next if($id eq "mpirun");
 	next if($id eq "COMPILERS");
 	next if($id eq "MPILIBS");
@@ -461,18 +492,20 @@ sub ReparseXML{
 
 sub Compset_Components
 {
+    # Obtain the specific components (e.g. cam, clm...) that are in the compset longname
+
     my($this) = @_;
     my $compset_longname = $this->GetValue("COMPSET");
     
     my @elements = split /_/, $compset_longname;
 
-# add the driver explicitly - may need to change this if we have more than one.
+    # add the driver explicitly - may need to change this if we have more than one.
     my @components;
 
     push(@components,'drv');
 
     foreach my $element (@elements){
-	next if($element =~ /^\d+$/); # ignore the initial date
+	next if($element =~ /^\d+$/); # ignore the initial date in the compset longname
 	my @element_components = split /%/, $element;
 	my $component = lc $element_components[0];
 	if ($component =~ m/\d+/) {

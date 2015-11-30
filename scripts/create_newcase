@@ -21,8 +21,11 @@ $opts{loglevel}="INFO";
 # Save commandline
 my $commandline = "create_newcase @ARGV";
 
+# Options that are caseroot independent and common to all scripts are handled in Base::getopts
+# Ex. options like loglevel, help, model, etc.
 CIME::Base->getopts(\%opts);
 
+# Options that 
 GetOptions(
     "case=s"                    => \$opts{'case'},
     "compset=s"                 => \$opts{'compset'},
@@ -48,16 +51,26 @@ GetOptions(
     )  or pod2usage(2);
 pod2usage(1) if($opts{help});
 
+# pod is Perl's in-line documentation style
+# pod2usage usese perl's internal documentation
+
+# easy_init initializes a logger, and if a logger is already initialized
+# then get_logger below (which is in Log4perl) will use it
+
 my $level = Log::Log4perl::Level::to_priority($opts{loglevel});
 Log::Log4perl->easy_init({level=>$level,
 			  layout=>'%F{1}: %m%n'});
 
+# set up a logger
 my $logger = get_logger();
 
+# Create an empty new case object
 my $Case = CIME::Case->new($cimeroot);
 
+# check the input options passed in on the command line
 _check_input_options ($Case, \%opts);
 
+# Fill the empty new case object with all relevant info to create a new case
 $Case->configure();
 
 _create_caseroot($Case);
@@ -188,12 +201,11 @@ sub _create_caseroot_tools
 }
 
 
-
 sub _check_input_options
 {
     my ($Case,$opts) = @_;
     
-    # Values in uppercase here have a direct correspondence to Entries in the case XML files
+    # Values in uppercase here have a direct correspondence to Entries in the caseroot XML files
     # Values in lowercase will need to have further handling
 
     if (!$opts->{'testlist'}) {
@@ -234,7 +246,6 @@ sub _check_input_options
 		$logger->logdie("$opts->{user_grid_file} could not be found");
 	    }
 	}
-
 
 	# Check for manditory compset input
 	if ($opts->{'compset'}) {
