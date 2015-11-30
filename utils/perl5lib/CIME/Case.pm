@@ -242,8 +242,8 @@ sub configure {
 
     my $compgrids = $grid_file->GetComponentGrids($grid);
     
-    foreach my $comp (keys $compgrids){
- 	foreach my $setting (keys $compgrids->{$comp}){
+    foreach my $comp (keys %$compgrids){
+ 	foreach my $setting (keys %{$compgrids->{$comp}}){
 	    $this->SetValue("${comp}_${setting}",$compgrids->{$comp}{$setting});
 	}
     }
@@ -257,7 +257,7 @@ sub configure {
 	    my $comp2 = $components[$j];
 	    my $maps = $grid_file->GetGridMaps(lc($comp1),$compgrids->{$comp1}{GRID},lc($comp2),$compgrids->{$comp2}{GRID});
 	    if(defined $maps){
-		foreach my $mapname (keys $maps){
+		foreach my $mapname (keys %$maps){
 		    $this->SetValue($mapname, $maps->{$mapname});
 		}
 	    }

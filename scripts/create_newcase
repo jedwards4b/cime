@@ -1,4 +1,4 @@
-#!/user/bin/env perl
+#!/usr/bin/env perl
 BEGIN{
     use Cwd qw(getcwd abs_path chdir);
 # create_newcase can only be run from the cime/scripts directory

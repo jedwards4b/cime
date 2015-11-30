@@ -13,6 +13,7 @@ ToolSet->export('Log::Log4perl'=>qw(get_logger ),
 		'XML::LibXML' => undef,
 		'File::Path' =>qw(mkpath),
                 'File::Copy' =>qw(cp),
+		'IO::File' => undef,
 		'Getopt::Long'=>qw(GetOptions),
 );
 
