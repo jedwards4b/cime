@@ -114,6 +114,20 @@ using a fortran linker.
   </LDFLAGS>
 </compiler>
 
+<compiler COMPILER="arm">
+  <SCC> armclang </SCC>
+  <SCXX>armclang++ </SCXX>
+  <SFC> armflang </SFC>
+  <MPICC> mpicc  </MPICC>
+  <MPICXX> mpicxx </MPICXX>
+  <MPIFC> mpif90 </MPIFC>
+  <CPPDEFS>
+    <append> -DFORTRANUNDERSCORE -DCPRARM</append>
+  </CPPDEFS>
+</compiler>  
+
+
+
 <compiler COMPILER="gnu">
   <CFLAGS>
     <base> -std=gnu99 </base>
