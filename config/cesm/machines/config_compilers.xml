@@ -124,6 +124,16 @@ using a fortran linker.
   <CPPDEFS>
     <append> -DFORTRANUNDERSCORE -DCPRARM</append>
   </CPPDEFS>
+  <FFLAGS>
+    <base> -mcpu=native </base>
+    <append DEBUG="TRUE"> -g -insight </append>
+    <append DEBUG="FALSE"> -O2 </append>
+  </FFLAGS>
+  <CFLAGS>
+    <base> -mcpu=native </base>
+    <append DEBUG="TRUE"> -g -insight </append>
+    <append DEBUG="FALSE"> -O2 </append>
+  </CFLAGS>
 </compiler>  
 
 

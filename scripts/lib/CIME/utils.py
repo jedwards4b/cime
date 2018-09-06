@@ -397,7 +397,7 @@ def run_sub_or_cmd(cmd, cmdargs, subname, subargs, logfile=None, case=None, from
         fullcmd += " " + cmdargs
 
     if logfile:
-        fullcmd += " >& {} ".format(logfile)
+        fullcmd += " > {} 2>&1".format(logfile)
 
     stat, output, _ = run_cmd("{}".format(fullcmd), combine_output=True, from_dir=from_dir)
     if output: # Will be empty if logfile

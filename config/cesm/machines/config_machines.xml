@@ -102,10 +102,10 @@ This allows using a different mpirun command to launch unit tests
     <DOUT_S_ROOT>$CIME_OUTPUT_ROOT/archive/$CASE</DOUT_S_ROOT>
 
     <!-- BASELINE_ROOT:  Root directory for system test baseline files -->
-    <BASELINE_ROOT>$ENV{CESMDATAROOT}/cesm_baselines</BASELINE_ROOT>
+    <BASELINE_ROOT>$ENV{HOME}/cesm/cesm_baselines</BASELINE_ROOT>
 
     <!-- CCSM_CPRNC: location of the cprnc tool, compares model output in testing-->
-    <CCSM_CPRNC>$ENV{CESMDATAROOT}/tools/cime/tools/cprnc/cprnc.cheyenne</CCSM_CPRNC>
+    <CCSM_CPRNC>$ENV{HOME}/cesm/tools/cprnc</CCSM_CPRNC>
 
     <!-- GMAKE: gnu compatible make tool, default is 'gmake' -->
     <GMAKE>make</GMAKE>
@@ -124,11 +124,11 @@ This allows using a different mpirun command to launch unit tests
     <!-- MAX_TASKS_PER_NODE: maximum number of threads*tasks per
 	 shared memory node on this machine,
 	 should always be >= MAX_MPITASKS_PER_NODE -->
-    <MAX_TASKS_PER_NODE>58</MAX_TASKS_PER_NODE>
+    <MAX_TASKS_PER_NODE>56</MAX_TASKS_PER_NODE>
 
     <!-- MAX_MPITASKS_PER_NODE: number of physical PES per shared node on
 	 this machine, in practice the MPI tasks per node will not exceed this value -->
-    <MAX_MPITASKS_PER_NODE>58</MAX_MPITASKS_PER_NODE>
+    <MAX_MPITASKS_PER_NODE>56</MAX_MPITASKS_PER_NODE>
 
     <!-- PROJECT_REQUIRED: Does this machine require a project to be specified to
 	 the batch system?  See PROJECT above -->
@@ -141,7 +141,7 @@ This allows using a different mpirun command to launch unit tests
       <executable>mpirun</executable>
       <!-- arguments to the mpiexec command, the name attribute here is ignored-->
       <arguments>
-	<arg name="tasks"> -np {total_tasks}</arg>
+	<arg name="tasks"> -np {{ total_tasks }}</arg>
       </arguments>
     </mpirun>
     <!-- module system: allowed module_system type values are:
