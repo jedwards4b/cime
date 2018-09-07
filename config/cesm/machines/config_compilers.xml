@@ -75,6 +75,28 @@ using a fortran linker.
   <SUPPORTS_CXX>FALSE</SUPPORTS_CXX>
 </compiler>
 
+<compiler COMPILER="arm">
+  <SCC> armclang </SCC>
+  <SCXX>armclang++ </SCXX>
+  <SFC> armflang </SFC>
+  <MPICC> mpicc  </MPICC>
+  <MPICXX> mpicxx </MPICXX>
+  <MPIFC> mpif90 </MPIFC>
+  <CPPDEFS>
+    <append> -DFORTRANUNDERSCORE -DCPRARM</append>
+  </CPPDEFS>
+  <FFLAGS>
+    <base> -mcpu=native </base>
+    <append DEBUG="TRUE"> -g -insight </append>
+    <append DEBUG="FALSE"> -O2 </append>
+  </FFLAGS>
+  <CFLAGS>
+    <base> -mcpu=native </base>
+    <append DEBUG="TRUE"> -g -insight </append>
+    <append DEBUG="FALSE"> -O2 </append>
+  </CFLAGS>
+</compiler>  
+
 <compiler COMPILER="cray">
   <CFLAGS>
     <append compile_threaded="false"> -h noomp </append>
