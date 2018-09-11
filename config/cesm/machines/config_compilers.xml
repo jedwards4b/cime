@@ -83,7 +83,7 @@ using a fortran linker.
   <MPICXX> mpicxx </MPICXX>
   <MPIFC> mpif90 </MPIFC>
   <CPPDEFS>
-    <append> -DFORTRANUNDERSCORE -DCPRARM</append>
+    <append> -DFORTRANUNDERSCORE -DCPRARM -DNO_R16</append>
   </CPPDEFS>
   <FFLAGS>
     <base> -mcpu=native </base>
@@ -95,6 +95,9 @@ using a fortran linker.
     <append DEBUG="TRUE"> -g -insight </append>
     <append DEBUG="FALSE"> -O2 </append>
   </CFLAGS>
+  <LDFLAGS>
+    <append> -L/usr/lib -lblas -llapack</append>
+  </LDFLAGS>
 </compiler>  
 
 <compiler COMPILER="cray">
