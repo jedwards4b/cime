@@ -1104,6 +1104,80 @@
     </environment_variables>
   </machine>
 
+  <machine MACH="isambard">
+    <DESC>bristol thunder-x2 arm system</DESC>
+    <NODENAME_REGEX>gw4arm*</NODENAME_REGEX>
+    <OS>LINUX</OS>
+<!--    <PROXY></PROXY> -->
+    <COMPILERS>arm,cray</COMPILERS>
+    <MPILIBS>mpich,openmpi</MPILIBS>
+<!--    <PROJECT></PROJECT>
+    <CHARGE_ACCOUNT></CHARGE_ACCOUNT>
+    <SAVE_TIMING_DIR> </SAVE_TIMING_DIR>
+    <SAVE_TIMING_DIR_PROJECTS> </SAVE_TIMING_DIR_PROJECTS>
+-->
+    <CIME_OUTPUT_ROOT>/lustre/scratch/jtmp/$USER</CIME_OUTPUT_ROOT>
+    <DIN_LOC_ROOT>$ENV{CESMDATAROOT}/inputdata</DIN_LOC_ROOT>
+    <DIN_LOC_ROOT_CLMFORC>$ENV{CESMDATAROOT}/lmwg</DIN_LOC_ROOT_CLMFORC>
+    <DOUT_S_ROOT>$CIME_OUTPUT_ROOT/archive/$CASE</DOUT_S_ROOT>
+    <BASELINE_ROOT>$ENV{CESMDATAROOT}/cesm_baselines</BASELINE_ROOT>
+    <CCSM_CPRNC>$ENV{CESMDATAROOT}/tools/cime/tools/cprnc/cprnc</CCSM_CPRNC>
+    <GMAKE>gmake</GMAKE>
+    <GMAKE_J>32</GMAKE_J>
+    <BATCH_SYSTEM>none</BATCH_SYSTEM>
+    <SUPPORTED_BY>jedwards</SUPPORTED_BY>
+    <MAX_TASKS_PER_NODE>256</MAX_TASKS_PER_NODE>
+    <MAX_MPITASKS_PER_NODE>64</MAX_MPITASKS_PER_NODE>
+    <PROJECT_REQUIRED>FALSE</PROJECT_REQUIRED>
+    <mpirun mpilib="default">
+      <executable>mpirun</executable>
+      <arguments>
+	<arg name="labelstdout">-prepend-rank </arg>
+	<arg name="taskcount"> -np {{ total_tasks }} </arg>
+      </arguments>
+    </mpirun>
+    <module_system type="module">
+      <init_path lang="perl">/opt/cray/pe/modules/3.2.10.6/init/perl.pm</init_path>
+      <init_path lang="python">/opt/cray/pe/modules/3.2.10.6/init/python.py</init_path>
+      <init_path lang="csh">/opt/cray/pe/modules/3.2.10.6/init/csh</init_path>
+      <init_path lang="sh">/opt/cray/pe/modules/3.2.10.6/init/sh</init_path>
+      <cmd_path lang="perl">/opt/cray/pe/modules/3.2.10.6/bin/modulecmd perl</cmd_path>
+      <cmd_path lang="python">/opt/cray/pe/modules/3.2.10.6/bin/modulecmd python</cmd_path>
+      <cmd_path lang="sh">module</cmd_path>
+      <cmd_path lang="csh">module</cmd_path>
+      <modules>
+	<command name="rm">cce</command>
+	<command name="rm">PrgEnv-cray</command>
+	<command name="load">cmake/3.9.4</command>
+      </modules>
+      <modules compiler="arm">
+	<command name="load">arm/hpc-compiler/18.4</command>
+      </modules>
+      <modules compiler="arm" mpilib="openmpi">
+	<command name="load">openmpi-3.1.0/arm-18.3</command>
+      </modules>
+      <modules compiler="arm" mpilib="mpich">
+	<command name="load">mpich/3.2/arm-18.4</command>
+      </modules>
+      <modules compiler="cray">
+	<command name="load">PrgEnv-cray</command>
+	<command name="load">cce/8.7.0.5323</command>
+      </modules>
+      <modules compiler="cray" mpilib="mpich">
+	<command name="load">anl-mpich/3.2.0.4</command>
+      </modules>
+    </module_system>
+    <environment_variables>
+      <env name="OMP_STACKSIZE">256M</env>
+    </environment_variables>
+    <environment_variables compiler="arm">
+      <env name="NETCDF_PATH">/lustre/home/brx-jedwards/netcdf/arm-18.4</env>
+      <env name="PNETCDF_PATH">/lustre/home/brx-jedwards/pnetcdf/arm-18.4/mpich-3.2/</env>
+    </environment_variables>
+    <resource_limits>
+      <resource name="RLIMIT_STACK">-1</resource>
+    </resource_limits>
+  </machine>
 
   <machine MACH="laramie">
     <DESC>NCAR SGI test platform, os is Linux, 36 pes/node, batch system is PBS</DESC>

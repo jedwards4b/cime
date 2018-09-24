@@ -86,7 +86,7 @@ using a fortran linker.
     <append> -DFORTRANUNDERSCORE -DCPRARM -DNO_R16</append>
   </CPPDEFS>
   <FFLAGS>
-    <base> -mcpu=native </base>
+    <base> -Mallocatable=03 -mcpu=native </base>
     <append DEBUG="TRUE"> -g -insight </append>
     <append DEBUG="FALSE"> -O2 </append>
   </FFLAGS>
@@ -95,9 +95,6 @@ using a fortran linker.
     <append DEBUG="TRUE"> -g -insight </append>
     <append DEBUG="FALSE"> -O2 </append>
   </CFLAGS>
-  <LDFLAGS>
-    <append> -L/usr/lib -lblas -llapack</append>
-  </LDFLAGS>
 </compiler>  
 
 <compiler COMPILER="cray">
@@ -529,6 +526,12 @@ using a fortran linker.
   <SLIBS>
     <base> -L${NETCDF_PATH}/lib -lnetcdf -lnetcdff -lpmi -L$ENV{MKL_PATH} -lmkl_rt</base>
   </SLIBS>
+</compiler>
+
+<compiler MACH="cavium" COMPILER="arm">
+  <LDFLAGS>
+    <append> -L/usr/lib -lblas -llapack</append>
+  </LDFLAGS>
 </compiler>
 
 <compiler MACH="constance" COMPILER="pgi">
