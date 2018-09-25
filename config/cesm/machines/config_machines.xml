@@ -1110,7 +1110,7 @@
     <OS>LINUX</OS>
 <!--    <PROXY></PROXY> -->
     <COMPILERS>arm,cray</COMPILERS>
-    <MPILIBS>mpich,openmpi</MPILIBS>
+    <MPILIBS>openmpi,mpich</MPILIBS>
 <!--    <PROJECT></PROJECT>
     <CHARGE_ACCOUNT></CHARGE_ACCOUNT>
     <SAVE_TIMING_DIR> </SAVE_TIMING_DIR>
@@ -1179,7 +1179,12 @@
     </environment_variables>
     <environment_variables compiler="arm">
       <env name="NETCDF_PATH">/lustre/home/brx-jedwards/netcdf/arm-18.4</env>
+    </environment_variables>
+    <environment_variables compiler="arm" mpilib="mpich">
       <env name="PNETCDF_PATH">/lustre/home/brx-jedwards/pnetcdf/arm-18.4/mpich-3.2/</env>
+    </environment_variables>
+    <environment_variables compiler="arm" mpilib="openmpi">
+      <env name="PNETCDF_PATH">/lustre/home/brx-jedwards/pnetcdf/arm-18.4/openmpi-3.0.0/</env>
     </environment_variables>
     <resource_limits>
       <resource name="RLIMIT_STACK">-1</resource>
