@@ -460,12 +460,12 @@ using a fortran linker.
     <append> -DLINUX </append>
     <append MODEL="gptl"> -DHAVE_NANOTIME -DBIT64 -DHAVE_VPRINTF -DHAVE_BACKTRACE -DHAVE_SLASHPROC -DHAVE_COMM_F2C -DHAVE_TIMES -DHAVE_GETTIMEOFDAY  </append>
   </CPPDEFS>
-  <MPICC> cc </MPICC>
-  <MPICXX> CC </MPICXX>
-  <MPIFC> ftn </MPIFC>
   <NETCDF_PATH>$ENV{NETCDF_DIR}</NETCDF_PATH>
   <PIO_FILESYSTEM_HINTS>lustre</PIO_FILESYSTEM_HINTS>
   <PNETCDF_PATH>$ENV{PARALLEL_NETCDF_DIR}</PNETCDF_PATH>
+  <MPICC> cc </MPICC>
+  <MPICXX> CC </MPICXX>
+  <MPIFC> ftn </MPIFC>
   <SCC> cc </SCC>
   <SCXX> CC </SCXX>
   <SFC> ftn </SFC>
@@ -533,6 +533,31 @@ using a fortran linker.
     <append> -L/usr/lib -lblas -llapack</append>
   </LDFLAGS>
 </compiler>
+
+<compiler MACH="isambard" COMPILER="arm">
+  <LDFLAGS>
+    <append> -Wl,-rpath $ENV{NETCDF_PATH}/lib</append>
+  </LDFLAGS>
+</compiler>
+
+<compiler MACH="isambard" COMPILER="cray">
+  <FFLAGS>
+    <base> -f free -N 255 -x dir </base>
+  </FFLAGS>
+  <LDFLAGS>
+    <base> -Wl,--allow-multiple-definition </base>
+  </LDFLAGS>
+  <MPICC> cc </MPICC>
+  <MPICXX> CC </MPICXX>
+  <MPIFC> ftn </MPIFC>
+  <SCC> cc </SCC>
+  <SCXX> CC </SCXX>
+  <SFC> ftn </SFC>
+  <LDFLAGS>
+    <append> -lcurl</append>
+  </LDFLAGS>
+</compiler>
+
 
 <compiler MACH="constance" COMPILER="pgi">
   <CFLAGS>

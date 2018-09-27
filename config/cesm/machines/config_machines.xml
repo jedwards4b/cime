@@ -1110,18 +1110,19 @@
     <OS>LINUX</OS>
 <!--    <PROXY></PROXY> -->
     <COMPILERS>arm,cray</COMPILERS>
-    <MPILIBS>openmpi,mpich</MPILIBS>
+    <MPILIBS compiler="arm">openmpi,mpich</MPILIBS>
+    <MPILIBS compiler="cray">mpich</MPILIBS>
 <!--    <PROJECT></PROJECT>
     <CHARGE_ACCOUNT></CHARGE_ACCOUNT>
     <SAVE_TIMING_DIR> </SAVE_TIMING_DIR>
     <SAVE_TIMING_DIR_PROJECTS> </SAVE_TIMING_DIR_PROJECTS>
 -->
-    <CIME_OUTPUT_ROOT>/lustre/scratch/jtmp/$USER</CIME_OUTPUT_ROOT>
+    <CIME_OUTPUT_ROOT>$ENV{HOME}/cesm</CIME_OUTPUT_ROOT>
     <DIN_LOC_ROOT>$ENV{CESMDATAROOT}/inputdata</DIN_LOC_ROOT>
     <DIN_LOC_ROOT_CLMFORC>$ENV{CESMDATAROOT}/lmwg</DIN_LOC_ROOT_CLMFORC>
     <DOUT_S_ROOT>$CIME_OUTPUT_ROOT/archive/$CASE</DOUT_S_ROOT>
     <BASELINE_ROOT>$ENV{CESMDATAROOT}/cesm_baselines</BASELINE_ROOT>
-    <CCSM_CPRNC>$ENV{CESMDATAROOT}/tools/cime/tools/cprnc/cprnc</CCSM_CPRNC>
+    <CCSM_CPRNC>$ENV{CESMDATAROOT}/tools/cprnc/cprnc</CCSM_CPRNC>
     <GMAKE>gmake</GMAKE>
     <GMAKE_J>32</GMAKE_J>
     <BATCH_SYSTEM>none</BATCH_SYSTEM>
@@ -1186,6 +1187,11 @@
     <environment_variables compiler="arm" mpilib="openmpi">
       <env name="PNETCDF_PATH">/lustre/home/brx-jedwards/pnetcdf/arm-18.4/openmpi-3.0.0/</env>
     </environment_variables>
+    <environment_variables compiler="cray">
+      <env name="NETCDF_PATH">/lustre/home/brx-jedwards/netcdf/cce-8.7.0</env>
+      <env name="PNETCDF_PATH">/lustre/home/brx-jedwards/pnetcdf/cce-8.7.0/mpich-3.2.0.4/</env>
+    </environment_variables>
+
     <resource_limits>
       <resource name="RLIMIT_STACK">-1</resource>
     </resource_limits>
