@@ -1159,7 +1159,9 @@
 	<command name="load">cmake/3.9.4</command>
       </modules>
       <modules compiler="arm">
-	<command name="load">arm/hpc-compiler/18.4</command>
+	<command name="load">arm/hpc-compiler/18.4.2</command>
+	<command name="load">arm/perf-libs/18.4.2/arm-18.4.2</command>
+	<command name="load">openblas/0.2.20-nothreads</command>
       </modules>
       <modules compiler="arm" mpilib="openmpi">
 	<command name="load">openmpi/3.0.0/arm-18.4</command>
@@ -1169,7 +1171,7 @@
       </modules>
       <modules compiler="cray">
 	<command name="load">PrgEnv-cray</command>
-	<command name="load">cce/8.7.0.5323</command>
+	<command name="switch">cce/8.7.0.5323</command>
       </modules>
       <modules compiler="cray" mpilib="mpich">
 	<command name="load">anl-mpich/3.2.0.4</command>

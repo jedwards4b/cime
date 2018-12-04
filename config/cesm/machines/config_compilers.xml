@@ -76,12 +76,6 @@ using a fortran linker.
 </compiler>
 
 <compiler COMPILER="arm">
-  <SCC> armclang </SCC>
-  <SCXX>armclang++ </SCXX>
-  <SFC> armflang </SFC>
-  <MPICC> mpicc  </MPICC>
-  <MPICXX> mpicxx </MPICXX>
-  <MPIFC> mpif90 </MPIFC>
   <CPPDEFS>
     <append> -DFORTRANUNDERSCORE -DCPRARM -DNO_R16</append>
   </CPPDEFS>
@@ -535,14 +529,23 @@ using a fortran linker.
 </compiler>
 
 <compiler MACH="isambard" COMPILER="arm">
+  <SCC> armclang </SCC>
+  <SCXX>armclang++ </SCXX>
+  <SFC> armflang </SFC>
+  <MPICC> mpicc  </MPICC>
+  <MPICXX> mpicxx </MPICXX>
+  <MPIFC> mpif90 </MPIFC>
   <LDFLAGS>
-    <append> -Wl,-rpath $ENV{NETCDF_PATH}/lib</append>
+    <append> -Wl,-rpath $ENV{NETCDF_PATH}/lib $(LAPACK)</append>
   </LDFLAGS>
 </compiler>
 
 <compiler MACH="isambard" COMPILER="cray">
   <FFLAGS>
     <base> -f free -N 255 -x dir </base>
+    <append compile_threaded="false"> -h noomp </append>
+    <append DEBUG="TRUE"> -g -O0 -K trap=fp -m1 </append>
+    <append DEBUG="FALSE"> -O2,ipa2 -em </append>
   </FFLAGS>
   <LDFLAGS>
     <base> -Wl,--allow-multiple-definition </base>
