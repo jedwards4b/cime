@@ -2332,7 +2332,7 @@ This allows using a different mpirun command to launch unit tests
     <PROJECT>CSC266</PROJECT>
     <SAVE_TIMING_DIR></SAVE_TIMING_DIR>
     <SAVE_TIMING_DIR_PROJECTS></SAVE_TIMING_DIR_PROJECTS>
-    <CIME_OUTPUT_ROOT>/scratch/$ENV{USER}</CIME_OUTPUT_ROOT>
+    <CIME_OUTPUT_ROOT>$ENV{HOME}/projects/scratch/</CIME_OUTPUT_ROOT>
     <DIN_LOC_ROOT>$ENV{HOME}/projects/cesm/inputdata</DIN_LOC_ROOT>
     <DIN_LOC_ROOT_CLMFORC>$ENV{CESMDATAROOT}/lmwg</DIN_LOC_ROOT_CLMFORC>
     <DOUT_S_ROOT>$CIME_OUTPUT_ROOT/archive/$CASE</DOUT_S_ROOT>
@@ -2347,17 +2347,17 @@ This allows using a different mpirun command to launch unit tests
     <PROJECT_REQUIRED>FALSE</PROJECT_REQUIRED>
     <mpirun mpilib="default">
       <!-- name of the exectuable used to launch mpi jobs -->
-      <executable>srun</executable>
+      <executable>mpirun</executable>
       <!-- arguments to the mpiexec command, the name attribute here is ignored-->
       <arguments>
-	<arg name="tasks"> -np {{ total_tasks }}</arg>
+	<arg name="tasks"> -n {{ total_tasks }}</arg>
       </arguments>
     </mpirun>
     <module_system type="module">
-      <init_path lang="perl">$ENV{MODULESHOME}/init/perl.pm</init_path>
-      <init_path lang="python">$ENV{MODULESHOME}/init/python.py</init_path>
-      <init_path lang="sh">$ENV{MODULESHOME}/init/sh</init_path>
-      <init_path lang="csh">$ENV{MODULESHOME}/init/csh</init_path>
+      <init_path lang="perl">/usr/share/Modules/init/perl.pm</init_path>
+      <init_path lang="python">/usr/share/Modules/init/python.py</init_path>
+      <init_path lang="sh">/usr/share/Modules/init/sh</init_path>
+      <init_path lang="csh">/usr/share/Modules/init/csh</init_path>
       <cmd_path lang="perl">/usr/bin/modulecmd perl</cmd_path>
       <cmd_path lang="python">/usr/bin/modulecmd python</cmd_path>
       <cmd_path lang="sh">module</cmd_path>
@@ -2365,12 +2365,16 @@ This allows using a different mpirun command to launch unit tests
       <modules compiler="arm">
         <command name="load">ARM_Compiler_For_HPC/19.0</command>
 	<command name="load">cmake/3.11.1</command>
-	<command name="load">openmpi/3.1.2-arm-19.0</command>
       </modules>
       </module_system>
     <environment_variables>
       <env name="OMP_STACKSIZE">256M</env>
+      <env name="NETCDF_PATH">$ENV{HOME}/netcdf/arm/19.0</env>
     </environment_variables> 
+    <environment_variables compiler="arm">
+      <env name="OMPI_CC">armclang</env>
+      <env name="OMPI_FC">armflang</env>
+    </environment_variables>
     <resource_limits>
       <resource name="RLIMIT_STACK">-1</resource>
     </resource_limits>

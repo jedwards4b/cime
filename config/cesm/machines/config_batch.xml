@@ -515,6 +515,9 @@
       <arg flag="-p" name="$JOB_QUEUE"/>
       <arg flag="--account" name="$PROJECT"/>
     </submit_args>
+    <queues>
+    <queue walltimemax="12:00:00" nodemin="1" nodemax="16" default="true">debug</queue>
+    </queues>
   </batch_system>
 
   <batch_jobs>
