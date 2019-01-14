@@ -2351,6 +2351,8 @@ This allows using a different mpirun command to launch unit tests
       <!-- arguments to the mpiexec command, the name attribute here is ignored-->
       <arguments>
 	<arg name="tasks"> -n {{ total_tasks }}</arg>
+      <arg name="perf"> --mca pml ucx --mca btl_openib_if_exclude mlx5_1,mlx5_2 --mca btl_openib_warn_default_gid_prefix 0 </arg>
+      <arg name="label"> --tag-output </arg>
       </arguments>
     </mpirun>
     <module_system type="module">

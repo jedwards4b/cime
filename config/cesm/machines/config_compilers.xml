@@ -122,7 +122,7 @@ using a fortran linker.
   <MPICXX> mpicxx </MPICXX>
   <MPIFC> mpif90 </MPIFC>
   <CPPDEFS>
-    <append> -DFORTRANUNDERSCORE -DCPRARM</append>
+    <append> -DFORTRANUNDERSCORE -DNO_R16 -DCPRARM</append>
   </CPPDEFS>
   <FFLAGS>
     <base> -mcpu=native </base>
@@ -1193,6 +1193,19 @@ using a fortran linker.
     <append>-L$(NETCDF_DIR)/lib -lnetcdff -L$(NETCDF_DIR)/lib -lnetcdf -Wl,-rpath -Wl,$(NETCDF_DIR)/lib </append>
   </SLIBS>
 </compiler>
+
+<compiler COMPILER="arm" MACH="wombat">
+  <CFLAGS>
+    <append> -armpl -fsimdmath </append>
+  </CFLAGS>
+  <FFLAGS>
+    <append> -armpl -fsimdmath </append>
+  </FFLAGS>
+  <SLIBS>
+    <append> -L$(NETCDF_PATH)/lib -lnetcdff -lnetcdf -larmpl_lp64 -lsimdmath -lm </append>
+  </SLIBS>
+</compiler>
+
 
 <compiler MACH="userdefined">
   <CONFIG_ARGS>
