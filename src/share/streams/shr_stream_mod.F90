@@ -158,7 +158,7 @@ module shr_stream_mod
   !----- parameters -----
   real(SHR_KIND_R8)   ,parameter :: spd = SHR_CONST_CDAY ! seconds per day
   integer(SHR_KIND_IN),parameter :: initarr_size = 3     ! size of initarr
-  integer(SHR_KIND_IN),save :: debug = 0        ! edit/turn-on for debug write statements
+  integer(SHR_KIND_IN),save :: debug = 2       ! edit/turn-on for debug write statements
   logical             ,save :: doabort = .true. ! flag if abort on error
   character(len=*), parameter :: sourcefile = &
        __FILE__
@@ -1109,9 +1109,9 @@ contains
     dDateIn = dYear*10000 + modulo(mDateIn,10000) ! mDateIn mapped to range of data years
     rDateIn = dDateIn + secIn/spd                 ! dDateIn + fraction of a day
 
-    !   write(s_logunit,*) 'tcx fbd1 ',mYear,dYear,dDateIn,rDateIn
-    !   write(s_logunit,*) 'tcx fbd2 ',yrFirst,yrLast,yrAlign,nYears
-    !   call shr_sys_flush(s_logunit)
+       write(s_logunit,*) 'tcx fbd1 ',mYear,dYear,dDateIn,rDateIn
+       write(s_logunit,*) 'tcx fbd2 ',yrFirst,yrLast,yrAlign,nYears
+       call shr_sys_flush(s_logunit)
 
     !----------------------------------------------------------------------------
     ! find least valid date (lvd)
@@ -1697,6 +1697,7 @@ contains
        end if
 
        !--- compare two consecutive dates ---
+       write(s_logunit,F02) "date(n), date(n+1) = ",date1,date2
        if (checkIt) then
           if ( date1 > date2 ) then
              rc = 1

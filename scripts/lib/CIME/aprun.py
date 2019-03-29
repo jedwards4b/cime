@@ -83,7 +83,7 @@ def _get_aprun_cmd_for_case_impl(ntasks, nthreads, rootpes, pstrids,
             # Compute for every subset
             task_per_numa = int(math.ceil(tasks_per_node / 2.0))
             # Option for Titan
-            if machine == "titan" and tasks_per_node > 1:
+            if machine == "titan" or machine == "xc50" and tasks_per_node > 1:
                 aprun_args += " -S {:d}".format(task_per_numa)
                 if compiler == "intel":
                     aprun_args += " -cc numa_node"

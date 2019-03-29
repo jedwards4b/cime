@@ -81,7 +81,8 @@ using a fortran linker.
     <append DEBUG="FALSE"> -O2 </append>
   </CFLAGS>
   <CPPDEFS>
-    <!--http://docs.cray.com/cgi-bin/craydoc.cgi?mode=View;id=S-3901-83;idx=books_search;this_sort=;q=;type=books;title=Cray%20Fortran%20Reference%20Manual -->
+  <!-- http://pubs.cray.com/content/S-3901/8.7/cray-fortran-reference-manual/fortran-compiler-introduction -->
+  <!-- http://pubs.cray.com/pdf-attachments/attachment?pubId=00539209-DA&attachmentId=pub_00539209-DA.pdf -->
     <append> -DFORTRANUNDERSCORE -DNO_R16 -DCPRCRAY</append>
     <append MODEL="pop"> -DDIR=NOOP </append>
     <append MODEL="moby"> -DDIR=NOOP </append>
@@ -102,6 +103,43 @@ using a fortran linker.
   <LDFLAGS>
     <base> -Wl,--allow-multiple-definition -h byteswapio </base>
   </LDFLAGS>
+</compiler>
+
+<compiler COMPILER="cray" MACH="xc50">
+  <CFLAGS>
+    <append compile_threaded="false"> -h noomp </append>
+    <append DEBUG="TRUE"> -g -O0 </append>
+    <append DEBUG="FALSE"> -O2 </append>
+  </CFLAGS>
+  <CONFIG_ARGS>
+    <base> --host=Linux </base>
+  </CONFIG_ARGS>
+  <CPPDEFS>
+  <!-- http://pubs.cray.com/content/S-3901/8.7/cray-fortran-reference-manual/fortran-compiler-introduction -->
+  <!-- http://pubs.cray.com/pdf-attachments/attachment?pubId=00539209-DA&attachmentId=pub_00539209-DA.pdf -->
+    <append> -DFORTRANUNDERSCORE -DNO_R16 -DCPRCRAY</append>
+    <append MODEL="pop"> -DDIR=NOOP </append>
+    <append MODEL="moby"> -DDIR=NOOP </append>
+  </CPPDEFS>
+  <FC_AUTO_R8>
+    <base> -s real64 </base>
+  </FC_AUTO_R8>
+  <FFLAGS>
+    <base> -f free -N 255  -h byteswapio -x dir </base>
+    <append compile_threaded="false"> -h noomp </append>
+    <append DEBUG="TRUE"> -g -O0 -K trap=fp  -m1 </append>
+    <append DEBUG="FALSE"> -O2,ipa2 -em </append>
+  </FFLAGS>
+  <FFLAGS_NOOPT>
+    <base> -O1,fp2,ipa0,scalar0,vector0 </base>
+  </FFLAGS_NOOPT>
+  <HAS_F2008_CONTIGUOUS>TRUE</HAS_F2008_CONTIGUOUS>
+  <LDFLAGS>
+    <base> -Wl,--allow-multiple-definition -h byteswapio </base>
+  </LDFLAGS>
+  <SFC> ftn </SFC>
+  <SCC> cc </SCC>
+  <SCXX> CC </SCXX>
 </compiler>
 
 <compiler COMPILER="gnu">
@@ -254,10 +292,65 @@ using a fortran linker.
     <append MPILIB="mpich2"> -mkl=cluster </append>
     <append MPILIB="mvapich"> -mkl=cluster </append>
     <append MPILIB="mvapich2"> -mkl=cluster </append>
-    <append MPILIB="mpt"> -mkl=cluster </append>
+    <!-- <append MPILIB="mpt"> -mkl=cluster </append> -->
     <append MPILIB="openmpi"> -mkl=cluster </append>
     <append MPILIB="impi"> -mkl=cluster </append>
     <append MPILIB="mpi-serial"> -mkl </append>
+  </SLIBS>
+  <SUPPORTS_CXX>TRUE</SUPPORTS_CXX>
+</compiler>
+
+<compiler COMPILER="intel" MACH="xc50">
+  <CFLAGS>
+    <base>  -qno-opt-dynamic-align -fp-model precise -std=gnu99 -xCORE-AVX2 </base>
+    <append compile_threaded="true"> -qopenmp </append>
+    <append DEBUG="FALSE"> -O2 -debug minimal </append>
+    <append DEBUG="TRUE"> -O0 -g </append>
+  </CFLAGS>
+  <CONFIG_ARGS>
+    <base> --host=Linux </base>
+  </CONFIG_ARGS>
+  <CPPDEFS>
+    <!-- http://software.intel.com/en-us/articles/intel-composer-xe/ -->
+    <!-- https://software.intel.com/en-us/download/intel-fortran-compiler-version-190-f1-help -->
+    <!-- https://software.intel.com/en-us/download/intel-cpp-compiler-version-190-f1-help -->
+    <append> -DFORTRANUNDERSCORE -DCPRINTEL</append>
+    <!-- <append MODEL="gptl"> -DHAVE_PAPI -DHAVE_SLASHPROC </append> -->
+    <append MODEL="gptl"> -DHAVE_SLASHPROC </append>
+  </CPPDEFS>
+  <CXX_LDFLAGS>
+    <base> -cxxlib </base>
+  </CXX_LDFLAGS>
+  <CXX_LINKER>FORTRAN</CXX_LINKER>
+  <FC_AUTO_R8>
+    <base> -r8 </base>
+  </FC_AUTO_R8>
+  <FFLAGS>
+    <base> -qno-opt-dynamic-align  -convert big_endian -assume byterecl -ftz -traceback -assume realloc_lhs -fp-model source -xCORE-AVX2 </base>
+    <append compile_threaded="true"> -qopenmp </append>
+    <append DEBUG="TRUE"> -O0 -g -check uninit -check bounds -check pointers -fpe0 -check noarg_temp_created </append>
+    <append DEBUG="FALSE"> -O2 -debug minimal </append>
+  </FFLAGS>
+  <FFLAGS_NOOPT>
+    <base> -O0 -xCORE-AVX2 </base>
+    <append compile_threaded="true"> -qopenmp </append>
+  </FFLAGS_NOOPT>
+  <FIXEDFLAGS>
+    <base> -fixed -132 </base>
+  </FIXEDFLAGS>
+  <FREEFLAGS>
+    <base> -free </base>
+  </FREEFLAGS>
+  <LDFLAGS>
+    <append compile_threaded="true"> -qopenmp </append>
+    <!-- <append MPILIB="mpt"> -mkl=cluster </append> -->
+    <append> -mkl -static-intel </append>
+  </LDFLAGS>
+  <SCC> cc </SCC>
+  <SCXX> CC </SCXX>
+  <SFC> ftn </SFC>
+  <SLIBS>
+    <append> -L$(PARALLEL_NETCDF_DIR) -lpnetcdf -L$(NETCDF_DIR) -lnetcdff -Wl,--as-needed,-L$(NETCDF_DIR)/lib -lnetcdff -lnetcdf </append>
   </SLIBS>
   <SUPPORTS_CXX>TRUE</SUPPORTS_CXX>
 </compiler>
@@ -440,6 +533,8 @@ using a fortran linker.
   <MPICC> cc </MPICC>
   <MPICXX> CC </MPICXX>
   <MPIFC> ftn </MPIFC>
+  <MPI_LIB_NAME> mpich </MPI_LIB_NAME>
+  <MPI_PATH>$ENV{MPICH_DIR}</MPI_PATH>
   <NETCDF_PATH>$ENV{NETCDF_DIR}</NETCDF_PATH>
   <PIO_FILESYSTEM_HINTS>lustre</PIO_FILESYSTEM_HINTS>
   <PNETCDF_PATH>$ENV{PARALLEL_NETCDF_DIR}</PNETCDF_PATH>
@@ -466,15 +561,8 @@ using a fortran linker.
   </CPPDEFS>
   <PIO_FILESYSTEM_HINTS>lustre</PIO_FILESYSTEM_HINTS>
 </compiler>
-
 <compiler MACH="bluewaters" COMPILER="intel">
   <HAS_F2008_CONTIGUOUS>FALSE</HAS_F2008_CONTIGUOUS>
-  <FFLAGS>
-    <append> -dynamic -mkl=sequential -no-fma</append>
-  </FFLAGS>
-  <CFLAGS>
-    <append> -dynamic -mkl=sequential -no-fma</append>
-  </CFLAGS>
 </compiler>
 
 <compiler MACH="bluewaters" COMPILER="pgi">
@@ -816,18 +904,6 @@ using a fortran linker.
   </SLIBS>
 </compiler>
 
-<compiler MACH="izumi">
-  <CPPDEFS>
-    <append MODEL="gptl"> -DHAVE_NANOTIME -DBIT64 -DHAVE_VPRINTF -DHAVE_BACKTRACE -DHAVE_SLASHPROC -DHAVE_COMM_F2C -DHAVE_TIMES -DHAVE_GETTIMEOFDAY </append>
-  </CPPDEFS>
-  <LAPACK_LIBDIR> /usr/lib64 </LAPACK_LIBDIR>
-  <MPI_LIB_NAME MPILIB="mvapich2"> mpich</MPI_LIB_NAME>
-  <NETCDF_PATH>$ENV{NETCDF_PATH}</NETCDF_PATH>
-  <SLIBS>
-    <append>-L$NETCDF_PATH/lib -lnetcdff -lnetcdf</append>
-  </SLIBS>
-</compiler>
-
 <compiler MACH="hobart" COMPILER="intel">
   <CFLAGS>
     <append> -lifcore</append>
@@ -883,7 +959,8 @@ using a fortran linker.
 
 <compiler MACH="hobart" COMPILER="gnu">
   <SLIBS>
-    <append> -lm -ldl</append>
+    <append> -lm </append>
+    <append> -ldl </append>
   </SLIBS>
 </compiler>
 
@@ -1096,21 +1173,6 @@ using a fortran linker.
   <PNETCDF_PATH>$ENV{PNETCDFROOT}</PNETCDF_PATH>
   <SLIBS>
     <append> -L${NETCDF_PATH}/lib -lnetcdff -L/projects/ccsm/BLAS-intel -lblas_LINUX</append>
-  </SLIBS>
-</compiler>
-
-<compiler MACH="lonestar5">
-  <CPPDEFS>
-    <append> -DHAVE_NANOTIME </append>
-  </CPPDEFS>
-  <NETCDF_PATH>$ENV{TACC_NETCDF_DIR}</NETCDF_PATH>
-  <PIO_FILESYSTEM_HINTS>lustre</PIO_FILESYSTEM_HINTS>
-  <PNETCDF_PATH>$ENV{TACC_PNETCDF_DIR}</PNETCDF_PATH>
-  <LDFLAGS>
-    <append> -Wl,-rpath,${NETCDF_PATH}/lib </append>
-  </LDFLAGS>
-  <SLIBS>
-    <append> -L${NETCDF_PATH}/lib -lnetcdff -lnetcdf</append>
   </SLIBS>
 </compiler>
 
