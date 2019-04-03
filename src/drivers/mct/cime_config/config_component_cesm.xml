@@ -288,7 +288,7 @@
     <default_value>$ATM_NCPL</default_value>
     <values match="last">
       <value compset="_POP2">1</value>
-      <value compset="_POP2" grid="oi%tx0.1v2">4</value>
+      <value compset="_POP2" grid="oi%tx0.1v2">48</value>
       <value compset="_POP2" grid="oi%gx1v6">24</value>
       <value compset="_POP2" grid="oi%gx1v7">24</value>
       <value compset="_DATM%NYF.*_SLND.*_DICE.*_DOCN.*_SWAV">1</value>
