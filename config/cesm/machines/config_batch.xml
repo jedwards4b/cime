@@ -553,6 +553,7 @@
     </submit_args>
     <queues>
       <queue walltimemax="48:00:00" nodemin="1" nodemax="256" default="true">skx-normal</queue>
+      <queue walltimemax="48:00:00" nodemin="257" nodemax="868">skx-large</queue>
       <queue walltimemax="02:00:00" nodemin="1" nodemax="4" >skx-dev</queue>
     </queues>
   </batch_system>
