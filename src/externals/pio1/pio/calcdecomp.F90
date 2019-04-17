@@ -102,11 +102,10 @@ contains
              end if
           end do
 
-
-
 ! Things work best if use_io_procs is a multiple of gdims(ndims)
 ! this adjustment makes it so, potentially increasing the blocksize a bit
-          if (gdims(ldims)<use_io_procs) then
+
+          if (ldims > 0 .and. gdims(ldims)<use_io_procs) then
              if(ldims>1 .and. gdims(ldims-1) > use_io_procs) then
                 ldims=ldims-1
              else

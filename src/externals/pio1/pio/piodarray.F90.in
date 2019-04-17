@@ -459,7 +459,7 @@ contains
 
     character(len=*), parameter :: subName=modName//'::write_darray_nf_{TYPE}'
     {VTYPE}, dimension(:), pointer ::  &
-         IOBUF => null()                ! local IO buffer
+         IOBUF                ! local IO buffer
 
     logical (log_kind) :: IOproc     ! true if IO processor
     integer (i4) ::  len,           &! length of IO decomp segmap
@@ -468,7 +468,6 @@ contains
 
     logical(log_kind) :: UseRearranger
 
-    logical(log_kind) :: is_iobuf_owned
 
 #if DEBUG_REARR
     {VTYPE}, dimension(:), pointer ::  array2
@@ -488,7 +487,6 @@ contains
     iotype     = File%iotype
     UseRearranger  = File%iosystem%UseRearranger
 
-    is_iobuf_owned = .false.
 
     ! ---------------------------------------------------------
     ! pull information out of the decomposition data structure
@@ -504,8 +502,8 @@ contains
     if(Debug) print *,__PIO_FILE__,__LINE__,' NAME : IAM: ', &
     File%iosystem%comp_rank,' UseRearranger: ',UseRearranger,iodesc%glen, iodesc%iomap%start, len
 #ifdef TIMING
-    call t_startf("PIO:pre_pio_write_nf")
     call t_startf("PIO:pio_rearrange_write")
+    call t_startf("PIO:pre_pio_write_nf")
 #endif
     if(UseRearranger) then
        if (IOproc) then
@@ -513,7 +511,6 @@ contains
                'Before call to allocate(IOBUF): ',len, iodesc%write%n_elemtype
 
           call alloc_check(IOBUF,len,' TYPE :IOBUF')
-          is_iobuf_owned = .true.
 
           if (present(fillval)) then
              IOBUF=fillval
@@ -530,7 +527,6 @@ contains
 
        else
           call alloc_check(IOBUF,0)
-          is_iobuf_owned = .true.
           IOBUF= -1.0_r8
        endif
 
@@ -539,7 +535,7 @@ contains
        !------------------------------------
        ! "array" is comp data
 
-       call rearrange_comp2io(File%iosystem,iodesc, array, IOBUF)
+       call rearrange_comp2io(File%iosystem,iodesc, array, iobuf)
 
 #if DEBUG_REARR
        call alloc_check(array2,size(array),'array2')
@@ -564,11 +560,10 @@ contains
        !--------------------------------------------
     else
        if(file%iotype==pio_iotype_pnetcdf) then
-          allocate(IOBUF(size(array)))
-          IOBUF=array
-          is_iobuf_owned = .true.
+          allocate(iobuf(size(array)))
+          iobuf=array
        else
-          IOBUF=>array
+          iobuf=>array
        end if
     endif   ! if(UseRearranger)
 #ifdef TIMING
@@ -615,7 +610,7 @@ contains
 
 
           if(Debug) print *, __PIO_FILE__,__LINE__,'start:',start, &
-           ' count:',count,' ndims:',ndims, minval(IOBUF),maxval(IOBUF)
+           ' count:',count,' ndims:',ndims, minval(iobuf),maxval(iobuf)
           ! this is a timedependent single value
        else if(vardesc%rec>=0) then
           call alloc_check(start,1)
@@ -660,15 +655,13 @@ contains
 #endif
        if(file%iotype==pio_iotype_pnetcdf) then
           call add_data_to_buffer(File, IOBUF, request)
-          is_iobuf_owned = .false.
+       else if(Userearranger) then
+          deallocate(iobuf)
        end if
 #ifdef TIMING
        call t_stopf("PIO:post_pio_write_nf")
 #endif
     end if
-    if(associated(IOBUF) .and. is_iobuf_owned) then
-       deallocate(IOBUF)
-    endif ! if(IOPROC)
 
     !   call MPI_Barrier(File%iosystem%comp_comm,ierr)
 
@@ -733,7 +726,7 @@ contains
     character(len=*), parameter :: subName=modName//'::write_darray_bin_{TYPE}'
 
     {VTYPE}, dimension(:), pointer ::  &
-         IOBUF => null()                ! local IO buffer
+         IOBUF                ! local IO buffer
 
 
 #if DEBUG_REARR
@@ -1317,7 +1310,7 @@ contains
 #ifdef _PNETCDF
        ierr  = nfmpi_wait_all(file%fh, cnt-1, array_of_requests, status)
 #endif
-       if(Debug) print *,__PIO_FILE__,__LINE__,status, ierr, total_buffsize
+       if(DEBUG) print *,__PIO_FILE__,__LINE__,status, ierr, total_buffsize
 
        ptr=>file%data_list_top
        do while(associated(ptr))
