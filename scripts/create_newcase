@@ -109,6 +109,12 @@ def parse_command_line(args, cimeroot, description):
     if model == "cesm":
         parser.add_argument("--run-unsupported", action="store_true",
                             help="Force the creation of a case that is not tested or supported by CESM developers.")
+
+        parser.add_argument("--use-cylc", action="store_true",
+                            help="Use cylc workflow for this case")
+        parser.add_argument("alert-addresses", help="Colon seperated list of emails for alerts (used only with --use-cylc)",
+                            default=os.environ['USER']+'@'+'ucar.edu')
+
     # hidden argument indicating called from create_test
     # Indicates that create_newcase was called from create_test - do not use otherwise.
     parser.add_argument("--test", "-test", action="store_true", help=argparse.SUPPRESS)
@@ -165,7 +171,7 @@ def parse_command_line(args, cimeroot, description):
         args.user_mods_dir, args.pesfile, \
         args.gridfile, args.srcroot, args.test, args.multi_driver, \
         args.ninst, args.walltime, args.queue, args.output_root, args.script_root, \
-        run_unsupported, args.answer, args.input_dir, args.driver
+        run_unsupported, args.answer, args.input_dir, args.driver, args.use_cylc, args.alert_addresses
 
 ###############################################################################
 def _main_func(description):
@@ -177,7 +183,8 @@ def _main_func(description):
         user_mods_dir, pesfile, \
         gridfile, srcroot, test, multi_driver, ninst, walltime, \
         queue, output_root, script_root, run_unsupported, \
-        answer, input_dir, driver = parse_command_line(sys.argv, cimeroot, description)
+        answer, input_dir, driver, use_cylc, alert_addresses \
+        = parse_command_line(sys.argv, cimeroot, description)
 
     if script_root is None:
         caseroot = os.path.abspath(casename)
@@ -202,7 +209,8 @@ def _main_func(description):
                     multi_driver=multi_driver, ninst=ninst, test=test,
                     walltime=walltime, queue=queue, output_root=output_root,
                     run_unsupported=run_unsupported, answer=answer,
-                    input_dir=input_dir, driver=driver)
+                    input_dir=input_dir, driver=driver,
+                    use_cylc=use_cylc, alert_addresses=alert_addresses)
 
 ###############################################################################
 
