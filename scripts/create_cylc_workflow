@@ -31,18 +31,20 @@ def parse_command_line(args, description):
     parser.add_argument("--postproc-path", help="path to postprocessing source",
                         default="/glade/u/home/mickelso/CESM_postprocessing_2/")
 
+    parser.add_argument("--conform-path", help="path to conform inputs",
+                        default="/glade/p/cesm/conform-input/cmip6_input")
+
     args = CIME.utils.parse_args_and_handle_standard_logging_options(args, parser)
 
-    return args.case, args.alert_addresses, args.cylc_suite_dir, args.postproc_xml, args.postproc_path
+    return args.case, args.alert_addresses, args.cylc_suite_dir, args.postproc_xml, args.postproc_path, args.conform_path
 
 
 def _main_func(description):
-
     caseroot, alert_addresses, cylc_suite_dir, \
-        postproc_xml, postproc_path = parse_command_line(sys.argv, description)
+        postproc_xml, postproc_path, conform_path = parse_command_line(sys.argv, description)
 
     with Case(caseroot, read_only=True) as case:
-        case.setup_cylc(alert_addresses, cylc_suite_dir, postproc_xml, postproc_path)
+        case.setup_cylc(alert_addresses, cylc_suite_dir, postproc_xml, postproc_path, conform_path)
 
 if __name__ == '__main__':
     _main_func(__doc__)
