@@ -77,6 +77,7 @@ class Case(object):
     from CIME.case.check_lockedfiles import check_lockedfile, check_lockedfiles, check_pelayouts_require_rebuild
     from CIME.case.preview_namelists import create_dirs, create_namelists
     from CIME.case.check_input_data import check_all_input_data, stage_refcase, check_input_data
+    from CIME.case.cylc_interface import setup_cylc
 
     def __init__(self, case_root=None, read_only=True):
 

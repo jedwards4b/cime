@@ -112,8 +112,6 @@ def parse_command_line(args, cimeroot, description):
 
         parser.add_argument("--use-cylc", action="store_true",
                             help="Use cylc workflow for this case")
-        parser.add_argument("alert-addresses", help="Colon seperated list of emails for alerts (used only with --use-cylc)",
-                            default=os.environ['USER']+'@'+'ucar.edu')
 
     # hidden argument indicating called from create_test
     # Indicates that create_newcase was called from create_test - do not use otherwise.
@@ -209,8 +207,10 @@ def _main_func(description):
                     multi_driver=multi_driver, ninst=ninst, test=test,
                     walltime=walltime, queue=queue, output_root=output_root,
                     run_unsupported=run_unsupported, answer=answer,
-                    input_dir=input_dir, driver=driver,
-                    use_cylc=use_cylc, alert_addresses=alert_addresses)
+                    input_dir=input_dir, driver=driver)
+        if use_cylc:
+            # do additional stuff for cylc workflow
+            case.setup_cylc(alert_addresses)
 
 ###############################################################################
 
