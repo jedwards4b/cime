@@ -1,8 +1,3 @@
-!===============================================================================
-! SVN $Id: shr_msg_mod.F90 6752 2007-10-04 21:02:15Z jwolfe $
-! SVN $URL: https://svn-ccsm-models.cgd.ucar.edu/csm_share/trunk_tags/share3_150116/shr/shr_msg_mod.F90 $
-!===============================================================================
-
 !BOP ===========================================================================
 !
 ! !MODULE: shr_msg_mod.F90 --- Module to handle various file utilily functions.

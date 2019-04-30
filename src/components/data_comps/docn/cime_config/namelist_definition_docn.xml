@@ -488,7 +488,7 @@
       <value>linear</value>
     </values>
   </entry>
-
+<!--
   <entry id="taxmode" per_stream_entry="true">
     <type>char(30)</type>
     <category>streams</category>
@@ -528,7 +528,7 @@
       <value>single</value>
     </values>
   </entry>
-
+-->
   <entry id="dtlimit" per_stream_entry="true">
     <type>real(30)</type>
     <category>streams</category>
@@ -551,7 +551,7 @@
       <value>1.5e0</value>
     </values>
   </entry>
-
+<!--
   <entry id="vectors">
     <type>char</type>
     <category>streams</category>
@@ -569,7 +569,7 @@
       <value>null</value>
     </values>
   </entry>
-
+-->
   <entry id="streams" skip_default_entry="true">
     <type>char(30)</type>
     <category>streams</category>

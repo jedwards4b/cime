@@ -8,9 +8,9 @@ module cplcomp_exchange_mod
   use mct_mod
   use seq_map_type_mod
   use component_type_mod
-  use seq_flds_mod, only: seq_flds_dom_coord, seq_flds_dom_other
+  use seq_flds_mod, only: seq_flds_dom_coord, seq_flds_dom_other 
   use seq_comm_mct, only: cplid, logunit
-  use seq_comm_mct, only: seq_comm_getinfo => seq_comm_setptrs, seq_comm_iamin
+  use seq_comm_mct, only: seq_comm_getinfo => seq_comm_setptrs, seq_comm_iamin 
   use seq_diag_mct
 
   implicit none
@@ -18,9 +18,9 @@ module cplcomp_exchange_mod
 #include <mpif.h>
   save
 
-  !--------------------------------------------------------------------------
-  ! Public interfaces
-  !--------------------------------------------------------------------------
+!--------------------------------------------------------------------------
+! Public interfaces
+!--------------------------------------------------------------------------
 
   public :: seq_map_init_exchange   ! union of cpl/component pes
   public :: seq_map_map_exchange    ! union of cpl/component pes
@@ -29,9 +29,9 @@ module cplcomp_exchange_mod
   public :: seq_mctext_gGridInit
   public :: seq_mctext_avExtend
 
-  !--------------------------------------------------------------------------
-  ! Private interfaces
-  !--------------------------------------------------------------------------
+!--------------------------------------------------------------------------
+! Private interfaces
+!--------------------------------------------------------------------------
 
   ! Shared routines for extension and computation of gsmaps, avs, and ggrids
   private :: seq_mctext_gsmapIdentical
@@ -39,15 +39,15 @@ module cplcomp_exchange_mod
   private :: seq_mctext_gsmapCreate
   private :: seq_mctext_avCreate
 
-  !--------------------------------------------------------------------------
-  ! Public data
-  !--------------------------------------------------------------------------
+!--------------------------------------------------------------------------
+! Public data
+!--------------------------------------------------------------------------
 
   integer,public :: seq_mctext_decomp
 
-  !--------------------------------------------------------------------------
-  ! Private data
-  !--------------------------------------------------------------------------
+!--------------------------------------------------------------------------
+! Private data
+!--------------------------------------------------------------------------
 
   character(*),parameter :: subName = '(seq_mctext_mct)'
   real(r8),parameter :: c1 = 1.0_r8
@@ -60,10 +60,10 @@ contains
 
     implicit none
     !-----------------------------------------------------
-    !
+    ! 
     ! Arguments
     !
-    type(component_type), intent(inout)      :: comp
+    type(component_type), intent(inout)      :: comp 
     type(seq_map)   , intent(inout), pointer :: mapper
     character(len=3), intent(in)             :: flow
     character(len=*), intent(in),optional    :: string
@@ -73,7 +73,7 @@ contains
     integer(IN)                :: ID_s
     integer(IN)                :: ID_d
     integer(IN)                :: ID_join
-    integer(IN)                :: mapid
+    integer(IN)                :: mapid, mapidmin, mapidmax
     integer(IN)                :: mpicom_s, mpicom_d, mpicom_join
     type(mct_gsmap) , pointer  :: gsmap_s
     type(mct_gsmap) , pointer  :: gsmap_d
@@ -127,12 +127,12 @@ contains
        if (seq_comm_iamroot(ID_join)) write(logunit,'(2A)') subname,' gsmaps are not identical'
 
        if (flow == 'c2x') then
-          id_s = comp%compid
+          id_s = comp%compid 
           id_d = cplid
        end if
        if (flow == 'x2c') then
           id_s = cplid
-          id_d = comp%compid
+          id_d = comp%compid 
        end if
        call seq_comm_getinfo(ID_s   , mpicom=mpicom_s)
        call seq_comm_getinfo(ID_d   , mpicom=mpicom_d)
@@ -187,21 +187,21 @@ contains
 
     if (seq_comm_iamroot(CPLID)) then
        write(logunit,'(2A,I6,4A)') subname,' mapper counter, strategy, mapfile = ', &
-            mapper%counter,' ',trim(mapper%strategy),' ',trim(mapper%mapfile)
+          mapper%counter,' ',trim(mapper%strategy),' ',trim(mapper%mapfile)
        call shr_sys_flush(logunit)
     endif
 
   end subroutine seq_map_init_exchange
 
-  !===============================================================================
+ !===============================================================================
 
   subroutine seq_map_map_exchange( comp, flow, dom_flag, dom_tmp, string, msgtag )
 
     !-----------------------------------------------------
-    !
+    ! 
     ! Arguments
     !
-    type(component_type) , intent(inout)               :: comp
+    type(component_type) , intent(inout)               :: comp 
     character(len=3)     , intent(in)                  :: flow
     logical              , intent(in),optional         :: dom_flag
     type(mct_gGrid)      , intent(in),optional, target :: dom_tmp
@@ -288,10 +288,10 @@ contains
     ! on other pes.  It addresses non-overlap of pes.
 
     !-----------------------------------------------------
-    !
+    ! 
     ! Arguments
     !
-    type(component_type), intent(inout) :: comp
+    type(component_type), intent(inout) :: comp 
     !
     ! Local Variables
     !
@@ -311,7 +311,7 @@ contains
     call seq_comm_getinfo(CPLID, mpicom=mpicom_CPLID)
 
     id_new  = cplid
-    id_old  = comp%compid
+    id_old  = comp%compid 
     id_join = comp%cplcompid
 
     mpicom_new  = mpicom_cplid
@@ -338,15 +338,15 @@ contains
 
   !=======================================================================
 
-  subroutine seq_mctext_avInit( comp, flow )
+  subroutine seq_mctext_avInit( comp, flow ) 
 
     !-----------------------------------------------------
     ! This routine initializes Avs that may need to be extended
-    !
+    ! 
     ! Arguments
     !
-    type(component_type), intent(inout) :: comp
-    character(len=3)    , intent(in)    :: flow
+    type(component_type), intent(inout) :: comp 
+    character(len=3)    , intent(in)    :: flow 
     !
     ! Local Variables
     !
@@ -367,7 +367,7 @@ contains
     call seq_comm_getinfo(CPLID ,mpicom=mpicom_CPLID)
 
     id_new  = cplid
-    id_old  = comp%compid
+    id_old  = comp%compid 
     id_join = comp%cplcompid
 
     mpicom_new  = mpicom_cplid
@@ -396,14 +396,14 @@ contains
 
   !=======================================================================
 
-  subroutine seq_mctext_gGridInit(comp, ggrid_new)
+  subroutine seq_mctext_gGridInit(comp, ggrid_new) 
 
     !-----------------------------------------------------
     ! This routine initializes gGrids that may need to be extended
-    !
+    ! 
     ! Arguments
     !
-    type(component_type), intent(inout) :: comp
+    type(component_type), intent(inout) :: comp 
     type(mct_gGrid), optional, target, intent(inout) :: ggrid_new
     !
     ! Local Variables
@@ -425,7 +425,7 @@ contains
     call seq_comm_getinfo(CPLID, mpicom=mpicom_CPLID)
 
     id_new  = cplid
-    id_old  = comp%compid
+    id_old  = comp%compid 
     id_join = comp%cplcompid
 
     mpicom_new = mpicom_cplid
@@ -442,7 +442,7 @@ contains
        lsize = mct_gsMap_lsize(gsMap_new,mpicom_new)
     endif
     call seq_mctext_avExtend(GG1_old%data, ID_old, ID_join)
-
+    
     if (present(ggrid_new)) then
        call mct_gGrid_init(GGrid=ggrid_new, CoordChars=seq_flds_dom_coord, OtherChars=seq_flds_dom_other, lsize=lsize )
        call mct_avect_zero(ggrid_new%data)
@@ -616,7 +616,7 @@ contains
     logical :: gsmap_bfbflag = .false. ! normally this should be set to false
 
     ! --- create a new gsmap on new pes based on the old gsmap
-    ! --- gsmapi must be known on all mpicomo pes, compute the same
+    ! --- gsmapi must be known on all mpicomo pes, compute the same 
     ! --- thing on all pes in parallel
 
     if (mpicomo /= MPI_COMM_NULL) then
@@ -705,7 +705,7 @@ contains
           enddo
           ktot = k
 
-          allocate(gindex(ktot),perm(ktot))
+          allocate(gindex(ktot),perm(ktot))  
 
           k = 0
           do n = 1,ngsegi
@@ -788,10 +788,11 @@ contains
     !
     character(len=*),parameter :: subname = "(seq_mctext_avExtend) "
     integer :: mpicom
-    integer :: rank
+    integer :: rank,rank2
     integer :: lsizei, lsizen
     integer :: srank,srankg
     integer :: ierr
+    integer :: nints
     character(len=CXX) :: iList,rList
     !-----------------------------------------------------------------------
 
@@ -800,7 +801,7 @@ contains
     ! --- lsizen is the size of the newly initialized AV, zero is valid
     ! --- lsizei is -1 on any peszero on any pes where AV is not yet initialized
 
-    lsizei = -1
+    lsizei = -1  
     if (seq_comm_iamin(IDin)) lsizei = mct_aVect_lsize(AVin)
     lsizen = 0
 
@@ -819,7 +820,7 @@ contains
        return
     endif
 
-    ! --- set the iList and rList from the broadcast pe (srankg) and
+    ! --- set the iList and rList from the broadcast pe (srankg) and 
     ! --- broadcast the lists
 
     iList = " "
@@ -868,17 +869,18 @@ contains
 
     character(len=*),parameter :: subname = "(seq_mctext_avCreate) "
     integer :: mpicom
-    integer :: rank
+    integer :: rank,rank2
     integer :: lsizei, lsizen
     integer :: srank,srankg
     integer :: ierr
+    integer :: nints
     character(len=CXX) :: iList,rList
 
     call seq_comm_getinfo(ID,mpicom=mpicom,iam=rank)
 
     ! --- lsizen is the size of the newly initialized AV, zero is valid
 
-    lsizei = -1
+    lsizei = -1  
     if (seq_comm_iamin(IDin)) lsizei = mct_aVect_lsize(AVin)
     lsizen = lsize
 
@@ -897,7 +899,7 @@ contains
        call shr_sys_abort()
     endif
 
-    ! --- set the iList and rList from the broadcast pe (srankg) and
+    ! --- set the iList and rList from the broadcast pe (srankg) and 
     ! --- broadcast the lists
 
     iList = " "

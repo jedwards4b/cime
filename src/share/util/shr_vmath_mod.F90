@@ -1,7 +1,4 @@
 !===============================================================================
-! SVN $Id: shr_vmath_mod.F90 66411 2014-12-19 22:40:08Z santos@ucar.edu $
-! SVN $URL: https://svn-ccsm-models.cgd.ucar.edu/csm_share/trunk_tags/share3_150116/shr/shr_vmath_mod.F90 $
-!===============================================================================
 ! PURPOSE:
 !   provides a uniform, platform-independent API for vector math functions
 !===============================================================================

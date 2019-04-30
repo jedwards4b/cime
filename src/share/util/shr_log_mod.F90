@@ -14,6 +14,7 @@ module shr_log_mod
 ! !USES:
 
   use shr_kind_mod
+
   use shr_strconvert_mod, only: toString
 
   use, intrinsic :: iso_fortran_env, only: output_unit
@@ -38,7 +39,7 @@ module shr_log_mod
 !EOP
 
   ! low-level shared variables for logging, these may not be parameters
-  integer(SHR_KIND_IN) :: shr_log_Level = 0
+  integer(SHR_KIND_IN) :: shr_log_Level = 1
   integer(SHR_KIND_IN) :: shr_log_Unit  = output_unit
 
 contains
@@ -52,13 +53,6 @@ contains
 !     Return an error message containing file & line info
 !     \newline
 !     errMsg = shr\_log\_errMsg(__FILE__, __LINE__)
-!
-! This is meant to be used when a routine expects a string argument for some message,
-! but you want to provide file and line information.
-!
-! However: Note that the performance of this function can be very bad. It is currently
-! maintained because it is used by old code, but you should probably avoid using this
-! in new code if possible.
 !
 ! !REVISION HISTORY:
 !     2013-July-23 - Bill Sacks

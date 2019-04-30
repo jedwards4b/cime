@@ -7,6 +7,11 @@ module seq_map_type_mod
   use shr_const_mod
   use seq_comm_mct,  only: logunit, CPLID, seq_comm_iamroot
   use mct_mod
+#ifdef USE_ESMF_LIB
+  use esmf
+  use esmfshr_mod
+  use seq_map_esmf
+#endif
 
   type seq_map
      logical                 :: copy_only
@@ -34,6 +39,12 @@ module seq_map_type_mod
      real(R8), pointer       :: clat_d(:)
      integer(IN)             :: mpicom    ! mpicom
      !
+#ifdef USE_ESMF_LIB
+     !---- import and export States for this mapper object, 
+     !---- routehandle is stored in the exp_state for repeated remapping use
+     type(ESMF_State)        :: imp_state
+     type(ESMF_State)        :: exp_state
+#endif
   end type seq_map
   public seq_map
 
@@ -44,7 +55,7 @@ module seq_map_type_mod
   ! seq_map_maxcnt is the total number of mappings supported
   ! seq_map_cnt is the total number of mappings initialized any any time
   ! seq_maps are the mappers that have been initialized
-
+  
   integer(IN),parameter :: seq_map_maxcnt = 5000
   integer(IN)           :: seq_map_cnt = 0
   type(seq_map),private,target  :: seq_maps(seq_map_maxcnt)
@@ -62,7 +73,7 @@ contains
 
   subroutine seq_map_mapmatch(mapid,gsMap_s,gsMap_d,mapfile,strategy)
 
-    ! This method searches through the current seq_maps to find a
+    ! This method searches through the current seq_maps to find a 
     ! mapping file that matches the values passed in
 
     implicit none
@@ -108,9 +119,9 @@ contains
 
   end subroutine seq_map_mapmatch
 
-  !===============================================================================
+ !===============================================================================
 
-  subroutine seq_map_mapinit(mapper,mpicom)
+ subroutine seq_map_mapinit(mapper,mpicom)
 
     ! This method initializes a new seq_maps map datatype and
     ! has the mapper passed in point to it
@@ -124,8 +135,8 @@ contains
     ! set the seq_map data
     seq_map_cnt = seq_map_cnt + 1
     if (seq_map_cnt > seq_map_maxcnt) then
-       write(logunit,*) trim(subname),'seq_map_cnt too large',seq_map_cnt
-       call shr_sys_abort(subName // "seq_map_cnt bigger than seq_map_maxcnt")
+      write(logunit,*) trim(subname),'seq_map_cnt too large',seq_map_cnt
+      call shr_sys_abort(subName // "seq_map_cnt bigger than seq_map_maxcnt")
     endif
     mapper => seq_maps(seq_map_cnt)
     mapper%counter = seq_map_cnt
@@ -136,13 +147,13 @@ contains
     mapper%strategy       = "undefined"
     mapper%mapfile        = "undefined"
 
-  end subroutine seq_map_mapinit
+ end subroutine seq_map_mapinit
 
-  !===============================================================================
+ !===============================================================================
 
-  subroutine seq_map_mappoint(mapid,mapper)
+ subroutine seq_map_mappoint(mapid,mapper)
 
-    ! This method searches through the current seq_maps to find a
+    ! This method searches through the current seq_maps to find a 
     ! mapping file that matches the values passed in
 
     implicit none
@@ -169,11 +180,11 @@ contains
     s1 = mct_gsMap_gsize(gsMap1)
     s2 = mct_gsMap_gsize(gsMap2)
     if (s1 /= s2) then
-       write(logunit,*) trim(subname),'gsmap global sizes different ',s1,s2
-       call shr_sys_abort(subName // "different gsmap size")
+      write(logunit,*) trim(subname),'gsmap global sizes different ',s1,s2
+      call shr_sys_abort(subName // "different gsmap size")
     endif
 
-  end subroutine seq_map_gsmapcheck
+ end subroutine seq_map_gsmapcheck
 
 
 end module seq_map_type_mod

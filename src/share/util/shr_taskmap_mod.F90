@@ -5,14 +5,14 @@ module shr_taskmap_mod
 ! Output mapping of MPI tasks to nodes for a specified
 ! communicator
 !
-! Methods: 
-!  Use mpi_get_processor_name to identify the node that an MPI 
+! Methods:
+!  Use mpi_get_processor_name to identify the node that an MPI
 !  task for a given communicator is assigned to. Gather these
-!  data to task 0 and then write out the list of MPI 
+!  data to task 0 and then write out the list of MPI
 !  tasks associated with each node using the designated unit
 !  number
 !
-! Author: P. Worley 
+! Author: P. Worley
 !
 !-----------------------------------------------------------------------
 
@@ -71,7 +71,7 @@ module shr_taskmap_mod
 !---------------------------Local Workspace-----------------------------
       integer :: iam                    ! task id in comm_id
       integer :: npes                   ! number of MPI tasks in comm_id
-      integer :: ier                    ! return error status    
+      integer :: ier                    ! return error status
       integer :: max_len                ! maximum name length
       integer :: length                 ! node name length
       integer :: c, i, j                ! loop indices
@@ -90,7 +90,7 @@ module shr_taskmap_mod
       logical :: verbose_output
 
       ! flag to indicate whether to write out information
-      ! (for when want to calculate nnodes and the task_node_map without 
+      ! (for when want to calculate nnodes and the task_node_map without
       !  output)
       logical :: output
 
@@ -98,11 +98,11 @@ module shr_taskmap_mod
       integer, allocatable :: task_node_map(:)
 
       ! number of MPI tasks per node
-      integer, allocatable :: node_task_cnt(:)    
+      integer, allocatable :: node_task_cnt(:)
       integer, allocatable :: node_task_tmpcnt(:)
 
       ! MPI tasks ordered by nodes to which they are assigned
-      integer, allocatable :: node_task_map(:)    
+      integer, allocatable :: node_task_map(:)
 
       ! offset into node_task_map for processes assigned to given node
       integer, allocatable :: node_task_offset(:)
@@ -116,7 +116,7 @@ module shr_taskmap_mod
       character, allocatable :: task_node_names(:) ! for all tasks
 
       ! node names without duplicates
-      character(len=mpi_max_processor_name), allocatable :: node_names(:)  
+      character(len=mpi_max_processor_name), allocatable :: node_names(:)
 
       ! string versions of numerical values
       character(len=8) :: c_npes       ! number of MPI tasks
@@ -130,10 +130,10 @@ module shr_taskmap_mod
 
 !-----------------------------------------------------------------------
       !
-      ! Get my id  
+      ! Get my id
       !
-      call mpi_comm_rank (comm_id, iam, ier) 
-      if (iam == 0) then 
+      call mpi_comm_rank (comm_id, iam, ier)
+      if (iam == 0) then
          masterproc = .true.
       else
          masterproc = .false.
@@ -180,7 +180,7 @@ module shr_taskmap_mod
          endif
       endif
 
-      ! 
+      !
       ! Allocate arrays for collecting node names
       !
       max_len = mpi_max_processor_name
@@ -191,9 +191,9 @@ module shr_taskmap_mod
       allocate ( task_node_names(max_len*npes), stat=ier )
       if (ier /= 0) &
          call shr_sys_abort(trim(subname)//': allocate task_node_names failed')
- 
+
       !
-      ! Get node names and send to root. 
+      ! Get node names and send to root.
       ! (Assume that processor names are node names.)
       !
       call mpi_get_processor_name (tmp_name, length, ier)

@@ -18,37 +18,37 @@ module seq_domain_mct
 #include <mpif.h>
   save
 
-  !--------------------------------------------------------------------------
-  ! Public interfaces
-  !--------------------------------------------------------------------------
+!--------------------------------------------------------------------------
+! Public interfaces
+!--------------------------------------------------------------------------
 
   public :: seq_domain_check
   public :: seq_domain_compare
   public :: seq_domain_areafactinit
 
-  !--------------------------------------------------------------------------
-  ! Public variables
-  !--------------------------------------------------------------------------
+!--------------------------------------------------------------------------
+! Public variables
+!--------------------------------------------------------------------------
 
   real(R8), parameter :: eps_tiny   = 1.0e-16_R8 ! roundoff eps
   real(R8), parameter :: eps_big    = 1.0e+02_R8 ! big eps
-  real(R8), parameter :: eps_frac_samegrid = 1.0e-9_R8 ! epsilon for fractions for samegrid
+  real(R8), parameter :: eps_frac_samegrid = 1.0e-14_R8 ! epsilon for fractions for samegrid
 
-  !--------------------------------------------------------------------------
-  ! Private interfaces
-  !--------------------------------------------------------------------------
+!--------------------------------------------------------------------------
+! Private interfaces
+!--------------------------------------------------------------------------
 
   private :: seq_domain_check_grid
 
-  !================================================================================
+!================================================================================
 contains
-  !================================================================================
+!================================================================================
 
-  !================================================================================
+!================================================================================
 
   subroutine seq_domain_check( infodata, &
        atm, ice, lnd, ocn, rof, glc, &
-       samegrid_al, samegrid_ao, samegrid_ro, samegrid_lg)
+       samegrid_al, samegrid_ao, samegrid_ro)
 
     !-----------------------------------------------------------
     ! Uses
@@ -58,7 +58,7 @@ contains
     use prep_atm_mod, only: prep_atm_get_mapper_Fo2a
     use prep_lnd_mod, only: prep_lnd_get_mapper_Fa2l
     use prep_ocn_mod, only: prep_ocn_get_mapper_SFi2o
-    use prep_glc_mod, only: prep_glc_get_mapper_Fl2g
+    use prep_glc_mod, only: prep_glc_get_mapper_SFl2g
     !
     ! Arguments
     !
@@ -72,7 +72,6 @@ contains
     logical                  , intent(in)    :: samegrid_al ! atm lnd grid same
     logical                  , intent(in)    :: samegrid_ao ! atm ocn grid same
     logical                  , intent(in)    :: samegrid_ro ! rof ocn grid same
-    logical                  , intent(in)    :: samegrid_lg ! lnd glc grid same
     !
     ! Local variables
     !
@@ -82,19 +81,19 @@ contains
     type(seq_map)   , pointer :: mapper_l2g !
     type(seq_map)   , pointer :: mapper_a2l !
     type(seq_map)   , pointer :: mapper_l2a !
-    !
+                                            !
     type(mct_gGrid) , pointer :: atmdom_a   ! atm domain
     type(mct_gGrid) , pointer :: icedom_i   ! ice domain
     type(mct_gGrid) , pointer :: lnddom_l   ! lnd domain
     type(mct_gGrid) , pointer :: ocndom_o   ! ocn domain
     type(mct_gGrid) , pointer :: glcdom_g   ! glc domain
-    !
-    type(mct_gsMap) , pointer :: gsMap_a    ! atm global seg map
-    type(mct_gsMap) , pointer :: gsMap_i    ! ice global seg map
-    type(mct_gsMap) , pointer :: gsMap_l    ! lnd global seg map
-    type(mct_gsMap) , pointer :: gsMap_o    ! ocn global seg map
-    type(mct_gsMap) , pointer :: gsMap_r    ! ocn global seg map
-    type(mct_gsMap) , pointer :: gsMap_g    ! glc global seg map
+                                            !
+    type(mct_gsMap) , pointer :: gsMap_a    ! atm global seg map 
+    type(mct_gsMap) , pointer :: gsMap_i    ! ice global seg map 
+    type(mct_gsMap) , pointer :: gsMap_l    ! lnd global seg map 
+    type(mct_gsMap) , pointer :: gsMap_o    ! ocn global seg map 
+    type(mct_gsMap) , pointer :: gsMap_r    ! ocn global seg map 
+    type(mct_gsMap) , pointer :: gsMap_g    ! glc global seg map 
     !
     type(mct_gGrid) :: lnddom_a              ! lnd domain info on atm decomp
     type(mct_gGrid) :: lnddom_g              ! lnd domain info on glc decomp
@@ -102,17 +101,18 @@ contains
     type(mct_gGrid) :: ocndom_a              ! ocn domain info on atm decomp (all grids same)
     type(mct_gGrid) :: icedom_o              ! ocn domain info on ocn decomp (atm/ocn grid different)
     !
-    real(R8), pointer :: fracl(:)            ! land fraction on atm decomp
-    real(R8), pointer :: fraco(:)            ! ocn  fraction on atm decomp
-    real(R8), pointer :: fraci(:)            ! ice  fraction on atm decomp
+    real(R8), pointer :: fracl(:)            ! land fraction on atm decomp 
+    real(R8), pointer :: fraco(:)            ! ocn  fraction on atm decomp 
+    real(R8), pointer :: fraci(:)            ! ice  fraction on atm decomp 
     real(R8), pointer :: maskl(:)            ! land mask on atm decomp (all grids same)
     real(R8), pointer :: maski(:)            ! ice  mask on atm decomp (all grids same)
     real(R8), pointer :: masko(:)            ! ocn  mask on atm decomp (all grids same)
     !
-    integer(IN) :: n            ! indicies
+    integer(IN) :: n, kl, ko, ki             ! indicies
+    integer(IN) :: k1,k2,k3                  ! indicies
     !
     integer(IN) :: mpicom_cplid
-    !
+    ! 
     logical      :: atm_present              ! atm present flag
     logical      :: lnd_present              ! lnd present flag
     logical      :: ocn_present              ! ocn present flag
@@ -133,6 +133,7 @@ contains
     integer(IN)  :: gicesize                 ! global size of ice  grid
     integer(IN)  :: gglcsize                 ! global size of glc  grid
     integer(IN)  :: npts                     ! local size temporary
+    integer(IN)  :: ier                      ! error code
     real(R8)     :: diff,dmaxo,dmaxi         ! difference tracker
     logical      :: iamroot                  ! local masterproc
     real(R8)     :: eps_frac                 ! epsilon for fractions
@@ -143,6 +144,7 @@ contains
     real(R8)     :: eps_oigrid               ! epsilon for grid coords, ocn/ice
     real(R8)     :: eps_oiarea               ! epsilon for areas, ocn/ice
     real(R8)     :: my_eps_frac              ! local eps_frac value
+    real(R8)     :: rmin1,rmax1,rmin,rmax    ! local min max computation
     !
     real(R8),allocatable :: mask (:)         ! temporary real vector, domain mask
     !
@@ -156,7 +158,7 @@ contains
     mapper_i2a => prep_atm_get_mapper_Fi2a()
     mapper_i2o => prep_ocn_get_mapper_SFi2o()
     mapper_o2a => prep_atm_get_mapper_Fo2a()
-    mapper_l2g => prep_glc_get_mapper_Fl2g()
+    mapper_l2g => prep_glc_get_mapper_SFl2g()
     mapper_a2l => prep_lnd_get_mapper_Fa2l()
     mapper_l2a => prep_atm_get_mapper_Fl2a()
 
@@ -180,18 +182,16 @@ contains
 
     ! Get info
 
-    if (atm_present) then
-       gsmap_a  => component_get_gsmap_cx(atm) ! gsmap_ax
-       atmdom_a => component_get_dom_cx(atm)   ! dom_ax
-       atmsize  = mct_avect_lsize(atmdom_a%data)
-       gatmsize = mct_gsMap_gsize(gsMap_a)
-    end if
+    gsmap_a  => component_get_gsmap_cx(atm) ! gsmap_ax
+    atmdom_a => component_get_dom_cx(atm)   ! dom_ax
+    atmsize  = mct_avect_lsize(atmdom_a%data)
+    gatmsize = mct_gsMap_gsize(gsMap_a)
 
     if (atm_present .and. lnd_present) then
        gsmap_l  => component_get_gsmap_cx(lnd) ! gsmap_lx
        lnddom_l => component_get_dom_cx(lnd)   ! dom_lx
        lndsize  = mct_avect_lsize(lnddom_l%data)
-       glndsize = mct_gsMap_gsize(gsMap_l)
+       glndsize = mct_gsMap_gsize(gsMap_l) 
 
        if (samegrid_al .and. gatmsize /= glndsize) then
           write(logunit,*) subname,' error: global atmsize = ',&
@@ -239,12 +239,12 @@ contains
           call mct_aVect_exportRattr(ocndom_a%data, 'mask', fraco, atmsize)
        endif
     endif
-
+   
     if (atm_present .and. ice_present) then
        gsmap_i  => component_get_gsmap_cx(ice) ! gsmap_ix
        icedom_i => component_get_dom_cx(ice)   ! dom_ix
        icesize  = mct_avect_lsize(icedom_i%data)
-       gicesize = mct_gsMap_gsize(gsMap_i)
+       gicesize = mct_gsMap_gsize(gsMap_i) 
 
        if (samegrid_ao .and. gatmsize /= gicesize) then
           write(logunit,*) subname,' error: global atmsize = ',&
@@ -273,49 +273,44 @@ contains
        gsmap_l  => component_get_gsmap_cx(lnd) ! gsmap_lx
        lnddom_l => component_get_dom_cx(lnd)   ! dom_lx
        lndsize  = mct_avect_lsize(lnddom_l%data)
-       glndsize = mct_gsMap_gsize(gsMap_l)
+       glndsize = mct_gsMap_gsize(gsMap_l) 
 
        gsmap_g  => component_get_gsmap_cx(glc) ! gsmap_gx
        glcdom_g => component_get_dom_cx(glc)   ! dom_gx
        glcsize  = mct_avect_lsize(glcdom_g%data)
-       gglcsize = mct_gsMap_gsize(gsMap_g)
+       gglcsize = mct_gsMap_gsize(gsMap_g) 
 
-       if (samegrid_lg .and. gglcsize /= glndsize) then
+       if (gglcsize /= glndsize) then
           write(logunit,*) subname,' error: global glcsize = ',gglcsize,' global lndsize= ',glndsize
           call shr_sys_flush(logunit)
           call shr_sys_abort(subname//' glc and lnd grid must have the same global size')
        end if
-
        if (iamroot) write(logunit,F00) ' --- checking glc maskfrac ---'
        call seq_domain_check_fracmask(glcdom_g%data)
        if (iamroot) write(logunit,F00) ' --- checking lnd maskfrac ---'
        call seq_domain_check_fracmask(lnddom_l%data)
-
-       if (samegrid_lg) then
-          call mct_gGrid_init(oGGrid=lnddom_g, iGGrid=lnddom_l, lsize=glcsize)
-          call mct_aVect_zero(lnddom_g%data)
-          call seq_map_map(mapper_l2g, lnddom_l%data, lnddom_g%data, norm=.false.)
-          if (iamroot) write(logunit,F00) ' --- checking glc/lnd domains ---'
-          npts = glcsize
-          allocate(mask(npts),stat=rcode)
-          if(rcode /= 0) call shr_sys_abort(subname//' allocate mask')
-          call mct_aVect_getRAttr(lnddom_g%data,"mask",mask,rcode)
-          where (mask < eps_axmask) mask = 0.0_R8
-          call seq_domain_check_grid(glcdom_g%data, lnddom_g%data, 'mask', eps=eps_axmask, mpicom=mpicom_cplid, mask=mask)
-          call seq_domain_check_grid(glcdom_g%data, lnddom_g%data, 'lat' , eps=eps_axgrid, mpicom=mpicom_cplid, mask=mask)
-          call seq_domain_check_grid(glcdom_g%data, lnddom_g%data, 'lon' , eps=eps_axgrid, mpicom=mpicom_cplid, mask=mask)
-          call seq_domain_check_grid(glcdom_g%data, lnddom_g%data, 'area', eps=eps_axarea, mpicom=mpicom_cplid, mask=mask)
-          deallocate(mask,stat=rcode)
-          if(rcode /= 0) call shr_sys_abort(subname//' deallocate mask')
-       end if
-
+       call mct_gGrid_init(oGGrid=lnddom_g, iGGrid=lnddom_l, lsize=glcsize)
+       call mct_aVect_zero(lnddom_g%data)
+       call seq_map_map(mapper_l2g, lnddom_l%data, lnddom_g%data, norm=.false.)
+       if (iamroot) write(logunit,F00) ' --- checking glc/lnd domains ---'
+       npts = glcsize
+       allocate(mask(npts),stat=rcode)
+       if(rcode /= 0) call shr_sys_abort(subname//' allocate mask')
+       call mct_aVect_getRAttr(lnddom_g%data,"mask",mask,rcode)
+       where (mask < eps_axmask) mask = 0.0_R8
+       call seq_domain_check_grid(glcdom_g%data, lnddom_g%data, 'mask', eps=eps_axmask, mpicom=mpicom_cplid, mask=mask)
+       call seq_domain_check_grid(glcdom_g%data, lnddom_g%data, 'lat' , eps=eps_axgrid, mpicom=mpicom_cplid, mask=mask)
+       call seq_domain_check_grid(glcdom_g%data, lnddom_g%data, 'lon' , eps=eps_axgrid, mpicom=mpicom_cplid, mask=mask)
+       call seq_domain_check_grid(glcdom_g%data, lnddom_g%data, 'area', eps=eps_axarea, mpicom=mpicom_cplid, mask=mask)
+       deallocate(mask,stat=rcode)
+       if(rcode /= 0) call shr_sys_abort(subname//' deallocate mask')
     endif
 
     if (ice_present .and. ocn_present) then
        gsmap_i  => component_get_gsmap_cx(ice) ! gsmap_ix
        icedom_i => component_get_dom_cx(ice)   ! dom_ix
        icesize  = mct_avect_lsize(icedom_i%data)
-       gicesize = mct_gsMap_gsize(gsMap_i)
+       gicesize = mct_gsMap_gsize(gsMap_i) 
 
        gsmap_o  => component_get_gsmap_cx(ocn) ! gsmap_ox
        ocndom_o => component_get_dom_cx(ocn)   ! dom_ox
@@ -347,8 +342,8 @@ contains
     ! Check ice/ocean grid consistency
     !------------------------------------------------------------------------------
 
-    if (ocn_present .and. ice_present) then
-       !    if (samegrid_oi) then       ! doesn't yet exist
+     if (ocn_present .and. ice_present) then
+!    if (samegrid_oi) then       ! doesn't yet exist
 
        npts = ocnsize
        allocate(mask(npts),stat=rcode)
@@ -366,8 +361,8 @@ contains
        deallocate(mask,stat=rcode)
        if(rcode /= 0) call shr_sys_abort(subname//' deallocate mask')
 
-       !    endif
-    endif
+!    endif
+     endif
 
     !------------------------------------------------------------------------------
     ! Check atm/lnd grid consistency
@@ -402,56 +397,54 @@ contains
     ! Check consistency of land fraction with ocean mask on grid
     !------------------------------------------------------------------------------
 
-    if (atm_present) then
-       my_eps_frac = eps_frac
-       if (samegrid_ao) my_eps_frac = eps_frac_samegrid
-       if (.not. samegrid_al) my_eps_frac = eps_big
+    my_eps_frac = eps_frac
+    if (samegrid_ao) my_eps_frac = eps_frac_samegrid
+    if (.not. samegrid_al) my_eps_frac = eps_big
 
-       if (iamroot) write(logunit,F00) ' --- checking fractions in domains ---'
-       dmaxi = 0.0_R8
-       dmaxo = 0.0_R8
-       do n = 1,atmsize
-          if (lnd_present .and. ice_present) then
-             diff = abs(1._R8 - fracl(n) - fraci(n))
-             dmaxi = max(diff,dmaxi)
-             if (diff > my_eps_frac) then
-                write(logunit,*)'inconsistency between land fraction and sea ice fraction'
-                write(logunit,*)'n= ',n,' fracl= ',fracl(n),' fraci= ',fraci(n),' sum= ',fracl(n)+fraci(n)
-                call shr_sys_flush(logunit)
-                call shr_sys_abort(subname//' inconsistency between land fraction and sea ice fraction')
-             end if
-             if ((1._R8-fraci(n)) > eps_frac .and. fracl(n) < eps_tiny) then
-                write(logunit,*)'inconsistency between land mask and sea ice mask'
-                write(logunit,*)'n= ',n,' fracl= ',fracl(n),' fraci= ',fraci(n)
-                call shr_sys_flush(logunit)
-                call shr_sys_abort(subname//'  inconsistency between land mask and sea ice mask')
-             end if
-          endif
-          if (lnd_present .and. ocn_present) then
-             diff = abs(1._R8 - fracl(n) - fraco(n))
-             dmaxo = max(diff,dmaxo)
-             if (diff > my_eps_frac) then
-                write(logunit,*)'inconsistency between land fraction and ocn land fraction'
-                write(logunit,*)'n= ',n,' fracl= ',fracl(n),' fraco= ',fraco(n),' sum= ',fracl(n)+fraco(n)
-                call shr_sys_flush(logunit)
-                call shr_sys_abort(subname//'  inconsistency between land fraction and ocn land fraction')
-             end if
-             if ((1._R8-fraco(n)) > eps_frac .and. fracl(n) < eps_tiny) then
-                write(logunit,*)'inconsistency between land mask and ocn land mask'
-                write(logunit,*)'n= ',n,' fracl= ',fracl(n),' fraco= ',fraco(n)
-                call shr_sys_flush(logunit)
-                call shr_sys_abort(subname//'  inconsistency between land mask and ocn land mask')
-             end if
-          endif
-       end do
-       if (iamroot) then
-          write(logunit,F02) ' maximum           difference for ofrac sum ',dmaxo
-          write(logunit,F02) ' maximum           difference for ifrac sum ',dmaxi
-          write(logunit,F02) ' maximum allowable difference for  frac sum ',my_eps_frac
-          write(logunit,F02) ' maximum allowable tolerance for valid frac ',eps_frac
-          call shr_sys_flush(logunit)
-       end if
-    end if
+    if (iamroot) write(logunit,F00) ' --- checking fractions in domains ---'
+    dmaxi = 0.0_R8
+    dmaxo = 0.0_R8
+    do n = 1,atmsize
+       if (atm_present .and. lnd_present .and. ice_present) then
+          diff = abs(1._R8 - fracl(n) - fraci(n))
+          dmaxi = max(diff,dmaxi)
+          if (diff > my_eps_frac) then
+             write(logunit,*)'inconsistency between land fraction and sea ice fraction'
+             write(logunit,*)'n= ',n,' fracl= ',fracl(n),' fraci= ',fraci(n),' sum= ',fracl(n)+fraci(n)
+             call shr_sys_flush(logunit)
+             call shr_sys_abort(subname//' inconsistency between land fraction and sea ice fraction')
+          end if
+          if ((1._R8-fraci(n)) > eps_frac .and. fracl(n) < eps_tiny) then
+             write(logunit,*)'inconsistency between land mask and sea ice mask'
+             write(logunit,*)'n= ',n,' fracl= ',fracl(n),' fraci= ',fraci(n)
+             call shr_sys_flush(logunit)
+             call shr_sys_abort(subname//'  inconsistency between land mask and sea ice mask')
+          end if
+       endif
+       if (atm_present .and. lnd_present .and. ocn_present) then
+          diff = abs(1._R8 - fracl(n) - fraco(n))
+          dmaxo = max(diff,dmaxo)
+          if (diff > my_eps_frac) then
+             write(logunit,*)'inconsistency between land fraction and ocn land fraction'
+             write(logunit,*)'n= ',n,' fracl= ',fracl(n),' fraco= ',fraco(n),' sum= ',fracl(n)+fraco(n)
+             call shr_sys_flush(logunit)
+             call shr_sys_abort(subname//'  inconsistency between land fraction and ocn land fraction')
+          end if
+          if ((1._R8-fraco(n)) > eps_frac .and. fracl(n) < eps_tiny) then
+             write(logunit,*)'inconsistency between land mask and ocn land mask'
+             write(logunit,*)'n= ',n,' fracl= ',fracl(n),' fraco= ',fraco(n)
+             call shr_sys_flush(logunit)
+             call shr_sys_abort(subname//'  inconsistency between land mask and ocn land mask')
+          end if
+       endif
+    end do 
+    if (iamroot) then
+       write(logunit,F02) ' maximum           difference for ofrac sum ',dmaxo
+       write(logunit,F02) ' maximum           difference for ifrac sum ',dmaxi
+       write(logunit,F02) ' maximum allowable difference for  frac sum ',my_eps_frac
+       write(logunit,F02) ' maximum allowable tolerance for valid frac ',eps_frac
+       call shr_sys_flush(logunit)
+    endif
 
     !------------------------------------------------------------------------------
     ! Clean up allocated memory
@@ -493,10 +486,10 @@ contains
 
   end subroutine seq_domain_check
 
-  !===============================================================================
-
+!===============================================================================
+  
   subroutine seq_domain_compare(dom1, dom2, mpicom, eps)
-
+   
     !-----------------------------------------------------------
 
     ! Arguments
@@ -526,10 +519,10 @@ contains
 
   end subroutine seq_domain_compare
 
-  !===============================================================================
-
+!===============================================================================
+  
   subroutine seq_domain_check_fracmask(dom1)
-
+   
     !-----------------------------------------------------------
 
     ! Arguments
@@ -562,7 +555,7 @@ contains
     ndiff = 0
     do n = 1,npts
        if (abs(dfrac(n)) > eps_tiny .and. abs(dmask(n)) < eps_tiny) then
-          !debug            write(logunit,*)'n= ',n,' dfrac= ',dfrac(n),' dmask= ',dmask(n)
+!debug            write(logunit,*)'n= ',n,' dfrac= ',dfrac(n),' dmask= ',dmask(n)
           ndiff = ndiff + 1
        endif
     enddo
@@ -578,12 +571,12 @@ contains
     deallocate(dfrac,stat=rcode)
     if(rcode /= 0) call shr_sys_abort(subname//' deallocate dfrac')
 
-  end subroutine seq_domain_check_fracmask
+ end subroutine seq_domain_check_fracmask
 
-  !===============================================================================
-
+!===============================================================================
+  
   subroutine seq_domain_check_grid(dom1, dom2, attr, eps, mpicom, mask)
-
+   
     !-----------------------------------------------------------
 
     ! Arguments
@@ -642,7 +635,7 @@ contains
     lmask = 1.0_R8
     if (present(mask)) then
        if (size(mask) /= npts) then
-          call shr_sys_abort(subName//" ERROR: mask size mis-match")
+	  call shr_sys_abort(subName//" ERROR: mask size mis-match")
        endif
        lmask = mask
     endif
@@ -651,15 +644,15 @@ contains
 
     if (trim(attr) == "lon") then
        do n = 1,npts
-          if (data2(n) > data1(n)) then
-             do while ( (data1(n)+360.0_R8) < (data2(n)+180.0_R8) ) ! longitude is periodic
-                data1(n) = data1(n) + 360.0_R8
-             end do
-          else
-             do while ( (data2(n)+360.0_R8) < (data1(n)+180.0_R8) ) ! longitude is periodic
-                data2(n) = data2(n) + 360.0_R8
-             end do
-          endif
+	  if (data2(n) > data1(n)) then
+	     do while ( (data1(n)+360.0_R8) < (data2(n)+180.0_R8) ) ! longitude is periodic
+		data1(n) = data1(n) + 360.0_R8
+	     end do
+	  else
+	     do while ( (data2(n)+360.0_R8) < (data1(n)+180.0_R8) ) ! longitude is periodic
+		data2(n) = data2(n) + 360.0_R8
+	     end do
+	  endif
        enddo
     endif
 
@@ -669,12 +662,12 @@ contains
     ndiff = 0
     do n=1,npts
        if (lmask(n) > eps_tiny) then
-          diff = abs(data1(n)-data2(n))
-          max_diff = max(max_diff,diff)
-          if (diff > eps) then
+	  diff = abs(data1(n)-data2(n))
+	  max_diff = max(max_diff,diff)
+	  if (diff > eps) then
       !debug            write(logunit,*)'n= ',n,' data1= ',data1(n),' data2= ',data2(n),' diff= ',diff, ' eps= ',eps
-             ndiff = ndiff + 1
-          endif
+	     ndiff = ndiff + 1
+	  endif
        end if
     end do
 
@@ -701,7 +694,7 @@ contains
 
   end subroutine seq_domain_check_grid
 
-  !===============================================================================
+!===============================================================================
 
   subroutine seq_domain_areafactinit(domain, mdl2drv, drv2mdl, &
        samegrid, mpicom, iamroot, comment)
@@ -710,17 +703,17 @@ contains
     ! Arguments
     !
     type(mct_gGrid)  , pointer             :: domain     ! component domain on component pes
-    real(R8)         , pointer             :: mdl2drv(:) ! comp->cpl factor on component pes
+    real(R8)         , pointer             :: mdl2drv(:) ! comp->cpl factor on component pes 
     real(R8)         , pointer             :: drv2mdl(:) ! cpl->comp factor on component pes
     logical          , intent(in)          :: samegrid   ! true => two grids are same
-    integer          , intent(in)          :: mpicom     ! mpi communicator on component pes
+    integer          , intent(in)          :: mpicom     ! mpi communicator on component pes  
     logical          , intent(in)          :: iamroot
     character(len=*) , optional,intent(in) :: comment
     !
     ! Local variables
     !
     integer                :: j1,j2,m1,n,rcode
-    integer                :: gridsize
+    integer                :: gridsize,m2dsize,d2msize
     real(R8)               :: rmin1,rmax1,rmin,rmax
     real(R8)               :: rmask,rarea,raream
     character(cl)          :: lcomment
@@ -785,6 +778,9 @@ contains
 
   end subroutine seq_domain_areafactinit
 
-  !===============================================================================
+!===============================================================================
 
 end module seq_domain_mct
+
+
+

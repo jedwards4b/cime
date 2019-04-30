@@ -1,7 +1,3 @@
-!===============================================================================
-! SVN $Id: shr_pcdf_mod.F90 18683 2009-09-30 22:20:22Z kauff $
-! SVN $URL: https://svn-ccsm-models.cgd.ucar.edu/drv/seq_mct/trunk_tags/drvseq3_0_36/driver/shr_pcdf_mod.F90 $
-!===============================================================================
 !BOP ===========================================================================
 !
 ! !MODULE: shr_pcdf_mod -- generic pio file reader and writer
@@ -56,8 +52,7 @@ module shr_pcdf_mod
 !===============================================================================
 contains
 !===============================================================================
-subroutine shr_pcdf_readwrite(type,iosystem,pio_iotype,filename,&
-                     mpicom,gsmap,dof,clobber,io_format, &
+subroutine shr_pcdf_readwrite(type,iosystem,pio_iotype,filename,mpicom,gsmap,dof,clobber,cdf64, &
                      id1,id1n,rs1,rs1n,is1,is1n,rf1,rf1n,if1,if1n,av1,av1n, &
                      id2,id2n,rs2,rs2n,is2,is2n,rf2,rf2n,if2,if2n,av2,av2n, &
                      id3,id3n,rs3,rs3n,is3,is3n,rf3,rf3n,if3,if3n,av3,av3n, &
@@ -77,8 +72,7 @@ subroutine shr_pcdf_readwrite(type,iosystem,pio_iotype,filename,&
 
   !--- optional settings ---
   logical          , optional, intent(in)    :: clobber
-  integer(IN), optional, intent(in) :: io_format
-
+  logical          , optional, intent(in)    :: cdf64
   ! add root, stride, ntasks, netcdf/pnetcdf, etc
 
   !--- data to write ---
@@ -147,7 +141,7 @@ subroutine shr_pcdf_readwrite(type,iosystem,pio_iotype,filename,&
   logical       :: readtype
   integer(IN)   :: lsize,gsize
   logical       :: lclobber
-  integer       :: lio_format
+  logical       :: lcdf64
   logical       :: exists
   integer       :: nmode
   character(CL) :: fname
@@ -157,6 +151,7 @@ subroutine shr_pcdf_readwrite(type,iosystem,pio_iotype,filename,&
 
 
   type(file_desc_t)     :: fid
+  type(var_desc_t)      :: varid
   type(io_desc_t)       :: iodescd
   type(io_desc_t)       :: iodesci
   integer(IN), pointer  :: ldof(:)
@@ -176,8 +171,8 @@ subroutine shr_pcdf_readwrite(type,iosystem,pio_iotype,filename,&
   lclobber = .false.
   if (present(clobber)) lclobber=clobber
 
-  lio_format = PIO_64BIT_OFFSET
-  if (present(io_format)) lio_format=io_format
+  lcdf64 = .false.
+  if (present(cdf64)) lcdf64=cdf64
 
   call mpi_comm_size(mpicom,ntasks,ier)
   call mpi_comm_rank(mpicom,iam,ier)
@@ -186,7 +181,7 @@ subroutine shr_pcdf_readwrite(type,iosystem,pio_iotype,filename,&
      write(shr_log_unit,*) subname,' filename   = ',trim(filename)
      write(shr_log_unit,*) subname,' type       = ',trim(type)
      write(shr_log_unit,*) subname,' clobber    = ',lclobber
-     write(shr_log_unit,*) subname,' io_format      = ',lio_format
+     write(shr_log_unit,*) subname,' cdf64      = ',lcdf64
      call shr_sys_flush(shr_log_unit)
   endif
 
@@ -229,13 +224,11 @@ subroutine shr_pcdf_readwrite(type,iosystem,pio_iotype,filename,&
      endif
      if (lclobber .or. .not.exists) then
         nmode = pio_clobber
-        if(pio_iotype .eq. PIO_IOTYPE_NETCDF .or. &
-             pio_iotype .eq. PIO_IOTYPE_PNETCDF) then
-           nmode = ior(nmode,lio_format)
-        endif
+        if (lcdf64) nmode = ior(nmode,PIO_64BIT_OFFSET)
         rcode = pio_createfile(iosystem, fid, pio_iotype, trim(filename), nmode)
      else
         nmode = pio_write
+        if (lcdf64) nmode = ior(nmode,PIO_64BIT_OFFSET)
         rcode = pio_openfile(iosystem, fid, pio_iotype, trim(filename), nmode)
      endif
      rcode = pio_put_att(fid,pio_global,"file_version",version)
@@ -544,7 +537,7 @@ subroutine shr_pcdf_defvar0d(fid,fname,vtype)
 
   implicit none
 
-  type(file_desc_t),intent(inout) :: fid
+  type(file_desc_t),intent(in) :: fid
   character(len=*) ,intent(in) :: fname
   integer(IN)      ,intent(in) :: vtype
 
@@ -556,11 +549,7 @@ subroutine shr_pcdf_defvar0d(fid,fname,vtype)
   !-------------
 
   rcode = pio_def_var(fid,trim(fname),vtype,varid)
-  if (vtype == PIO_DOUBLE) then
-     rcode = PIO_put_att(fid, varid, '_FillValue', fillvalue)
-  else
-     rcode = PIO_put_att(fid, varid, '_FillValue', ifillvalue)
-  endif
+
 end subroutine shr_pcdf_defvar0d
 
 !===============================================================================
@@ -568,7 +557,7 @@ subroutine shr_pcdf_defvar1d(fid,fname,vtype,dimid)
 
   implicit none
 
-  type(file_desc_t),intent(inout) :: fid
+  type(file_desc_t),intent(in) :: fid
   character(len=*) ,intent(in) :: fname
   integer(IN)      ,intent(in) :: vtype
   integer(IN)      ,intent(in) :: dimid(:)
@@ -581,11 +570,6 @@ subroutine shr_pcdf_defvar1d(fid,fname,vtype,dimid)
   !-------------
 
   rcode = pio_def_var(fid,trim(fname),vtype,dimid,varid)
-  if (vtype == PIO_DOUBLE) then
-     rcode = PIO_put_att(fid, varid, '_FillValue', fillvalue)
-  else
-     rcode = PIO_put_att(fid, varid, '_FillValue', ifillvalue)
-  endif
 
 end subroutine shr_pcdf_defvar1d
 
@@ -601,12 +585,24 @@ subroutine shr_pcdf_readr1d(fid,fname,iodesc,r1d)
 
   !--- local ---
   type(var_desc_t) :: varid
+  integer(IN)      :: dimid(4),ndims
+  integer(IN)      :: vsize,fsize
   integer(IN)      :: rcode
   character(len=*),parameter :: subname = '(shr_pcdf_readr1d) '
 
   !-------------
 
   rcode = pio_inq_varid(fid,trim(fname),varid)
+
+!--tcraig, here vsize is global, fsize is local, what check if any?
+!  rcode = pio_inq_varndims(fid, varid, ndims)
+!  rcode = pio_inq_vardimid(fid, varid, dimid(1:ndims))
+!  rcode = pio_inq_dimlen(fid, dimid(1), vsize)
+!  fsize = size(r1d)
+!  if (vsize /= fsize) then
+!     write(shr_log_unit,*) subname,' ERROR: vsize,fsize = ',vsize,fsize
+!     call shr_sys_abort(trim(subname)//' ERROR: vsize,fsize')
+!  endif
 
   call pio_read_darray(fid,varid,iodesc,r1d,rcode)
 
@@ -624,6 +620,8 @@ subroutine shr_pcdf_writer1d(fid,fname,iodesc,r1d)
 
   !--- local ---
   type(var_desc_t) :: varid
+  integer(IN)      :: dimid(4)
+  integer(IN)      :: vsize,fsize
   real(R8)         :: lfillvalue
   integer(IN)      :: rcode
   character(len=*),parameter :: subname = '(shr_pcdf_writer1d) '
@@ -633,7 +631,6 @@ subroutine shr_pcdf_writer1d(fid,fname,iodesc,r1d)
   lfillvalue = fillvalue
 
   rcode = pio_inq_varid(fid,trim(fname),varid)
-
   call pio_write_darray(fid, varid, iodesc, r1d, rcode, fillval=lfillvalue)
 
 end subroutine shr_pcdf_writer1d
@@ -650,12 +647,24 @@ subroutine shr_pcdf_readi1d(fid,fname,iodesc,i1d)
 
   !--- local ---
   type(var_desc_t) :: varid
+  integer(IN)      :: dimid(4),ndims
+  integer(IN)      :: vsize,fsize
   integer(IN)      :: rcode
   character(len=*),parameter :: subname = '(shr_pcdf_readi1d) '
 
   !-------------
 
   rcode = pio_inq_varid(fid,trim(fname),varid)
+
+!--tcraig, here vsize is global, fsize is local, what check if any?
+!  rcode = pio_inq_varndims(fid, varid, ndims)
+!  rcode = pio_inq_vardimid(fid, varid, dimid(1:ndims))
+!  rcode = pio_inq_dimlen(fid, dimid(1), vsize)
+!  fsize = size(i1d)
+!  if (vsize /= fsize) then
+!     write(shr_log_unit,*) subname,' ERROR: vsize,fsize = ',vsize,fsize
+!     call shr_sys_abort(trim(subname)//' ERROR: vsize,fsize')
+!  endif
 
   call pio_read_darray(fid,varid,iodesc,i1d,rcode)
 
@@ -673,6 +682,8 @@ subroutine shr_pcdf_writei1d(fid,fname,iodesc,i1d)
 
   !--- local ---
   type(var_desc_t) :: varid
+  integer(IN)      :: dimid(4)
+  integer(IN)      :: vsize,fsize
   integer(IN)      :: lfillvalue
   integer(IN)      :: rcode
   character(len=*),parameter :: subname = '(shr_pcdf_writei1d) '

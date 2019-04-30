@@ -1,7 +1,3 @@
-!===============================================================================
-! SVN $Id: shr_mct_mod.F90 18548 2009-09-26 23:55:51Z tcraig $
-! SVN $URL: https://svn-ccsm-models.cgd.ucar.edu/csm_share/trunk_tags/share3_091114/shr/shr_mct_mod.F90 $
-!===============================================================================
 !BOP ===========================================================================
 !
 ! !MODULE: shr_mct_mod -- higher level mct type routines
@@ -69,7 +65,7 @@ contains
 
 subroutine shr_mct_sMatReadnc(sMat,fileName)
 
-  use netcdf
+#include <netcdf.inc>
 
 ! !INPUT/OUTPUT PARAMETERS:
 
@@ -79,9 +75,11 @@ subroutine shr_mct_sMatReadnc(sMat,fileName)
 !EOP
 
    !--- local ---
+   integer(IN)           :: n       ! generic loop indicies
    integer(IN)           :: na      ! size of source domain
    integer(IN)           :: nb      ! size of destination domain
    integer(IN)           :: ns      ! number of non-zero elements in matrix
+   integer(IN)           :: ni,nj   ! number of row and col in the matrix
    integer(IN)           :: igrow   ! aVect index for matrix row
    integer(IN)           :: igcol   ! aVect index for matrix column
    integer(IN)           :: iwgt    ! aVect index for matrix element
@@ -104,19 +102,19 @@ subroutine shr_mct_sMatReadnc(sMat,fileName)
    ! open & read the file
    !----------------------------------------------------------------------------
    if (s_loglev > 0) write(s_logunit,F00) "* file name                  : ",trim(fileName)
-   rcode = nf90_open(filename,NF90_NOWRITE,fid)
-   if (rcode /= NF90_NOERR) then
-      write(s_logunit,F00) nf90_strerror(rcode)
+   rcode = nf_open(filename,NF_NOWRITE,fid)
+   if (rcode /= NF_NOERR) then
+      write(s_logunit,F00) nf_strerror(rcode)
       call mct_die(subName,"error opening Netcdf file")
    endif
 
    !--- allocate memory & get matrix data ----------
-   rcode = nf90_inq_dimid (fid, 'n_s', did)  ! size of sparse matrix
-   rcode = nf90_inquire_dimension(fid, did, len=ns)
-   rcode = nf90_inq_dimid (fid, 'n_a', did)  ! size of  input vector
-   rcode = nf90_inquire_dimension(fid, did, len=na)
-   rcode = nf90_inq_dimid (fid, 'n_b', did)  ! size of output vector
-   rcode = nf90_inquire_dimension(fid, did, len=nb)
+   rcode = nf_inq_dimid (fid, 'n_s', did)  ! size of sparse matrix
+   rcode = nf_inq_dimlen(fid, did  , ns)
+   rcode = nf_inq_dimid (fid, 'n_a', did)  ! size of  input vector
+   rcode = nf_inq_dimlen(fid, did  , na)
+   rcode = nf_inq_dimid (fid, 'n_b', did)  ! size of output vector
+   rcode = nf_inq_dimlen(fid, did  , nb)
 
    if (s_loglev > 0) write(s_logunit,F01) "* matrix dimensions src x dst: ",na,' x',nb
    if (s_loglev > 0) write(s_logunit,F01) "* number of non-zero elements: ",ns
@@ -139,11 +137,9 @@ subroutine shr_mct_sMatReadnc(sMat,fileName)
    if (rcode /= 0) &
      call mct_die(subName,':: allocate weights',rcode)
 
-   rcode = nf90_inq_varid(fid, 'S',vid)
-   rcode = nf90_get_var(fid, vid, rtemp)
-   if (rcode /= NF90_NOERR .and. s_loglev > 0) then
-      write(s_logunit,F00) nf90_strerror(rcode)
-   end if
+   rcode = nf_inq_varid     (fid,'S'  ,vid)
+   rcode = nf_get_var_double(fid,vid  ,rtemp  )
+   if (rcode /= NF_NOERR .and. s_loglev > 0) write(s_logunit,F00) nf_strerror(rcode)
 
    sMat%data%rAttr(iwgt ,:) =   rtemp(:)
 
@@ -155,11 +151,9 @@ subroutine shr_mct_sMatReadnc(sMat,fileName)
    allocate(itemp(ns),stat=rcode)
    if (rcode /= 0) call mct_perr_die(subName,':: allocate rows',rcode)
 
-   rcode = nf90_inq_varid(fid, 'row', vid)
-   rcode = nf90_get_var(fid, vid, itemp)
-   if (rcode /= NF90_NOERR .and. s_loglev > 0) then
-      write(s_logunit,F00) nf90_strerror(rcode)
-   end if
+   rcode = nf_inq_varid     (fid,'row',vid)
+   rcode = nf_get_var_int   (fid,vid  ,itemp)
+   if (rcode /= NF_NOERR .and. s_loglev > 0) write(s_logunit,F00) nf_strerror(rcode)
 
    sMat%data%iAttr(igrow,:) = itemp(:)
 
@@ -168,18 +162,16 @@ subroutine shr_mct_sMatReadnc(sMat,fileName)
    ! read and load columns
    itemp(:) = 0
 
-   rcode = nf90_inq_varid(fid, 'col', vid)
-   rcode = nf90_get_var(fid, vid, itemp)
-   if (rcode /= NF90_NOERR .and. s_loglev > 0) then
-      write(s_logunit,F00) nf90_strerror(rcode)
-   end if
+   rcode = nf_inq_varid     (fid,'col',vid)
+   rcode = nf_get_var_int   (fid,vid  ,itemp)
+   if (rcode /= NF_NOERR .and. s_loglev > 0) write(s_logunit,F00) nf_strerror(rcode)
 
    sMat%data%iAttr(igcol,:) = itemp(:)
 
    deallocate(itemp, stat=rcode)
    if (rcode /= 0) call mct_perr_die(subName,':: deallocate cols',rcode)
 
-   rcode = nf90_close(fid)
+   rcode = nf_close(fid)
 
    if (s_loglev > 0) write(s_logunit,F00) "... done reading file"
    call shr_sys_flush(s_logunit)
@@ -314,6 +306,7 @@ subroutine shr_mct_sMatPInitnc_mapfile(sMatP, gsMapX, gsMapY, &
    type(mct_Avect) :: areadst_map ! area of dst grid from mapping file
 
    integer          :: lsize
+   integer          :: iret
    integer          :: pe_loc
    logical          :: usevector
    character(len=3) :: Smaptype
@@ -421,7 +414,7 @@ subroutine shr_mct_sMatReaddnc(sMat,SgsMap,DgsMap,newdom,areasrc,areadst, &
 
 ! !USES:
 
-  use netcdf
+#include <netcdf.inc>
 
 ! !INPUT/OUTPUT PARAMETERS:
 
@@ -446,9 +439,11 @@ subroutine shr_mct_sMatReaddnc(sMat,SgsMap,DgsMap,newdom,areasrc,areadst, &
    integer(IN)           :: na      ! size of source domain
    integer(IN)           :: nb      ! size of destination domain
    integer(IN)           :: ns      ! number of non-zero elements in matrix
+   integer(IN)           :: ni,nj   ! number of row and col in the matrix
    integer(IN)           :: igrow   ! aVect index for matrix row
    integer(IN)           :: igcol   ! aVect index for matrix column
    integer(IN)           :: iwgt    ! aVect index for matrix element
+   integer(IN)           :: iarea   ! aVect index for area
    integer(IN)           :: rsize   ! size of read buffer
    integer(IN)           :: cnt     ! local num of wgts
    integer(IN)           :: cntold  ! local num of wgts, previous read
@@ -459,6 +454,7 @@ subroutine shr_mct_sMatReaddnc(sMat,SgsMap,DgsMap,newdom,areasrc,areadst, &
    logical               :: mywt    ! does this weight belong on my pe
 
    !--- buffers for i/o ---
+   real(R8)   ,allocatable :: rtemp(:) ! real temporary
    real(R8)   ,allocatable :: Sbuf(:)  ! real weights
    integer(IN),allocatable :: Rbuf(:)  ! ints rows
    integer(IN),allocatable :: Cbuf(:)  ! ints cols
@@ -477,6 +473,8 @@ subroutine shr_mct_sMatReaddnc(sMat,SgsMap,DgsMap,newdom,areasrc,areadst, &
    integer(IN),allocatable :: Rnew(:),Rold(:)  ! ints
    integer(IN),allocatable :: Cnew(:),Cold(:)  ! ints
 
+   character,allocatable :: str(:)  ! variable length char string
+   character(CL)         :: attstr  ! netCDF attribute name string
    integer(IN)           :: rcode   ! netCDF routine return code
    integer(IN)           :: fid     ! netCDF file      ID
    integer(IN)           :: vid     ! netCDF variable  ID
@@ -507,30 +505,30 @@ subroutine shr_mct_sMatReaddnc(sMat,SgsMap,DgsMap,newdom,areasrc,areadst, &
    ! open & read the file
    !----------------------------------------------------------------------------
    if (s_loglev > 0) write(s_logunit,F00) "* file name                  : ",trim(fileName)
-   rcode = nf90_open(filename,NF90_NOWRITE,fid)
-   if (rcode /= NF90_NOERR) then
+   rcode = nf_open(filename,NF_NOWRITE,fid)
+   if (rcode /= NF_NOERR) then
       print *,'Failed to open file ',trim(filename)
-      call shr_sys_abort(trim(subName)//nf90_strerror(rcode))
+      call shr_sys_abort(trim(subName)//nf_strerror(rcode))
    end if
 
 
    !--- get matrix dimensions ----------
-   rcode = nf90_inq_dimid(fid, 'n_s', did)  ! size of sparse matrix
-   rcode = nf90_inquire_dimension(fid, did, len=ns)
-   rcode = nf90_inq_dimid(fid, 'n_a', did)  ! size of  input vector
-   rcode = nf90_inquire_dimension(fid, did, len=na)
-   rcode = nf90_inq_dimid(fid, 'n_b', did)  ! size of output vector
-   rcode = nf90_inquire_dimension(fid, did, len=nb)
+   rcode = nf_inq_dimid (fid, 'n_s', did)  ! size of sparse matrix
+   rcode = nf_inq_dimlen(fid, did  , ns)
+   rcode = nf_inq_dimid (fid, 'n_a', did)  ! size of  input vector
+   rcode = nf_inq_dimlen(fid, did  , na)
+   rcode = nf_inq_dimid (fid, 'n_b', did)  ! size of output vector
+   rcode = nf_inq_dimlen(fid, did  , nb)
 
    if (present(ni_i) .and. present(nj_i) .and. present(ni_o) .and. present(nj_o)) then
-      rcode = nf90_inq_dimid(fid, 'ni_a', did)  ! number of lons in input grid
-      rcode = nf90_inquire_dimension(fid, did, len=ni_i)
-      rcode = nf90_inq_dimid(fid, 'nj_a', did)  ! number of lats in input grid
-      rcode = nf90_inquire_dimension(fid, did, len=nj_i)
-      rcode = nf90_inq_dimid(fid, 'ni_b', did)  ! number of lons in output grid
-      rcode = nf90_inquire_dimension(fid, did, len=ni_o)
-      rcode = nf90_inq_dimid(fid, 'nj_b', did)  ! number of lats in output grid
-      rcode = nf90_inquire_dimension(fid, did, len=nj_o)
+      rcode = nf_inq_dimid (fid, 'ni_a', did)  ! number of lons in input grid
+      rcode = nf_inq_dimlen(fid, did  , ni_i)
+      rcode = nf_inq_dimid (fid, 'nj_a', did)  ! number of lats in input grid
+      rcode = nf_inq_dimlen(fid, did  , nj_i)
+      rcode = nf_inq_dimid (fid, 'ni_b', did)  ! number of lons in output grid
+      rcode = nf_inq_dimlen(fid, did  , ni_o)
+      rcode = nf_inq_dimid (fid, 'nj_b', did)  ! number of lats in output grid
+      rcode = nf_inq_dimlen(fid, did  , nj_o)
    end if
 
    if (s_loglev > 0) write(s_logunit,F01) "* matrix dims src x dst      : ",na,' x',nb
@@ -542,10 +540,10 @@ subroutine shr_mct_sMatReaddnc(sMat,SgsMap,DgsMap,newdom,areasrc,areadst, &
    if (present(areasrc)) then
    if (mytask == 0) then
       call mct_aVect_init(areasrc0,' ',areaAV_field,na)
-      rcode = nf90_inq_varid(fid, 'area_a', vid)
-      if (rcode /= NF90_NOERR) write(6,F00) nf90_strerror(rcode)
-      rcode = nf90_get_var(fid, vid, areasrc0%rAttr)
-      if (rcode /= NF90_NOERR) write(6,F00) nf90_strerror(rcode)
+      rcode = nf_inq_varid     (fid,'area_a',vid)
+      if (rcode /= NF_NOERR) write(6,F00) nf_strerror(rcode)
+      rcode = nf_get_var_double(fid, vid, areasrc0%rAttr)
+      if (rcode /= NF_NOERR) write(6,F00) nf_strerror(rcode)
    endif
    call mct_aVect_scatter(areasrc0, areasrc, SgsMap, 0, mpicom, rcode)
    if (rcode /= 0) call mct_die("shr_mct_sMatReaddnc","Error on scatter of areasrc0")
@@ -564,10 +562,10 @@ subroutine shr_mct_sMatReaddnc(sMat,SgsMap,DgsMap,newdom,areasrc,areadst, &
    if (present(areadst)) then
    if (mytask == 0) then
       call mct_aVect_init(areadst0,' ',areaAV_field,nb)
-      rcode = nf90_inq_varid(fid, 'area_b', vid)
-      if (rcode /= NF90_NOERR) write(6,F00) nf90_strerror(rcode)
-      rcode = nf90_get_var(fid, vid, areadst0%rAttr)
-      if (rcode /= NF90_NOERR) write(6,F00) nf90_strerror(rcode)
+      rcode = nf_inq_varid     (fid,'area_b',vid)
+      if (rcode /= NF_NOERR) write(6,F00) nf_strerror(rcode)
+      rcode = nf_get_var_double(fid, vid, areadst0%rAttr)
+      if (rcode /= NF_NOERR) write(6,F00) nf_strerror(rcode)
    endif
    call mct_aVect_scatter(areadst0, areadst, DgsMap, 0, mpicom, rcode)
    if (rcode /= 0) call mct_die("shr_mct_sMatReaddnc","Error on scatter of areadst0")
@@ -659,23 +657,17 @@ subroutine shr_mct_sMatReaddnc(sMat,SgsMap,DgsMap,newdom,areasrc,areadst, &
 
       !--- read data on root pe
       if (mytask== 0) then
-         rcode = nf90_inq_varid(fid, 'S', vid)
-         rcode = nf90_get_var(fid, vid, Sbuf, start, count)
-         if (rcode /= NF90_NOERR .and. s_loglev > 0) then
-            write(s_logunit,F00) nf90_strerror(rcode)
-         end if
+         rcode = nf_inq_varid      (fid,'S'  ,vid)
+         rcode = nf_get_vara_double(fid,vid,start,count,Sbuf)
+         if (rcode /= NF_NOERR .and. s_loglev > 0) write(s_logunit,F00) nf_strerror(rcode)
 
-         rcode = nf90_inq_varid(fid, 'row', vid)
-         rcode = nf90_get_var(fid, vid, Rbuf, start, count)
-         if (rcode /= NF90_NOERR .and. s_loglev > 0) then
-            write(s_logunit,F00) nf90_strerror(rcode)
-         end if
+         rcode = nf_inq_varid      (fid,'row',vid)
+         rcode = nf_get_vara_int   (fid,vid,start,count,Rbuf)
+         if (rcode /= NF_NOERR .and. s_loglev > 0) write(s_logunit,F00) nf_strerror(rcode)
 
-         rcode = nf90_inq_varid(fid, 'col', vid)
-         rcode = nf90_get_var(fid, vid, Cbuf, start, count)
-         if (rcode /= NF90_NOERR .and. s_loglev > 0) then
-            write(s_logunit,F00) nf90_strerror(rcode)
-         end if
+         rcode = nf_inq_varid      (fid,'col',vid)
+         rcode = nf_get_vara_int   (fid,vid,start,count,Cbuf)
+         if (rcode /= NF_NOERR .and. s_loglev > 0) write(s_logunit,F00) nf_strerror(rcode)
       endif
 
       !--- send S, row, col to all pes
@@ -753,7 +745,7 @@ subroutine shr_mct_sMatReaddnc(sMat,SgsMap,DgsMap,newdom,areasrc,areadst, &
    if (rcode /= 0) call mct_perr_die(subName,':: deallocate new',rcode)
 
    if (mytask == 0) then
-      rcode = nf90_close(fid)
+      rcode = nf_close(fid)
       if (s_loglev > 0) write(s_logunit,F00) "... done reading file"
       call shr_sys_flush(s_logunit)
    endif
@@ -777,12 +769,13 @@ end subroutine shr_mct_sMatReaddnc
 !
 ! !INTERFACE:  -----------------------------------------------------------------
 
-subroutine shr_mct_sMatWritednc(sMat,iosystem, io_type, io_format, fileName,compid, mpicom)
+subroutine shr_mct_sMatWritednc(sMat,iosystem, io_type, fileName,compid, mpicom)
 
 ! !USES:
   use pio, only : iosystem_desc_t
    use shr_pcdf_mod, only : shr_pcdf_readwrite
    implicit none
+#include <netcdf.inc>
 #include <mpif.h>
 
 ! !INPUT/OUTPUT PARAMETERS:
@@ -790,7 +783,6 @@ subroutine shr_mct_sMatWritednc(sMat,iosystem, io_type, io_format, fileName,comp
    type(mct_sMat)  ,intent(in)   :: sMat     ! mapping data
    type(iosystem_desc_t)         :: iosystem ! PIO subsystem description
    integer(IN)     ,intent(in)   :: io_type  ! type of io interface for this file
-   integer(IN)     ,intent(in)   :: io_format ! type of io netcdf3 format for this file
    character(*)    ,intent(in)   :: filename ! netCDF file to read
    integer(IN)     ,intent(in)   :: compid   ! processor id
    integer(IN)     ,intent(in)   :: mpicom   ! communicator
@@ -849,7 +841,7 @@ subroutine shr_mct_sMatWritednc(sMat,iosystem, io_type, io_format, fileName,comp
    AV%rAttr(1,:) = expvarr(:)
    deallocate(expvarr)
 
-   call shr_pcdf_readwrite('write',iosystem,io_type, trim(filename),mpicom,gsmap,clobber=.false.,io_format=io_format, &
+   call shr_pcdf_readwrite('write',iosystem,io_type, trim(filename),mpicom,gsmap,clobber=.false.,cdf64=.true., &
       id1=na,id1n='n_a',id2=nb,id2n='n_b',id3=ns,id3n='n_s',av1=AV,av1n='')
 
    call mct_gsmap_clean(gsmap)
