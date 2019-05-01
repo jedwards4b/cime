@@ -136,7 +136,7 @@
       <value BGC_MODE=".*_OI">.true.</value>
     </values>
   </entry>
--->
+
   <entry  id="flds_wiso" modify_via_xml="FLDS_WISO">
     <type>logical</type>
     <category>seq_flds</category>
