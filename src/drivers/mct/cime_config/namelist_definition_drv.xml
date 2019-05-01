@@ -2756,7 +2756,7 @@
       <value>$NINST_ROF_LAYOUT</value>
     </values>
   </entry>
-
+<!--
   <entry id="esp_ntasks" modify_via_xml="NTASKS_ESP">
     <type>integer</type>
     <category>cime_pes</category>
@@ -2821,7 +2821,7 @@
       <value>$NINST_ESP_LAYOUT</value>
     </values>
   </entry>
-
+-->
   <entry  id="cpl_ntasks" modify_via_xml="NTASKS_CPL">
     <type>integer</type>
     <category>cime_pes</category>
@@ -2873,7 +2873,7 @@
       <value>$PSTRID_CPL</value>
     </values>
   </entry>
-
+<!--
   <entry id="info_taskmap_model">
     <type>integer</type>
     <category>cime_pes</category>
@@ -2899,7 +2899,7 @@
       <value>$INFO_TASKMAP_COMP</value>
     </values>
   </entry>
-
+-->
   <!-- =========================== -->
   <!-- group prof_inparm           -->
   <!--  in perf_mod.F90            -->
