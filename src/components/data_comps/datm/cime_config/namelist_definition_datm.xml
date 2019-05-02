@@ -1384,7 +1384,7 @@
         JRA.v1.3.q_10.TL319.2014.171019.nc
         JRA.v1.3.q_10.TL319.2015.171019.nc
         JRA.v1.3.q_10.TL319.2016.171019.nc
-      </value> 
+      </value>
       <value  stream="CORE_IAF_JRA.SLP_">
         JRA.v1.3.slp.TL319.1958.171019.nc
         JRA.v1.3.slp.TL319.1959.171019.nc
@@ -1445,7 +1445,7 @@
         JRA.v1.3.slp.TL319.2014.171019.nc
         JRA.v1.3.slp.TL319.2015.171019.nc
         JRA.v1.3.slp.TL319.2016.171019.nc
-      </value> 
+      </value>
       <value  stream="CORE_IAF_JRA.T_10">
         JRA.v1.3.t_10.TL319.1958.171019.nc
         JRA.v1.3.t_10.TL319.1959.171019.nc
@@ -1506,7 +1506,7 @@
         JRA.v1.3.t_10.TL319.2014.171019.nc
         JRA.v1.3.t_10.TL319.2015.171019.nc
         JRA.v1.3.t_10.TL319.2016.171019.nc
-      </value> 
+      </value>
       <value  stream="CORE_IAF_JRA.U_10">
         JRA.v1.3.u_10.TL319.1958.171019.nc
         JRA.v1.3.u_10.TL319.1959.171019.nc
@@ -1567,7 +1567,7 @@
         JRA.v1.3.u_10.TL319.2014.171019.nc
         JRA.v1.3.u_10.TL319.2015.171019.nc
         JRA.v1.3.u_10.TL319.2016.171019.nc
-      </value> 
+      </value>
       <value  stream="CORE_IAF_JRA.V_10">
         JRA.v1.3.v_10.TL319.1958.171019.nc
         JRA.v1.3.v_10.TL319.1959.171019.nc
@@ -1893,7 +1893,7 @@
         prec  prec
       </value>
       <value  stream="CORE_IAF_JRA.LWDN">
-        lwdn  lwdn 
+        lwdn  lwdn
       </value>
       <value  stream="CORE_IAF_JRA.SWDN">
         swdn  swdn
@@ -2484,7 +2484,7 @@
       <value atm_grid="CLM_USRDAT">cycle</value>
     </values>
   </entry>
-
+<!--
   <entry id="readmode" per_stream_entry="true">
     <type>char(30)</type>
     <category>streams</category>
@@ -2501,7 +2501,7 @@
       <value>single</value>
     </values>
   </entry>
-
+-->
   <entry id="dtlimit" per_stream_entry="true">
     <type>real(30)</type>
     <category>streams</category>
@@ -2709,7 +2709,7 @@
       <value>undefined</value>
     </values>
   </entry>
-
+<!--
   <entry id="wiso_datm">
     <type>logical</type>
     <category>datm</category>
@@ -2722,5 +2722,5 @@
       <value datm_mode="CLM_QIAN_WISO">.true.</value>
     </values>
   </entry>
-
+-->
 </entry_id>

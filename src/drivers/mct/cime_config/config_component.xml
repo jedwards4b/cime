@@ -1508,7 +1508,24 @@
     will generate a runtime error if in fact a file is required for the given compset</desc>
   </entry>
 
+  <entry id="ROF2OCN_RMAPNAME">
+    <type>char</type>
+    <default_value>idmap_ignore</default_value>
+    <group>run_domain</group>
+    <file>env_run.xml</file>
+    <desc>rof2ocn flux mapping file - the default value idmap_ignore, if set, will be ignored by buildnml and
+    will generate a runtime error if in fact a file is required for the given compset</desc>
+  </entry>
+
   <entry id="ROF2OCN_FMAPTYPE">
+    <type>char</type>
+    <valid_values>X,Y</valid_values>
+    <default_value>Y</default_value>
+    <group>run_domain</group>
+    <file>env_run.xml</file>
+    <desc>rof2ocn flux mapping file decomp type</desc>
+  </entry>
+  <entry id="ROF2OCN_RMAPTYPE">
     <type>char</type>
     <valid_values>X,Y</valid_values>
     <default_value>Y</default_value>

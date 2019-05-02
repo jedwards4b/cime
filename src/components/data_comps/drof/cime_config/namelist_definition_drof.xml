@@ -357,7 +357,7 @@
     <type>char</type>
     <category>streams</category>
     <group>shr_strdata_nml</group>
-    <valid_values>NULL,COPYALL</valid_values>
+    <valid_values>NULL,DIATREN_ANN_RX1</valid_values>
     <desc>
       The runoff data is associated with the river model.
       datamode = "NULL"
@@ -370,7 +370,7 @@
       fields not found on an input stream will be set to zero.
     </desc>
     <values>
-      <value>COPYALL</value>
+      <value>DIATREN_ANN_RX1</value>
       <value drof_mode="NULL">NULL</value>
     </values>
   </entry>
@@ -560,7 +560,7 @@
       <value>cycle</value>
     </values>
   </entry>
-
+<!--
   <entry id="readmode" per_stream_entry="true">
     <type>char(30)</type>
     <category>streams</category>
@@ -577,7 +577,7 @@
       <value>single</value>
     </values>
   </entry>
-
+-->
   <entry id="dtlimit"  per_stream_entry="true">
     <type>real(30)</type>
     <category>streams</category>
@@ -676,7 +676,16 @@
       <value>undefined</value>
     </values>
   </entry>
-
+  <entry id="restfilsr">
+    <type>char</type>
+    <category>drof</category>
+    <group>drof_nml</group>
+    <desc>Stream restart file name for drof model, needed for branch simulations</desc>
+    <values>
+      <value>undefined</value>
+    </values>
+  </entry>
+<!--
   <entry id="restfils">
     <type>char</type>
     <category>drof</category>
@@ -686,5 +695,5 @@
       <value>undefined</value>
     </values>
   </entry>
-
+-->
 </entry_id>
