@@ -15,12 +15,10 @@ def parse_command_line(args, description):
 
     CIME.utils.setup_standard_logging_options(parser)
 
-    parser.add_argument("--case", "-case", required=True, metavar="CASENAME",
-                        help="(required) Specify the case name. "
-                        "\nIf this is simply a name (not a path), the case directory is created in the current working directory."
-                        "\nThis can also be a relative or absolute path specifying where the case should be created;"
-                        "\nwith this usage, the name of the case will be the last component of the path.")
-    parser.add_argument("--alert-addresses", help="Colon seperated list of emails for alerts (used only with --use-cylc)",
+    parser.add_argument("--caseroot", "-c", required=True, metavar="CASEROOT",default=os.cwd(),
+                        help="(required) Full path to an existing case directory. ")
+
+    parser.add_argument("--alert-addresses", help="Comma seperated list of emails for alerts",
                         default=os.environ['USER']+'@'+'ucar.edu')
 
     parser.add_argument("--cylc-suite-dir", help="Output path for cylc control files",

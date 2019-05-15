@@ -416,6 +416,14 @@ NODEFAIL          Tests restart upon detected node failure. Generates fake failu
     <DOUT_S>FALSE</DOUT_S>
   </test>
 
+  <test NAME="TESTWORKFLOW" INFRASTRUCTURE_TEST="TRUE">
+    <DESC>For testing infra only. Insta-pass run step with data transfer.</DESC>
+    <INFO_DBUG>1</INFO_DBUG>
+    <STOP_OPTION>nyears</STOP_OPTION>
+    <STOP_N>2</STOP_N>
+    <CHECK_TIMING>FALSE</CHECK_TIMING>
+  </test>
+
   <test NAME="TESTMEMLEAKFAIL" INFRASTRUCTURE_TEST="TRUE">
     <DESC>For testing infra only. Insta-fail memleak step.</DESC>
     <INFO_DBUG>1</INFO_DBUG>

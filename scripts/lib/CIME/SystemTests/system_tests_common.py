@@ -503,6 +503,38 @@ class FakeTest(SystemTestsCommon):
             os.environ["MPI_SHEPHERD"] = "true"
         super(FakeTest, self).run_indv(suffix, st_archive)
 
+class TESTWORKFLOW(FakeTest):
+    def build_phase(self, sharedlib_only=False, model_only=False):
+        rundir = self._case.get_value("RUNDIR")
+        case = self._case.get_value("CASE")
+        stop_n = self._case.get_value("STOP_N")
+        dout_s_root = self._case.get_value("DOUT_S_ROOT")
+
+        script = \
+"""
+dout_s_path=$(dirname {dout_s_root})
+test_workflow_input=$dout_s_path/TESTWORKFLOW_INPUT
+search_string="TESTWORKFLOW.f09_g17.B1850cmip6"
+finalyr=$(expr {stop_n} - 1)
+for yr in $(seq 0 $finalyr)
+do
+for f in $test_workflow_input/*/hist/*.185$yr*
+do
+  filename="${{f##*/}}"
+  newf=${{filename/$search_string/{case}}}
+  echo "cp $f {rundir}/$newf"
+  cp $f {rundir}/$newf
+done
+done
+echo Insta pass with full data
+echo SUCCESSFUL TERMINATION > {rundir}/{log}.log.$LID
+""".format(rundir=rundir, log=self._cpllog, case=case, stop_n=stop_n, dout_s_root=dout_s_root)
+        self._set_script(script)
+        FakeTest.build_phase(self,
+                             sharedlib_only=sharedlib_only, model_only=model_only)
+
+
+
 class TESTRUNPASS(FakeTest):
 
     def build_phase(self, sharedlib_only=False, model_only=False):
