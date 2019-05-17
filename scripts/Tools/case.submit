@@ -66,19 +66,23 @@ def parse_command_line(args, description):
     parser.add_argument("-a", "--batch-args",
                         help="Used to pass additional arguments to batch system.")
 
+    # a hidden argument to indicate this script is called from the cylc workflow system
+    # It acts like no batch but only runs the primary job (case.run or case.test)
+    parser.add_argument("--cylc", help=argparse.SUPPRESS, action="store_true")
+
     args = CIME.utils.parse_args_and_handle_standard_logging_options(args, parser)
 
     CIME.utils.resolve_mail_type_args(args)
 
     return (args.caseroot, args.job, args.no_batch, args.prereq, args.prereq_allow_failure,
             args.resubmit, args.resubmit_immediate, args.skip_preview_namelist, args.mail_user,
-            args.mail_type, args.batch_args)
+            args.mail_type, args.batch_args, args.cylc)
 
 ###############################################################################
 def _main_func(description):
 ###############################################################################
     caseroot, job, no_batch, prereq, allow_fail, resubmit, resubmit_immediate, skip_pnl, \
-        mail_user, mail_type, batch_args = parse_command_line(sys.argv, description)
+        mail_user, mail_type, batch_args, runwithcylc = parse_command_line(sys.argv, description)
 
     # save these options to a hidden file for use during resubmit
     config_file = os.path.join(caseroot,".submit_options")
@@ -101,7 +105,8 @@ def _main_func(description):
     with Case(caseroot, read_only=False) as case:
         case.submit(job=job, no_batch=no_batch, prereq=prereq, allow_fail=allow_fail,
                     resubmit=resubmit, resubmit_immediate=resubmit_immediate, skip_pnl=skip_pnl,
-                    mail_user=mail_user, mail_type=mail_type, batch_args=batch_args)
+                    mail_user=mail_user, mail_type=mail_type, batch_args=batch_args,
+                    runwithcylc=runwithcylc)
 
 if __name__ == "__main__":
     _main_func(__doc__)

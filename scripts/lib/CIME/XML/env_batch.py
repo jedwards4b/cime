@@ -426,8 +426,11 @@ class EnvBatch(EnvBase):
 
     def submit_jobs(self, case, no_batch=False, job=None, user_prereq=None, skip_pnl=False,
                     allow_fail=False, resubmit_immediate=False, mail_user=None, mail_type=None,
-                    batch_args=None, dry_run=False):
-        alljobs = self.get_jobs()
+                    batch_args=None, dry_run=False, runwithcylc=False):
+        if runwithcylc:
+            alljobs = [job]
+        else:
+            alljobs = self.get_jobs()
         startindex = 0
         jobs = []
         firstjob = job
@@ -489,7 +492,7 @@ class EnvBatch(EnvBase):
                                                  resubmit_immediate=resubmit_immediate,
                                                  dep_jobs=dep_jobs,
                                                  allow_fail=allow_fail,
-                                                 no_batch=no_batch,
+                                                 no_batch=no_batch or runwithcylc,
                                                  mail_user=mail_user,
                                                  mail_type=mail_type,
                                                  batch_args=batch_args,

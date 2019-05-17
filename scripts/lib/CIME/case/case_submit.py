@@ -24,7 +24,7 @@ def _build_prereq_str(case, prev_job_ids):
 
 def _submit(case, job=None, no_batch=False, prereq=None, allow_fail=False, resubmit=False,
             resubmit_immediate=False, skip_pnl=False, mail_user=None, mail_type=None,
-            batch_args=None):
+            batch_args=None, runwithcylc=False):
     if job is None:
         job = case.get_primary_job()
 
@@ -40,7 +40,7 @@ def _submit(case, job=None, no_batch=False, prereq=None, allow_fail=False, resub
 
     if resubmit and env_batch.get_batch_system_type() == "none":
         no_batch = True
-    if no_batch:
+    if no_batch or runwithcylc:
         batch_system = "none"
     else:
         batch_system = env_batch.get_batch_system_type()
@@ -96,7 +96,7 @@ manual edits to these file will be lost!
     job_ids = case.submit_jobs(no_batch=no_batch, job=job, prereq=prereq,
                                skip_pnl=skip_pnl, resubmit_immediate=resubmit_immediate,
                                allow_fail=allow_fail, mail_user=mail_user,
-                               mail_type=mail_type, batch_args=batch_args)
+                               mail_type=mail_type, batch_args=batch_args, runwithcylc=runwithcylc)
 
     xml_jobids = []
     for jobname, jobid in job_ids.items():
@@ -112,7 +112,7 @@ manual edits to these file will be lost!
 
 def submit(self, job=None, no_batch=False, prereq=None, allow_fail=False, resubmit=False,
            resubmit_immediate=False, skip_pnl=False, mail_user=None, mail_type=None,
-           batch_args=None):
+           batch_args=None, runwithcylc=False):
     if resubmit_immediate and self.get_value("MACH") in ['mira', 'cetus']:
         logger.warning("resubmit_immediate does not work on Mira/Cetus, submitting normally")
         resubmit_immediate = False
@@ -151,7 +151,7 @@ def submit(self, job=None, no_batch=False, prereq=None, allow_fail=False, resubm
                                   allow_fail=allow_fail, resubmit=resubmit,
                                   resubmit_immediate=resubmit_immediate, skip_pnl=skip_pnl,
                                   mail_user=mail_user, mail_type=mail_type,
-                                  batch_args=batch_args)
+                                  batch_args=batch_args, runwithcylc=runwithcylc)
         run_and_log_case_status(functor, "case.submit", caseroot=caseroot,
                                 custom_success_msg_functor=verbatim_success_msg)
     except:

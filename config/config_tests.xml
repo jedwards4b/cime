@@ -422,6 +422,7 @@ NODEFAIL          Tests restart upon detected node failure. Generates fake failu
     <STOP_OPTION>nyears</STOP_OPTION>
     <STOP_N>2</STOP_N>
     <CHECK_TIMING>FALSE</CHECK_TIMING>
+    <RUN_STARTDATE>1850-01-01</RUN_STARTDATE>
   </test>
 
   <test NAME="TESTMEMLEAKFAIL" INFRASTRUCTURE_TEST="TRUE">
