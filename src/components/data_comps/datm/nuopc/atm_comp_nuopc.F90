@@ -328,6 +328,9 @@ contains
     real(r8)                :: maxcornerCoord(2)
     type(ESMF_Grid)         :: lgrid
     character(len=*), parameter :: subname=trim(modName)//':(InitializeRealize) '
+#ifdef _OPENMP
+    integer :: tid, nthreads, omp_get_num_threads, OMP_GET_THREAD_NUM
+#endif
     !-------------------------------------------------------------------------------
 
     ! TODO: read_restart, scmlat, scmlon, orbeccen, orbmvelpp, orblambm0, orbobliqr needs to be obtained
@@ -342,6 +345,23 @@ contains
 
     call shr_file_getLogUnit (shrlogunit)
     call shr_file_setLogUnit (logUnit)
+
+#ifdef _OPENMP
+!$OMP PARALLEL PRIVATE(NTHREADS, TID)
+    !     Obtain thread number
+    if (my_task == master_task .or. DEBUG) then
+       TID = OMP_GET_THREAD_NUM()
+       write(logunit, *) 'Hello World from thread = ', TID, __FILE__,__LINE__
+
+       !     Only master thread does this
+       IF (TID .EQ. 0) THEN
+          NTHREADS = OMP_GET_NUM_THREADS()
+          write(logunit,*) 'Number of threads = ', NTHREADS, __FILE__,__LINE__
+       END IF
+    endif
+    !     All threads join master thread and disband
+!$OMP END PARALLEL
+#endif
 
     !--------------------------------
     ! Determine necessary config variables
@@ -596,6 +616,9 @@ contains
     real(R8)                :: orbObliqr     ! orb obliquity (radians)
     character(len=CL)       :: cvalue
     character(len=*),parameter  :: subname=trim(modName)//':(ModelAdvance) '
+#ifdef _OPENMP
+    integer :: tid, nthreads, omp_get_num_threads, OMP_GET_THREAD_NUM
+#endif
     !-------------------------------------------------------------------------------
 
     rc = ESMF_SUCCESS
@@ -610,6 +633,24 @@ contains
 
     call shr_file_getLogUnit (shrlogunit)
     call shr_file_setLogUnit (logunit)
+    !     Fork a team of threads giving them their own copies of variables
+#ifdef _OPENMP
+!$OMP PARALLEL PRIVATE(NTHREADS, TID)
+    if(my_task == master_task .or. DEBUG) then
+       !     Obtain thread number
+       TID = OMP_GET_THREAD_NUM()
+       write(logunit, *) 'Hello World from thread = ', TID
+
+       !     Only master thread does this
+       IF (TID .EQ. 0) THEN
+          NTHREADS = OMP_GET_NUM_THREADS()
+          write(logunit,*) 'Number of threads = ', NTHREADS
+       END IF
+
+       !     All threads join master thread and disband
+    endif
+!$OMP END PARALLEL
+#endif
 
     !--------------------------------
     ! query the Component for its clock, importState and exportState
