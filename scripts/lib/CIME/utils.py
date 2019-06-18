@@ -419,7 +419,6 @@ def run_cmd(cmd, input_str=None, from_dir=None, verbose=None,
         stdin = subprocess.PIPE
     else:
         stdin = None
-
     proc = subprocess.Popen(cmd,
                             shell=True,
                             stdout=arg_stdout,

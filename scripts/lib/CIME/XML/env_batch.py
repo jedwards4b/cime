@@ -167,21 +167,20 @@ class EnvBatch(EnvBase):
     def make_batch_script(self, input_template, job, case, outfile=None):
         expect(os.path.exists(input_template), "input file '{}' does not exist".format(input_template))
         env_workflow = case.get_env('workflow')
-        task_count = env_workflow.get_value("task_count", subgroup=job)
-        tasks_per_node = env_workflow.get_value("tasks_per_node", subgroup=job)
-        if not tasks_per_node:
-            tasks_per_node = case.tasks_per_node
+        total_tasks, num_nodes, tasks_per_node, thread_count = env_workflow.get_job_specs(job)
         overrides = {}
 
-        if task_count is not None:
-            overrides["total_tasks"] = int(task_count)
-            overrides["num_nodes"]   = int(math.ceil(float(task_count)/float(tasks_per_node)))
-            overrides["tasks_per_node"] =  overrides["total_tasks"]//overrides["num_nodes"]
+        if total_tasks:
+            overrides["total_tasks"] = total_tasks
+            overrides["num_nodes"]   = num_nodes
+            overrides["tasks_per_node"] =  tasks_per_node
+            if thread_count:
+                overrides["thread_count"] = thread_count
         else:
-            task_count = case.get_value("TOTALPES")*int(case.thread_count)
-
-        if int(task_count) < case.get_value("MAX_TASKS_PER_NODE"):
-            overrides["max_tasks_per_node"] = int(task_count)
+            total_tasks = case.get_value("TOTALPES")*int(case.thread_count)
+            thread_count = case.thread_count
+        if int(total_tasks)*int(thread_count) < case.get_value("MAX_TASKS_PER_NODE"):
+            overrides["max_tasks_per_node"] = int(total_tasks)
 
         overrides["job_id"] = case.get_value("CASE") + os.path.splitext(job)[1]
         if "pleiades" in case.get_value("MACH"):
@@ -189,8 +188,7 @@ class EnvBatch(EnvBase):
             overrides["job_id"] = overrides["job_id"][:15]
 
         overrides["batchdirectives"] = self.get_batch_directives(case, job, overrides=overrides)
-
-        overrides["mpirun"] = case.get_mpirun_cmd(job=job)
+        overrides["mpirun"] = case.get_mpirun_cmd(job=job, overrides=overrides)
 
         output_text = transform_vars(open(input_template,"r").read(), case=case, subgroup=job, overrides=overrides)
         output_name = get_batch_script_for_job(job) if outfile is None else outfile

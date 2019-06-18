@@ -1239,7 +1239,7 @@ directory, NOT in this subdirectory."""
             if not success:
                 logger.warning("Failed to kill {}".format(jobid))
 
-    def get_mpirun_cmd(self, job=None, allow_unresolved_envvars=True):
+    def get_mpirun_cmd(self, job=None, allow_unresolved_envvars=True, overrides=None):
         if job is None:
             job = self.get_primary_job()
 
@@ -1261,9 +1261,7 @@ directory, NOT in this subdirectory."""
             "queue" : self.get_value("JOB_QUEUE", subgroup=job),
             "unit_testing" : False
             }
-
-        executable, mpi_arg_list = env_mach_specific.get_mpirun(self, mpi_attribs, job)
-
+        executable, mpi_arg_list = env_mach_specific.get_mpirun(self, mpi_attribs, job, overrides=overrides)
         # special case for aprun
         if executable is not None and "aprun" in executable and not "theta" in self.get_value("MACH"):
             aprun_args, num_nodes = get_aprun_cmd_for_case(self, run_exe)[0:2]
