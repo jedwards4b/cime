@@ -172,11 +172,14 @@ class EnvBatch(EnvBase):
         if not tasks_per_node:
             tasks_per_node = case.tasks_per_node
         overrides = {}
+
         if task_count is not None:
             overrides["total_tasks"] = int(task_count)
             overrides["num_nodes"]   = int(math.ceil(float(task_count)/float(tasks_per_node)))
+            overrides["tasks_per_node"] =  overrides["total_tasks"]//overrides["num_nodes"]
         else:
             task_count = case.get_value("TOTALPES")*int(case.thread_count)
+
         if int(task_count) < case.get_value("MAX_TASKS_PER_NODE"):
             overrides["max_tasks_per_node"] = int(task_count)
 
@@ -186,7 +189,9 @@ class EnvBatch(EnvBase):
             overrides["job_id"] = overrides["job_id"][:15]
 
         overrides["batchdirectives"] = self.get_batch_directives(case, job, overrides=overrides)
+
         overrides["mpirun"] = case.get_mpirun_cmd(job=job)
+
         output_text = transform_vars(open(input_template,"r").read(), case=case, subgroup=job, overrides=overrides)
         output_name = get_batch_script_for_job(job) if outfile is None else outfile
         logger.info("Creating file {}".format(output_name))
