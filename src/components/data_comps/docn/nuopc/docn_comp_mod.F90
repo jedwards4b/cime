@@ -107,7 +107,7 @@ contains
     ! input/output arguments
     type(ESMF_State)     , intent(inout) :: importState
     type(ESMF_State)     , intent(inout) :: exportState
-    character(len=*)     , intent(in)    :: flds_scalar_name 
+    character(len=*)     , intent(in)    :: flds_scalar_name
     logical              , intent(in)    :: ocn_prognostic
     integer              , intent(out)   :: fldsToOcn_num
     integer              , intent(out)   :: fldsFrOcn_num
@@ -335,7 +335,6 @@ contains
     ! is a '2d1d' decommp (1d decomp of 2d grid) and also create SDOCN%grid
 
     SDOCN%calendar = trim(shr_cal_calendarName(trim(calendar)))
-
     if (scmmode) then
        if (my_task == master_task) write(logunit,F05) ' scm lon lat = ',scmlon,scmlat
        call shr_strdata_init_model_domain(SDOCN, mpicom, compid, my_task, &
@@ -365,6 +364,7 @@ contains
        xc(n) = ownedElemCoords(2*n-1)
        yc(n) = ownedElemCoords(2*n)
     end do
+    print *,__FILE__,__LINE__
 
     ! error check that mesh lats and lons correspond to those on the input domain file
     klon = mct_aVect_indexRA(SDOCN%grid%data,'lon')
@@ -376,6 +376,7 @@ contains
        !SDOCN%grid%data%rattr(klon,n) = xc(n) ! overwrite ggrid with mesh data
        xc(n) = SDOCN%grid%data%rattr(klon,n)  ! overwrite mesh data with ggrid data
     end do
+    print *,__FILE__,__LINE__
     klat = mct_aVect_indexRA(SDOCN%grid%data,'lat')
     do n = 1, lsize
        if (abs( SDOCN%grid%data%rattr(klat,n) -  yc(n)) > 1.e-4) then
@@ -391,12 +392,15 @@ contains
     kmask = mct_aVect_indexRA(SDOCN%grid%data,'mask')
     imask(:) = nint(SDOCN%grid%data%rAttr(kmask,:))
 
+    print *,__FILE__,__LINE__
     !----------------------------------------------------------------------------
     ! Initialize the SDOCN streams and mapping of streams to model domain
     !----------------------------------------------------------------------------
 
     call shr_strdata_init_streams(SDOCN, compid, mpicom, my_task)
+    print *,__FILE__,__LINE__
     call shr_strdata_init_mapping(SDOCN, compid, mpicom, my_task)
+    print *,__FILE__,__LINE__
 
     !----------------------------------------------------------------------------
     ! Allocate module arrays
@@ -416,6 +420,7 @@ contains
 
     call mct_aVect_init(o2x, rList=flds_o2x, lsize=lsize)
     call mct_aVect_zero(o2x)
+    print *,__FILE__,__LINE__
 
     kfrac = mct_aVect_indexRA(SDOCN%grid%data,'frac')
     o2x%rAttr(ksomask,:) = SDOCN%grid%data%rAttr(kfrac,:)
@@ -459,6 +464,7 @@ contains
        kh    = mct_aVect_indexRA(avstrm,'strm_h'   , perrWith='quiet')
        kqbot = mct_aVect_indexRA(avstrm,'strm_qbot', perrWith='quiet')
     end if
+    print *,__FILE__,__LINE__
 
     call t_stopf('docn_initavs')
 
@@ -527,12 +533,14 @@ contains
     !----------------------------------------------------------------------------
 
     call t_adj_detailf(+2)
+    print *,__FILE__,__LINE__
 
     call docn_comp_run(mpicom=mpicom, compid=compid,  my_task=my_task, &
          master_task=master_task, inst_suffix=inst_suffix, logunit=logunit, &
          read_restart=read_restart, write_restart=.false., &
          target_ymd=current_ymd, target_tod=current_tod, modeldt=modeldt)
 
+    print *,__FILE__,__LINE__
     if (my_task == master_task) then
        write(logunit,F00) 'docn_comp_init done'
     end if

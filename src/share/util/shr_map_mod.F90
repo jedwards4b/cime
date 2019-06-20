@@ -619,24 +619,15 @@ contains
     nwts = map%nwts
 
     if (present(isrc)) then
-       if (size(isrc) < nwts) then
-          call shr_sys_abort(subName//' ERROR is isrc size')
-       endif
-       isrc(1:nwts) = map%isrc(1:nwts)
+       isrc(1:nwts) => map%isrc(1:nwts)
     endif
 
     if (present(idst)) then
-       if (size(idst) < nwts) then
-          call shr_sys_abort(subName//' ERROR is idst size')
-       endif
-       idst(1:nwts) = map%idst(1:nwts)
+       idst(1:nwts) => map%idst(1:nwts)
     endif
 
     if (present(wgts)) then
-       if (size(wgts) < nwts) then
-          call shr_sys_abort(subName//' ERROR is wgts size')
-       endif
-       wgts(1:nwts) = map%wgts(1:nwts)
+       wgts(1:nwts) => map%wgts(1:nwts)
     endif
 
   end subroutine shr_map_getAR

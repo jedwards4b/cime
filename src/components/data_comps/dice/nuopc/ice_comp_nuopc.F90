@@ -252,7 +252,7 @@ contains
   !===============================================================================
 
   subroutine InitializeRealize(gcomp, importState, exportState, clock, rc)
-
+!$  use omp_lib, only: OMP_GET_THREAD_NUM, OMP_GET_NUM_THREADS, OMP_GET_MAX_THREADS, OMP_GET_NUM_PROCS
     ! input/output variables
     type(ESMF_GridComp)  :: gcomp
     type(ESMF_State)     :: importState, exportState
@@ -281,6 +281,9 @@ contains
     logical                 :: write_restart
     integer                 :: nxg, nyg
     character(len=*),parameter :: subname=trim(modName)//':(InitializeRealize) '
+    type(ESMF_VM)               :: vm
+    integer                     :: localPet, localPeCount
+    character(len=160)          :: msgString
     !-------------------------------------------------------------------------------
 
     rc = ESMF_SUCCESS
@@ -293,9 +296,36 @@ contains
     call shr_file_getLogUnit (shrlogunit)
     call shr_file_setLogUnit (logUnit)
 
+    ! Query the VM of the component for the localPeCount and set OpenMP
+    ! num_threads accordingly.
+
+    call ESMF_GridCompGet(gcomp, vm=vm, rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    call ESMF_VMGet(vm, localPet=localPet, rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    call ESMF_VMGet(vm, pet=localPet, peCount=localPeCount, rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+!$  call omp_set_num_threads(localPeCount)
+
+    ! Now can use OpenMP for fine grained parallelism...
+    ! Here just write info about the PET-local OpenMP threads to Log.
+!$omp parallel private(msgString)
+!$omp critical
+!$    write(msgString,'(A,A,I4,A,I4,A,I4,A,I4)') &
+!$      subname, ": thread_num=", omp_get_thread_num(), &
+!$      "   num_threads=", omp_get_num_threads(), &
+!$      "   max_threads=", omp_get_max_threads(), &
+!$      "   num_procs=", omp_get_num_procs()
+!$    call ESMF_LogWrite(msgString, ESMF_LOGMSG_INFO, rc=rc)
+!$omp end critical
+!$omp end parallel
+
     !--------------------------------
     ! get config variables
     !--------------------------------
+
+    call ESMF_LogWrite(subname//'300', ESMF_LOGMSG_INFO, rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
     call NUOPC_CompAttributeGet(gcomp, name='case_name', value=case_name, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
@@ -324,6 +354,8 @@ contains
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
     read(cvalue,*) compid
 
+    call ESMF_LogWrite(subname//'330', ESMF_LOGMSG_INFO, rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
     !----------------------------------------------------------------------------
     ! Determine calendar info
     !----------------------------------------------------------------------------
@@ -346,6 +378,9 @@ contains
     ! Generate the mesh
     !--------------------------------
 
+    call ESMF_LogWrite(subname//'354', ESMF_LOGMSG_INFO, rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+
     call NUOPC_CompAttributeGet(gcomp, name='mesh_ice', value=cvalue, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
@@ -360,9 +395,13 @@ contains
     ! Initialize model
     !--------------------------------
 
+    call ESMF_LogWrite(subname//'371', ESMF_LOGMSG_INFO, rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
     call dice_comp_init(flds_i2o_per_cat, mpicom, compid, my_task, master_task, &
          inst_suffix, inst_name, logunit, read_restart, &
          scmMode, scmlat, scmlon, calendar, Emesh, nxg, nyg)
+    call ESMF_LogWrite(subname//'376', ESMF_LOGMSG_INFO, rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
     !--------------------------------
     ! realize the actively coupled fields, now that a mesh is established
@@ -453,7 +492,7 @@ contains
   !===============================================================================
 
   subroutine ModelAdvance(gcomp, rc)
-
+!$  use omp_lib, only: OMP_GET_THREAD_NUM, OMP_GET_NUM_THREADS, OMP_GET_MAX_THREADS, OMP_GET_NUM_PROCS
     ! input/output variables
     type(ESMF_GridComp)  :: gcomp
     integer, intent(out) :: rc
@@ -476,6 +515,10 @@ contains
     real(R8)                :: jday, jday0   ! elapsed day counters
     character(len=CL)       :: cvalue
     character(len=*),parameter  :: subname=trim(modName)//':(ModelAdvance) '
+    type(ESMF_VM)               :: vm
+    integer                     :: localPet, localPeCount
+    character(len=160)          :: msgString
+
     !-------------------------------------------------------------------------------
 
     rc = ESMF_SUCCESS
@@ -488,6 +531,30 @@ contains
 
     call shr_file_getLogUnit (shrlogunit)
     call shr_file_setLogUnit (logunit)
+    ! Query the VM of the component for the localPeCount and set OpenMP
+    ! num_threads accordingly.
+
+    call ESMF_GridCompGet(gcomp, vm=vm, rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    call ESMF_VMGet(vm, localPet=localPet, rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    call ESMF_VMGet(vm, pet=localPet, peCount=localPeCount, rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+!$  call omp_set_num_threads(localPeCount)
+
+    ! Now can use OpenMP for fine grained parallelism...
+    ! Here just write info about the PET-local OpenMP threads to Log.
+!$omp parallel private(msgString)
+!$omp critical
+!$    write(msgString,'(A,A,I4,A,I4,A,I4,A,I4)') &
+!$      subname, ": thread_num=", omp_get_thread_num(), &
+!$      "   num_threads=", omp_get_num_threads(), &
+!$      "   max_threads=", omp_get_max_threads(), &
+!$      "   num_procs=", omp_get_num_procs()
+!$    call ESMF_LogWrite(msgString, ESMF_LOGMSG_INFO, rc=rc)
+!$omp end critical
+!$omp end parallel
+
 
     !--------------------------------
     ! query the Component for its clock, importState and exportState

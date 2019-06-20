@@ -196,7 +196,7 @@ CONTAINS
     use shr_file_mod  , only : shr_file_noprefix, shr_file_queryprefix, shr_file_get
     use shr_string_mod, only : shr_string_lastindex
     use shr_ncread_mod, only : shr_ncread_domain, shr_ncread_vardimsizes
-    use shr_ncread_mod, only : shr_ncread_varexists, shr_ncread_vardimnum,  shr_ncread_field4dG 
+    use shr_ncread_mod, only : shr_ncread_varexists, shr_ncread_vardimnum,  shr_ncread_field4dG
 
     !----- arguments -----
     type(mct_gGrid)  ,          intent(inout) :: gGrid
@@ -450,7 +450,7 @@ CONTAINS
 
           !--- start with wraparound ---
 
-          !--- determine whether dealing with 2D input files (typical of Eulerian 
+          !--- determine whether dealing with 2D input files (typical of Eulerian
           !--- dynamical core) or 1D files (typical of Spectral Element)
           if (nyg .ne. 1) then
             ni = 1
@@ -1495,7 +1495,6 @@ CONTAINS
        call shr_map_get(shrmap,shr_map_fs_nsrc,nsrc)
        call shr_map_get(shrmap,shr_map_fs_ndst,ndst)
        call shr_map_get(shrmap,shr_map_fs_nwts,nwts)
-       allocate(isrc(nwts),idst(nwts),wgts(nwts))
        call shr_map_get(shrmap,isrc,idst,wgts)
        call shr_map_clean(shrmap)
 
@@ -1504,7 +1503,6 @@ CONTAINS
        call mct_sMat_ImpGColI (sMat0,isrc,nwts)
        call mct_sMat_ImpGRowI (sMat0,idst,nwts)
        call mct_sMat_ImpMatrix(sMat0,wgts,nwts)
-       deallocate(isrc,idst,wgts)
     endif
 
     call mct_sMatP_Init(sMatP,sMat0,gsmapS,gsmapD,lstrategy,master_task,mpicom,compid)
