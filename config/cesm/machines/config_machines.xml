@@ -1160,7 +1160,7 @@ This allows using a different mpirun command to launch unit tests
     <OS>LINUX</OS>
     <COMPILERS>intel</COMPILERS>
     <MPILIBS>impi</MPILIBS>
-    <PROJECT>TG-ATM180016</PROJECT>
+    <PROJECT>FTA-Chang</PROJECT>
     <CIME_OUTPUT_ROOT>$ENV{SCRATCH}</CIME_OUTPUT_ROOT>
     <!-- temporary until /work is mounted on compute nodes -->
     <DIN_LOC_ROOT>/scratch1/02503/edwardsj/CESM/inputdata</DIN_LOC_ROOT>
