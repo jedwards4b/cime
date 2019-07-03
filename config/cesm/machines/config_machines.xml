@@ -1197,7 +1197,7 @@ This allows using a different mpirun command to launch unit tests
       </modules>
       <modules mpilib="impi">
         <command name="load">impi/19.0.4</command>
-<!--        <command name="load">pnetcdf/1.11.0</command> -->
+        <command name="load">pnetcdf/1.11.2</command> 
         <command name="load">parallel-netcdf/4.6.2</command>
       </modules>
       <modules mpilib="mpi-serial">
