@@ -160,10 +160,11 @@
     <batch_mail_type_flag>--mail-type</batch_mail_type_flag>
     <batch_mail_type>none, all, begin, end, fail</batch_mail_type>
     <directives>
-      <directive> --job-name={{ job_id }}</directive>
+      <directive> --job-name={{ job_id }}.%J</directive>
       <directive> --nodes={{ num_nodes }}</directive>
       <directive> --ntasks-per-node={{ tasks_per_node }}</directive>
-      <directive> --output={{ job_id }}   </directive>
+      <directive> --output={{ job_id }}.out.%J   </directive>
+      <directive> --error={{ job_id }}.err.%J   </directive>
       <directive> --exclusive                        </directive>
     </directives>
   </batch_system>
@@ -367,6 +368,23 @@
       <queue walltimemax="03:59:00" >normal.4h</queue>
     </queues>
   </batch_system>
+
+  <batch_system MACH="frontera" type="slurm" >
+    <batch_submit>ssh login1 cd $CASEROOT ; sbatch</batch_submit>
+    <submit_args>
+      <arg flag="--time" name="$JOB_WALLCLOCK_TIME"/>
+      <arg flag="-p" name="$JOB_QUEUE"/>
+      <arg flag="--account" name="$PROJECT"/>
+    </submit_args>
+    <queues>
+      <queue walltimemax="02:00:00" nodemin="1" nodemax="40">development</queue>
+      <queue walltimemax="24:00:00" nodemin="1" nodemax="512" default="true">normal</queue>
+      <queue walltimemax="24:00:00" nodemin="513" nodemax="4096" >large</queue>
+    </queues>
+  </batch_system>
+
+
+
   <!-- gaea is PBS -->
   <batch_system MACH="gaea" type="pbs" >
     <directives>
