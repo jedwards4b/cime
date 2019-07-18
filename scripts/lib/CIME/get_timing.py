@@ -287,7 +287,7 @@ class _TimingParser:
         else:
             inst_label = ''
         if self._driver == 'mct':
-            binfilename = os.path.join(rundir, "timing", "model_timing{}_stats" . format(inst_label))
+            binfilename = os.path.join(rundir, "timing", "cesm_timing{}_stats" . format(inst_label))
             finfilename = os.path.join(self.caseroot, "timing",
                                        "{}_timing{}_stats.{}".format(cime_model, inst_label, self.lid))
         elif self._driver == 'nuopc':

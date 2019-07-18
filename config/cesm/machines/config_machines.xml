@@ -1195,12 +1195,12 @@ This allows using a different mpirun command to launch unit tests
         <command name="purge"></command>
         <command name="load">TACC</command>
         <command name="load">python/2.7.16</command>
-        <command name="load">intel/19.0.4</command>
+        <command name="load">intel/18.0.5</command>
         <command name="load">cmake/3.13.4</command>
       </modules>
       <modules mpilib="impi">
-        <command name="load">impi/19.0.4</command>
-        <command name="load">pnetcdf/1.11.2</command>
+        <command name="load">impi/18.0.5</command>
+        <command name="load">pnetcdf/1.11.2</command> 
         <command name="load">parallel-netcdf/4.6.2</command>
       </modules>
       <modules mpilib="mpi-serial">
@@ -1209,6 +1209,16 @@ This allows using a different mpirun command to launch unit tests
     </module_system>
     <environment_variables>
       <env name="OMP_STACKSIZE">256M</env>
+      <env name="MY_MPIRUN_OPTIONS">-prepend-rank </env>
+      <env name="I_MPI_ADJUST_GATHER">3</env>
+      <env name="I_MPI_ADJUST_GATHERV">3</env>
+      <env name="I_MPI_ADJUST_SCATTER">3</env>
+      <env name="I_MPI_ADJUST_SCATTERV">2</env>
+      <!--     <env name="I_MPI_DEBUG">50</env> -->
+      <env name="I_MPI_OFA_DYNAMIC_QPS">0</env> 
+      <env name="I_MPI_EXTRA_FILESYSTEM">enable</env>
+      <env name="I_MPI_EXTRA_FILESYSTEM_LIST">lustre</env>
+      <env name="I_MPI_JOB_FAST_STARTUP">1</env>
      </environment_variables>
   </machine>
 
