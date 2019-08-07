@@ -1162,7 +1162,7 @@ This allows using a different mpirun command to launch unit tests
     <NODENAME_REGEX>.*frontera</NODENAME_REGEX>
     <OS>LINUX</OS>
     <COMPILERS>intel</COMPILERS>
-    <MPILIBS>impi</MPILIBS>
+    <MPILIBS>impi,mvapich</MPILIBS>
     <PROJECT>FTA-Chang</PROJECT>
     <CIME_OUTPUT_ROOT>$ENV{SCRATCH}</CIME_OUTPUT_ROOT>
     <!-- temporary until /work is mounted on compute nodes -->
@@ -1177,6 +1177,12 @@ This allows using a different mpirun command to launch unit tests
     <MAX_TASKS_PER_NODE>112</MAX_TASKS_PER_NODE>
     <MAX_MPITASKS_PER_NODE>56</MAX_MPITASKS_PER_NODE>
     <mpirun mpilib="impi">
+      <executable>ibrun</executable>
+      <arguments>
+	<arg name="ntasks"> -n {{ total_tasks }} </arg>
+      </arguments>
+    </mpirun>
+    <mpirun mpilib="mvapich">
       <executable>ibrun</executable>
       <arguments>
 	<arg name="ntasks"> -n {{ total_tasks }} </arg>
@@ -1203,12 +1209,20 @@ This allows using a different mpirun command to launch unit tests
         <command name="load">pnetcdf/1.11.2</command> 
         <command name="load">parallel-netcdf/4.6.2</command>
       </modules>
+      <modules mpilib="mvapich">
+	<command name="rm">impi</command>
+        <command name="load">mvapich2/2.X</command>
+        <command name="load">pnetcdf/1.11.2</command> 
+        <command name="load">parallel-netcdf/4.6.2</command>
+      </modules>
       <modules mpilib="mpi-serial">
         <command name="load">netcdf/4.6.2</command>
       </modules>
     </module_system>
     <environment_variables>
       <env name="OMP_STACKSIZE">256M</env>
+    </environment_variables>
+    <environment_variables mpilib="impi">
       <env name="MY_MPIRUN_OPTIONS">-prepend-rank </env>
       <env name="I_MPI_ADJUST_GATHER">3</env>
       <env name="I_MPI_ADJUST_GATHERV">3</env>
