@@ -1038,7 +1038,7 @@ contains
              if (present(timer_comp_run)) then
                 call t_drvstopf (trim(timer_comp_run))
              end if
-
+#ifdef DEBUG
              if (present(comp_num)) then
                 if (present(run_barriers)) then
                    if (run_barriers) then
@@ -1055,7 +1055,7 @@ contains
                    endif
                 end if
              end if
-
+#endif
           endif
        enddo   ! eci
 

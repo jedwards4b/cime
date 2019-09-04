@@ -1188,7 +1188,7 @@ This allows using a different mpirun command to launch unit tests
 	<arg name="ntasks"> -n {{ total_tasks }} </arg>
       </arguments>
     </mpirun>
-    <module_system type="module">
+    <module_system type="module" allow_error="true">
       <init_path lang="perl">/opt/apps/lmod/lmod/init/perl</init_path>
       <init_path lang="python">/opt/apps/lmod/lmod/init/env_modules_python.py</init_path>
       <init_path lang="sh">/opt/apps/lmod/lmod/init/sh</init_path>
@@ -1200,12 +1200,11 @@ This allows using a different mpirun command to launch unit tests
       <modules>
         <command name="purge"></command>
         <command name="load">TACC</command>
-        <command name="load">python/2.7.16</command>
-        <command name="load">intel/18.0.5</command>
+        <command name="load">intel/19.0.4</command>
         <command name="load">cmake/3.13.4</command>
       </modules>
       <modules mpilib="impi">
-        <command name="load">impi/18.0.5</command>
+        <command name="load">impi</command>
         <command name="load">pnetcdf/1.11.2</command> 
         <command name="load">parallel-netcdf/4.6.2</command>
       </modules>
@@ -1234,6 +1233,25 @@ This allows using a different mpirun command to launch unit tests
       <env name="I_MPI_EXTRA_FILESYSTEM_LIST">lustre</env>
       <env name="I_MPI_JOB_FAST_STARTUP">1</env>
      </environment_variables>
+  <environment_variables mpilib="mvapich">
+    <env name="MV2_HOMOGENEOUS_CLUSTER"/>
+    <env name="MV2_HYBRID_BINDING_POLICY">spread</env>
+    <env name="MV2_CPU_BINDING_POLICY">hybrid</env>
+    <env name="MV2_USE_DC">0</env>
+    <env name="MV2_HYBRID_ENABLE_THRESHOLD">1</env>
+    <env name="MV2_UD_MAX_SEND_WQE">4096</env>
+    <env name="MV2_UD_MAX_RECV_WQE">4096</env>
+    <env name="TACC_MPI_GETMODE">mvapich2_ssh</env>
+
+    <env name="MPI_ROOT">/scratch1/01255/siliu/mvapich2/2.x/intel19</env>
+    <env name="MPICH_HOME">/scratch1/01255/siliu/mvapich2/2.x/intel19</env>
+    <env name="MV2_INC">/scratch1/01255/siliu/mvapich2/2.x/intel19/include</env>
+    <env name="MV2_LIB">/scratch1/01255/siliu/mvapich2/2.x/intel19/lib64</env>
+
+    <env name="LD_LIBRARY_PATH">/scratch1/01255/siliu/mvapich2/2.x/intel19/lib64:$ENV{LD_LIBRARY_PATH}</env>
+    <env name="PATH">/scratch1/01255/siliu/mvapich2/qp-patch:/scratch1/01255/siliu/mvapich2/2.x/intel19/bin:$ENV{PATH}</env>
+  </environment_variables>
+
   </machine>
 
   <machine MACH="gaea">
