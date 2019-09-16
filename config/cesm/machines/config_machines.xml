@@ -1200,11 +1200,10 @@ This allows using a different mpirun command to launch unit tests
       <modules>
         <command name="purge"></command>
         <command name="load">TACC</command>
-        <command name="load">intel/19.0.4</command>
+        <command name="load">intel/19.0.5</command>
         <command name="load">cmake/3.13.4</command>
       </modules>
       <modules mpilib="impi">
-	<command name="use">/admin/build/admin/rpms/frontera/rtevans/apps/intel19/modulefiles</command>
         <command name="load">impi/19.0.5</command>
         <command name="load">pnetcdf/1.11.2</command> 
         <command name="load">parallel-netcdf/4.6.2</command>
