@@ -1230,10 +1230,10 @@ This allows using a different mpirun command to launch unit tests
       <env name="I_MPI_ADJUST_SCATTERV">2</env>
       <!--     <env name="I_MPI_DEBUG">50</env> -->
       <env name="I_MPI_OFA_DYNAMIC_QPS">0</env> 
-<!--      <env name="I_MPI_EXTRA_FILESYSTEM">enable</env>
-      <env name="I_MPI_EXTRA_FILESYSTEM_LIST">lustre</env> -->
-      <env name="I_MPI_EXTRA_FILESYSTEM_FORCE">ufs</env>
+      <env name="I_MPI_EXTRA_FILESYSTEM">enable</env>
+      <env name="I_MPI_EXTRA_FILESYSTEM_LIST">lustre</env> 
       <env name="I_MPI_JOB_FAST_STARTUP">1</env>
+      <env name="LD_PRELOAD">/scratch1/01255/siliu/io_patch_JE/io_patch.so:/scratch1/01255/siliu/io_patch_JE/hook.so</env>
      </environment_variables>
   <environment_variables mpilib="mvapich">
     <env name="MV2_HOMOGENEOUS_CLUSTER"/>
