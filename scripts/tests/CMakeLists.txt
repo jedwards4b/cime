@@ -31,8 +31,8 @@ if (DEFINED ENV{CIME_MPILIB})
   set(args "${args} --mpilib $ENV{CIME_MPILIB}")
 endif()
 if (DEFINED ENV{CIME_TESTROOT})
-  set(args "${args} --test-root=${CIME_TESTROOT}")
-endif
+  set(args "${args} --test-root=$ENV{CIME_TESTROOT}")
+endif()
 separate_arguments(ARG_LIST UNIX_COMMAND ${args})
 
 MESSAGE("ARG_LIST is ${ARG_LIST}")
