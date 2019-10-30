@@ -22,10 +22,17 @@ if (DEFINED ENV{CIME_COMPILER})
 else()
    set(compiler "default")
 endif()
+
+if (DEFINED ENV{CIME_DRIVER})
+   set(driver $ENV{CIME_DRIVER})
+else()
+   set(driver "mct")
+endif()
+
 if (DEFINED ENV{CIME_MPILIB})
    set(mpilib $ENV{CIME_MPILIB})
 else()
    set(mpilib "default")
 endif()
 
-set(BUILDNAME "scripts_regression_${shell}_${compiler}_${mpilib}")
+set(BUILDNAME "srt_${driver}_${shell}_${compiler}_${mpilib}")
