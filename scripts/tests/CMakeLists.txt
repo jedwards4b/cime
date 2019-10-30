@@ -30,13 +30,12 @@ endif()
 if (DEFINED ENV{CIME_MPILIB})
   set(args "${args} --mpilib $ENV{CIME_MPILIB}")
 endif()
-STRING(TIMESTAMP CTIME)
-
-set(args "${args} --test-root=srt.${CTIME}")
-
+if (DEFINED ENV{CIME_TESTROOT})
+  set(args "${args} --test-root=${CIME_TESTROOT}")
+endif
 separate_arguments(ARG_LIST UNIX_COMMAND ${args})
 
-#MESSAGE("ARG_LIST is ${ARG_LIST}")
+MESSAGE("ARG_LIST is ${ARG_LIST}")
 
 foreach(ATEST ${TEST_LIST})
     # this assignment prevents quotes being added to testname in add_test
