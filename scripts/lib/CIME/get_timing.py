@@ -85,7 +85,7 @@ class _TimingParser:
         maxval = 0
 
         for line in self.finlines:
-            m = re.match(r'\s*{}\s*\d+\s*\d+\s*\S+\s*\S+\s*(\d*\.\d+)\s*\(.*\)\s*(\d*\.\d+)\s*\(.*\)'.format(heading), line)
+            m = re.match(r'\s*{}\s*-?\s*\d+\s*\d+\s*\S+\s*\S+\s*(\d*\.\d+)\s*\(.*\)\s*(\d*\.\d+)\s*\(.*\)'.format(heading), line)
             if m:
                 maxval = float(m.groups()[0])
                 minval = float(m.groups()[1])
@@ -210,7 +210,6 @@ class _TimingParser:
             logger.warning("Unknown NCPL_BASE_PERIOD={}".format(ncpl_base_period))
 
         nprocs, ncount = self.gettime2('CPL:CLOCK_ADVANCE ')
-        print ("ncount {} nprocs {}".format(ncount, nprocs))
         nsteps = ncount / nprocs
 
         adays = nsteps*tlen/ncpl
@@ -346,7 +345,7 @@ class _TimingParser:
             for k in self.case.get_values("COMP_CLASSES"):
                 m = self.models[k]
                 self.write("    {} Run Time:  {:10.3f} seconds   {:10.3f} seconds/mday   {:10.2f} myears/wday \n".format(k, m.tmax, m.tmax/adays, m.tmaxr))
-                self.write("    CPL COMM Time: {:10.3f} seconds   {:10.3f} seconds/mday   {:10.2f} myears/wday \n".format(xmax, xmax/adays, xmaxr))
+            self.write("    CPL COMM Time: {:10.3f} seconds   {:10.3f} seconds/mday   {:10.2f} myears/wday \n".format(xmax, xmax/adays, xmaxr))
 
         self.write("\n\n---------------- DRIVER TIMING FLOWCHART "
                    "--------------------- \n\n")
