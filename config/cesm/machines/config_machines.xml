@@ -1164,12 +1164,11 @@ This allows using a different mpirun command to launch unit tests
     <MPILIBS>impi,mvapich</MPILIBS>
     <PROJECT>FTA-Chang</PROJECT>
     <CIME_OUTPUT_ROOT>$ENV{SCRATCH}</CIME_OUTPUT_ROOT>
-    <!-- temporary until /work is mounted on compute nodes -->
-    <DIN_LOC_ROOT>/scratch1/02503/edwardsj/CESM/inputdata</DIN_LOC_ROOT>
-    <DIN_LOC_ROOT_CLMFORC>/scratch1/02503/edwardsj/CESM/inputdata/lmwg</DIN_LOC_ROOT_CLMFORC>
+    <DIN_LOC_ROOT>/work/02503/edwardsj/CESM/inputdata/</DIN_LOC_ROOT>
+    <DIN_LOC_ROOT_CLMFORC>/work/02503/edwardsj/CESM/inputdata/lmwg</DIN_LOC_ROOT_CLMFORC>
     <DOUT_S_ROOT>$ENV{SCRATCH}/archive/$CASE</DOUT_S_ROOT>
-    <BASELINE_ROOT>$ENV{SCRATCH}/CESM/cesm_baselines</BASELINE_ROOT>
-    <CCSM_CPRNC>$ENV{SCRATCH}/CESM/tools/cprnc</CCSM_CPRNC>
+    <BASELINE_ROOT>/work/02503/edwardsj/CESM/cesm_baselines</BASELINE_ROOT>
+    <CCSM_CPRNC>/work/02503/edwardsj/CESM/tools/cprnc</CCSM_CPRNC>
     <GMAKE_J>4</GMAKE_J>
     <BATCH_SYSTEM>slurm</BATCH_SYSTEM>
     <SUPPORTED_BY>cseg</SUPPORTED_BY>
