@@ -1202,7 +1202,8 @@ This allows using a different mpirun command to launch unit tests
         <command name="load">cmake/3.13.4</command>
       </modules>
       <modules mpilib="impi">
-        <command name="load">impi/19.0.5</command>
+	<command name="use"> /home1/00422/cazes/modulefiles/intel19</command>
+        <command name="load">impi/19.0.6</command>
         <command name="load">pnetcdf/1.11.2</command> 
         <command name="load">parallel-netcdf/4.6.2</command>
       </modules>
@@ -1219,6 +1220,7 @@ This allows using a different mpirun command to launch unit tests
     </module_system>
     <environment_variables>
       <env name="OMP_STACKSIZE">256M</env>
+      <env name="UCX_DC_MLX5_RETRY_COUNT">20</env>
     </environment_variables>
     <environment_variables mpilib="impi">
       <env name="MY_MPIRUN_OPTIONS">-prepend-rank </env>
@@ -1227,12 +1229,7 @@ This allows using a different mpirun command to launch unit tests
       <env name="I_MPI_ADJUST_GATHERV">3</env>
       <env name="I_MPI_ADJUST_SCATTER">3</env>
       <env name="I_MPI_ADJUST_SCATTERV">2</env>
-      <!--     <env name="I_MPI_DEBUG">50</env> -->
-      <env name="I_MPI_OFA_DYNAMIC_QPS">0</env> 
       <env name="I_MPI_EXTRA_FILESYSTEM">enable</env>
-      <env name="I_MPI_EXTRA_FILESYSTEM_LIST">lustre</env> 
-      <env name="I_MPI_JOB_FAST_STARTUP">1</env>
-      <env name="LD_PRELOAD">/scratch1/01255/siliu/io_patch_JE/io_patch.so:/scratch1/01255/siliu/io_patch_JE/hook.so</env>
      </environment_variables>
   <environment_variables mpilib="mvapich">
     <env name="MV2_HOMOGENEOUS_CLUSTER"/>
