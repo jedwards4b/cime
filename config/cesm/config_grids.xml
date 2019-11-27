@@ -772,6 +772,13 @@
       <mask>gx1v6</mask>
     </model_grid>
 
+    <model_grid alias="ne120_ne120_mt12" not_compset="_POP">
+      <grid name="atm">ne120np4</grid>
+      <grid name="lnd">ne120np4</grid>
+      <grid name="ocnice">ne120np4</grid>
+      <mask>tx0.1v2</mask>
+    </model_grid>
+
     <model_grid alias="ne240_f02_g16">
       <grid name="atm">ne240np4</grid>
       <grid name="lnd">0.23x0.31</grid>
