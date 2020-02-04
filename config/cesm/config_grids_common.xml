@@ -126,6 +126,7 @@
 
     <gridmap rof_grid="r05" ocn_grid="gx1v6" >
       <map name="ROF2OCN_FMAPNAME">cpl/cpl6/map_r05_TO_g16_aave.120920.nc</map>
+      <map name="ROF2OCN_RMAPNAME">cpl/cpl6/map_r05_to_gx1v6_e1000r300_090226.nc</map>
     </gridmap>
 
     <gridmap rof_grid="r05" ocn_grid="gx1v7" >
