@@ -21,7 +21,6 @@
   <entry id="PIO_STRIDE">
     <values>
       <value>$MAX_MPITASKS_PER_NODE</value>
-      <value mach="yellowstone" grid="a%ne120.+oi%gx1">60</value>
     </values>
   </entry>
 
@@ -58,9 +57,7 @@
 
   <entry id="PIO_REARRANGER">
     <values>
-      <!-- Note: problem not using box rearranger with nuopc caps -->
-      <!-- <value>$PIO_VERSION</value> -->
-      <value>1</value>
+      <value>$PIO_VERSION</value>
     </values>
   </entry>
 
