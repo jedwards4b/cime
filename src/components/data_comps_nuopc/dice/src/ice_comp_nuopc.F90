@@ -5,37 +5,35 @@ module ice_comp_nuopc
   !----------------------------------------------------------------------------
 
   use ESMF
-  use NUOPC                , only : NUOPC_CompDerive, NUOPC_CompSetEntryPoint, NUOPC_CompSpecialize
-  use NUOPC                , only : NUOPC_CompAttributeGet, NUOPC_Advertise
-  use NUOPC_Model          , only : model_routine_SS        => SetServices
-  use NUOPC_Model          , only : model_label_Advance     => label_Advance
-  use NUOPC_Model          , only : model_label_SetRunClock => label_SetRunClock
-  use NUOPC_Model          , only : model_label_Finalize    => label_Finalize
-  use NUOPC_Model          , only : NUOPC_ModelGet
-  use shr_file_mod         , only : shr_file_getlogunit, shr_file_setlogunit
-  use shr_kind_mod         , only : r8=>shr_kind_r8, cxx=>shr_kind_cxx, cl=>shr_kind_cl, cs=>shr_kind_cs
-  use shr_const_mod        , only : shr_const_pi, shr_const_spval, shr_const_tkfrz, shr_const_latice
-  use shr_sys_mod          , only : shr_sys_abort
-  use shr_cal_mod          , only : shr_cal_noleap, shr_cal_gregorian, shr_cal_ymd2date, shr_cal_ymd2julian
-  use shr_mpi_mod          , only : shr_mpi_bcast
-  use shr_frz_mod          , only : shr_frz_freezetemp
-  use dshr_methods_mod     , only : dshr_state_getfldptr, dshr_state_diagnose, chkerr, memcheck
-  use dshr_mod             , only : dshr_model_initphase, dshr_init, dshr_sdat_init 
-  use dshr_mod             , only : dshr_state_setscalar, dshr_set_runclock, dshr_log_clock_advance
-  use dshr_mod             , only : dshr_restart_read, dshr_restart_write
-  use dshr_mod             , only : dshr_create_mesh_from_grid
-  use dshr_strdata_mod     , only : shr_strdata_type, shr_strdata_advance
-  use dshr_dfield_mod      , only : dfield_type, dshr_dfield_add, dshr_dfield_copy
-  use dshr_fldlist_mod     , only : fldlist_type, dshr_fldlist_add, dshr_fldlist_realize
-  use dice_flux_atmice_mod , only : dice_flux_atmice
-  use perf_mod             , only : t_startf, t_stopf, t_adj_detailf, t_barrierf
-  use pio
+  use NUOPC            , only : NUOPC_CompDerive, NUOPC_CompSetEntryPoint, NUOPC_CompSpecialize
+  use NUOPC            , only : NUOPC_CompAttributeGet, NUOPC_Advertise
+  use NUOPC_Model      , only : model_routine_SS        => SetServices
+  use NUOPC_Model      , only : SetVM
+  use NUOPC_Model      , only : model_label_Advance     => label_Advance
+  use NUOPC_Model      , only : model_label_SetRunClock => label_SetRunClock
+  use NUOPC_Model      , only : model_label_Finalize    => label_Finalize
+  use NUOPC_Model      , only : NUOPC_ModelGet
+  use shr_file_mod     , only : shr_file_getlogunit, shr_file_setlogunit
+  use shr_kind_mod     , only : r8=>shr_kind_r8, i8=>shr_kind_i8, cl=>shr_kind_cl, cs=>shr_kind_cs
+  use shr_const_mod    , only : shr_const_spval, shr_const_pi
+  use shr_sys_mod      , only : shr_sys_abort
+  use shr_cal_mod      , only : shr_cal_noleap, shr_cal_gregorian, shr_cal_ymd2date, shr_cal_ymd2julian
+  use shr_strdata_mod  , only : shr_strdata_type, shr_strdata_readnml
+  use shr_mpi_mod      , only : shr_mpi_bcast
+  use dshr_methods_mod , only : chkerr, state_setscalar, state_diagnose, memcheck
+  use dshr_methods_mod , only : set_component_logging, log_clock_advance
+  use dshr_nuopc_mod   , only : dshr_advertise, dshr_model_initphase, dshr_set_runclock
+  use dshr_nuopc_mod   , only : dshr_sdat_init, dshr_check_mesh
+  use dshr_nuopc_mod   , only : dshr_restart_read, dshr_restart_write
+  use dice_comp_mod    , only : dice_comp_advertise, dice_comp_realize, dice_comp_run
+  use dice_comp_mod    , only : water  ! for restart
+  use perf_mod         , only : t_startf, t_stopf, t_adj_detailf, t_barrierf
 
   implicit none
   private ! except
 
   public  :: SetServices
-
+  public  :: SetVM
   private :: InitializeAdvertise
   private :: InitializeRealize
   private :: ModelAdvance
@@ -230,16 +228,16 @@ contains
     integer           :: shrlogunit         ! original log unit
     integer           :: nu                 ! unit number
     integer           :: ierr               ! error code
-    logical           :: exists             ! check for file existence  
+    logical           :: exists             ! check for file existence
     character(len=*),parameter  :: subname=trim(modName)//':(InitializeAdvertise) '
     !-------------------------------------------------------------------------------
 
     namelist / dice_nml / datamode, model_maskfile, restfilm, restfils, &
-         flux_swpf, flux_Qmin, flux_Qacc, flux_Qacc0 
+         flux_swpf, flux_Qmin, flux_Qacc, flux_Qacc0
 
     rc = ESMF_SUCCESS
 
-    ! Obtain flds_scalar values, mpi values, multi-instance values and  
+    ! Obtain flds_scalar values, mpi values, multi-instance values and
     ! set logunit and set shr logging to my log file
     call dshr_init(gcomp, mpicom, my_task, inst_index, inst_suffix, &
          flds_scalar_name, flds_scalar_num, flds_scalar_index_nx, flds_scalar_index_ny, &
@@ -351,7 +349,7 @@ contains
 
     ! Initialize sdat
     call t_startf('dice_strdata_init')
-    if (trim(model_maskfile) /= nullstr) then 
+    if (trim(model_maskfile) /= nullstr) then
        call dshr_sdat_init(gcomp, clock, nlfilename, compid, logunit, 'ice', mesh, read_restart, sdat, &
             model_maskfile=model_maskfile, rc=rc)
        if (ChkErr(rc,__LINE__,u_FILE_u)) return
@@ -707,11 +705,11 @@ contains
 
     ! Set Si_imask (this corresponds to the ocean mask)
     allocate(imask(sdat%lsize))
-    if (trim(model_maskfile) /= nullstr) then 
+    if (trim(model_maskfile) /= nullstr) then
        ! Read in the ocean fraction from the input namelist ocean mask file and assume 'mask' name on domain file
        rcode = pio_openfile(sdat%pio_subsystem, pioid, sdat%io_type, trim(model_maskfile), pio_nowrite)
        call pio_seterrorhandling(pioid, PIO_BCAST_ERROR)
-       rcode = pio_inq_varid(pioid, 'mask', varid) 
+       rcode = pio_inq_varid(pioid, 'mask', varid)
        call pio_initdecomp(sdat%pio_subsystem, pio_int, (/sdat%nxg, sdat%nyg/), sdat%gindex, pio_iodesc)
        call pio_read_darray(pioid, varid, pio_iodesc, imask, rcode)
        call pio_closefile(pioid)

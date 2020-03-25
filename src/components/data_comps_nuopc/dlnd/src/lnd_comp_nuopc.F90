@@ -5,35 +5,34 @@ module lnd_comp_nuopc
   !----------------------------------------------------------------------------
 
   use ESMF
-  use NUOPC             , only : NUOPC_CompDerive, NUOPC_CompSetEntryPoint, NUOPC_CompSpecialize
-  use NUOPC             , only : NUOPC_CompAttributeGet, NUOPC_Advertise
-  use NUOPC_Model       , only : model_routine_SS        => SetServices
-  use NUOPC_Model       , only : model_label_Advance     => label_Advance
-  use NUOPC_Model       , only : model_label_SetRunClock => label_SetRunClock
-  use NUOPC_Model       , only : model_label_Finalize    => label_Finalize
-  use NUOPC_Model       , only : NUOPC_ModelGet
-  use shr_file_mod      , only : shr_file_getlogunit, shr_file_setlogunit
-  use shr_kind_mod      , only : r8=>shr_kind_r8, i8=>shr_kind_i8, cl=>shr_kind_cl, cs=>shr_kind_cs
-  use shr_sys_mod       , only : shr_sys_abort
-  use shr_cal_mod       , only : shr_cal_ymd2date
-  use shr_mpi_mod       , only : shr_mpi_bcast
-  use dshr_methods_mod  , only : dshr_state_getfldptr, dshr_state_diagnose, chkerr, memcheck
-  use dshr_strdata_mod  , only : shr_strdata_type, shr_strdata_advance, shr_strdata_get_stream_domain
-  use dshr_mod          , only : dshr_model_initphase, dshr_init, dshr_sdat_init 
-  use dshr_mod          , only : dshr_state_setscalar
-  use dshr_mod          , only : dshr_set_runclock, dshr_log_clock_advance
-  use dshr_mod          , only : dshr_restart_read, dshr_restart_write
-  use dshr_mod          , only : dshr_create_mesh_from_grid
-  use dshr_dfield_mod   , only : dfield_type, dshr_dfield_add, dshr_dfield_copy
-  use dshr_fldlist_mod  , only : fldlist_type, dshr_fldlist_add, dshr_fldlist_realize
-  use glc_elevclass_mod , only : glc_elevclass_as_string, glc_elevclass_init
-  use perf_mod          , only : t_startf, t_stopf, t_adj_detailf, t_barrierf
+  use NUOPC            , only : NUOPC_CompDerive, NUOPC_CompSetEntryPoint, NUOPC_CompSpecialize
+  use NUOPC            , only : NUOPC_CompAttributeGet, NUOPC_Advertise
+  use NUOPC_Model      , only : model_routine_SS        => SetServices
+  use NUOPC_Model      , only : SetVM
+  use NUOPC_Model      , only : model_label_Advance     => label_Advance
+  use NUOPC_Model      , only : model_label_SetRunClock => label_SetRunClock
+  use NUOPC_Model      , only : model_label_Finalize    => label_Finalize
+  use NUOPC_Model      , only : NUOPC_ModelGet
+  use shr_file_mod     , only : shr_file_getlogunit, shr_file_setlogunit
+  use shr_kind_mod     , only : r8=>shr_kind_r8, i8=>shr_kind_i8, cl=>shr_kind_cl, cs=>shr_kind_cs
+  use shr_const_mod    , only : SHR_CONST_SPVAL
+  use shr_sys_mod      , only : shr_sys_abort
+  use shr_cal_mod      , only : shr_cal_ymd2date
+  use shr_mpi_mod      , only : shr_mpi_bcast
+  use shr_strdata_mod  , only : shr_strdata_type, shr_strdata_readnml
+  use dshr_methods_mod , only : chkerr, state_setscalar,  state_diagnose, memcheck
+  use dshr_methods_mod , only : set_component_logging, log_clock_advance
+  use dshr_nuopc_mod   , only : dshr_advertise, dshr_model_initphase, dshr_set_runclock
+  use dshr_nuopc_mod   , only : dshr_sdat_init, dshr_check_mesh
+  use dshr_nuopc_mod   , only : dshr_restart_read, dshr_restart_write
+  use dlnd_comp_mod    , only : dlnd_comp_advertise, dlnd_comp_realize, dlnd_comp_run
+  use perf_mod         , only : t_startf, t_stopf, t_adj_detailf, t_barrierf
 
   implicit none
   private ! except
 
   public  :: SetServices
-
+  public  :: SetVM
   private :: InitializeAdvertise
   private :: InitializeRealize
   private :: ModelAdvance
@@ -157,7 +156,7 @@ contains
 
     rc = ESMF_SUCCESS
 
-    ! Obtain flds_scalar values, mpi values, multi-instance values and  
+    ! Obtain flds_scalar values, mpi values, multi-instance values and
     ! set logunit and set shr logging to my log file
     call dshr_init(gcomp, mpicom, my_task, inst_index, inst_suffix, &
          flds_scalar_name, flds_scalar_num, flds_scalar_index_nx, flds_scalar_index_ny, &
@@ -470,7 +469,7 @@ contains
     if (chkerr(rc,__LINE__,u_FILE_u)) return
 
     ! Obtain fractional land from first stream
-    call shr_strdata_get_stream_domain(sdat, 1, mpicom, my_task, domain_fracname, lfrac) 
+    call shr_strdata_get_stream_domain(sdat, 1, mpicom, my_task, domain_fracname, lfrac)
 
     ! Create stream-> export state mapping
     allocate(strm_flds(0:glc_nec))
