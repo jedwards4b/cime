@@ -7,6 +7,7 @@
   <xs:attribute name="version" type="xs:decimal"/>
   <xs:attribute name="queue" type="xs:string"/>
   <xs:attribute name="MACH" type="xs:NCName"/>
+  <xs:attribute name="comp_interface" type="xs:NCName"/>
   <xs:attribute name="type"  type="xs:NCName"/>
 
   <!-- simple elements -->
@@ -113,6 +114,7 @@
       </xs:sequence>
 
       <xs:attribute ref="MACH"/>
+      <xs:attribute ref="comp_interface"/>
       <xs:attribute ref="type" use="required"/>
       <xs:attribute ref="version"/>
     </xs:complexType>

@@ -156,6 +156,7 @@ class Case(object):
             "compiler" : self.get_value("COMPILER"),
             "mpilib"   : self.get_value("MPILIB"),
             "threaded" : self.get_build_threaded(),
+            "comp_interface" : driver,
             }
 
         job = self.get_primary_job()
@@ -166,7 +167,7 @@ class Case(object):
             self.num_nodes += self.spare_nodes
         else:
             self.total_tasks = env_mach_pes.get_total_tasks(comp_classes, driver=driver)
-            self.tasks_per_node = env_mach_pes.get_tasks_per_node(self.total_tasks, self.thread_count, driver)
+            self.tasks_per_node = min(self.total_tasks,env_mach_pes.get_tasks_per_node(self.total_tasks, self.thread_count, driver))
 
             self.num_nodes, self.spare_nodes = env_mach_pes.get_total_nodes(self.total_tasks, self.thread_count, driver)
             self.num_nodes += self.spare_nodes
@@ -1087,7 +1088,7 @@ class Case(object):
         batch_system_type = machobj.get_value("BATCH_SYSTEM")
         logger.info("Batch_system_type is {}".format(batch_system_type))
         batch = Batch(batch_system=batch_system_type, machine=machine_name, files=files,
-                      extra_machines_dir=extra_machines_dir)
+                      comp_interface=driver, extra_machines_dir=extra_machines_dir)
         workflow = Workflow(files=files)
         bjobs = workflow.get_workflow_jobs(machine=machine_name, workflowid=workflowid)
         env_workflow = self.get_env("workflow")
@@ -1410,6 +1411,7 @@ directory, NOT in this subdirectory."""
             "mpilib"   : self.get_value("MPILIB"),
             "threaded" : self.get_build_threaded(),
             "queue" : self.get_value("JOB_QUEUE", subgroup=job),
+            "comp_interface" : self.get_value("COMP_INTERFACE"),
             "unit_testing" : False
             }
 

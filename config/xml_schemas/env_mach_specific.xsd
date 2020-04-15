@@ -156,6 +156,7 @@
         <xs:element minOccurs="0" maxOccurs="1" name="run_misc_suffix" type="xs:string"/>
       </xs:sequence>
       <xs:attribute ref="compiler"/>
+      <xs:attribute ref="comp_interface"/>
       <xs:attribute ref="mpilib"/>
       <xs:attribute name="threaded" type="xs:boolean"/>
       <xs:attribute ref="queue"/>

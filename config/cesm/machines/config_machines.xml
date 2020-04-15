@@ -377,6 +377,22 @@ This allows using a different mpirun command to launch unit tests
     <MAX_TASKS_PER_NODE>36</MAX_TASKS_PER_NODE>
     <MAX_MPITASKS_PER_NODE>36</MAX_MPITASKS_PER_NODE>
     <PROJECT_REQUIRED>TRUE</PROJECT_REQUIRED>
+    <mpirun mpilib="default" comp_interface="mct">
+      <executable>mpiexec_mpt</executable>
+      <arguments>
+	<arg name="labelstdout">-p "%g:"</arg>
+	<arg name="num_tasks"> -np {{ total_tasks }}</arg>
+	<!-- the omplace argument needs to be last -->
+	<arg name="zthreadplacement"> omplace -tm open64 </arg>
+      </arguments>
+    </mpirun>
+    <mpirun mpilib="default" comp_interface="nuopc">
+      <executable>mpiexec_mpt</executable>
+      <arguments>
+	<arg name="labelstdout">-p "%g:"</arg>
+	<arg name="num_tasks"> -np {{ total_tasks }}</arg>
+      </arguments>
+    </mpirun>
     <mpirun mpilib="default">
       <executable>mpiexec_mpt</executable>
       <arguments>
@@ -491,7 +507,7 @@ This allows using a different mpirun command to launch unit tests
       </modules>
     </module_system>
     <environment_variables>
-      <env name="OMP_STACKSIZE">1024M</env>
+      <env name="OMP_STACKSIZE">128M</env>
       <env name="TMPDIR">/glade/scratch/$USER</env>
       <env name="MPI_TYPE_DEPTH">16</env>
       <env name="MPI_IB_CONGESTED">1</env>
@@ -503,6 +519,8 @@ This allows using a different mpirun command to launch unit tests
       <env name="UGCSINPUTPATH">/glade/work/turuncu/FV3GFS/benchmark-inputs/2012010100/gfs/fcst</env>
       <env name="UGCSFIXEDFILEPATH">/glade/work/turuncu/FV3GFS/fix_am</env>
       <env name="UGCSADDONPATH">/glade/work/turuncu/FV3GFS/addon</env>
+      <env name="MPI_DSM_DISTRIBUTE">NO</env>
+      <env name="MPI_DSM_VERBOSE">YES</env>
     </environment_variables>
     <environment_variables unit_testing="true">
       <env name="MPI_USE_ARRAY">false</env>

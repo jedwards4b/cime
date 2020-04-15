@@ -199,6 +199,7 @@
       <xs:attribute ref="queue"/>
       <xs:attribute ref="mpilib"/>
       <xs:attribute ref="threaded"/>
+      <xs:attribute ref="comp_interface"/>
       <xs:attribute ref="unit_testing"/>
     </xs:complexType>
   </xs:element>

@@ -21,7 +21,7 @@ class EnvMachSpecific(EnvBase):
         """
         schema = os.path.join(get_cime_root(), "config", "xml_schemas", "env_mach_specific.xsd")
         EnvBase.__init__(self, caseroot, infile, schema=schema, read_only=read_only)
-        self._allowed_mpi_attributes = ("compiler", "mpilib", "threaded", "unit_testing", "queue")
+        self._allowed_mpi_attributes = ("compiler", "mpilib", "threaded", "unit_testing", "queue", "comp_interface")
         self._unit_testing = unit_testing
 
     def populate(self, machobj):

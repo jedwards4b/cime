@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class Batch(GenericXML):
 
-    def __init__(self, batch_system=None, machine=None, infile=None, files=None, extra_machines_dir=None):
+    def __init__(self, batch_system=None, machine=None, infile=None, files=None, extra_machines_dir=None, comp_interface="mct"):
         """
         initialize an object
 
@@ -35,13 +35,16 @@ class Batch(GenericXML):
         self.machine_node      = None
         self.batch_system      = batch_system
         self.machine           = machine
-
         # Append the contents of $HOME/.cime/config_batch.xml if it exists.
         #
         # Also append the contents of a config_batch.xml file in the directory given by
         # extra_machines_dir, if present.
         #
         # This could cause problems if node matches are repeated when only one is expected.
+        self.comp_interface            = comp_interface
+        #Append the contents of $HOME/.cime/config_batch.xml if it exists
+        #This could cause problems if node matchs are repeated when only one is expected
+
         infile = os.path.join(os.environ.get("HOME"),".cime","config_batch.xml")
         if os.path.exists(infile):
             GenericXML.read(self, infile)
@@ -83,9 +86,10 @@ class Batch(GenericXML):
             nodes = self.get_children("batch_system",{"type" : batch_system})
             for node in nodes:
                 mach = self.get(node, "MACH")
-                if mach is None:
+                comp_interface = self.get(node, "comp_interface")
+                if mach is None and (comp_interface is None or comp_interface == self.comp_interface):
                     self.batch_system_node = node
-                elif mach == machine:
+                elif mach == machine and (comp_interface is None or comp_interface == self.comp_interface):
                     self.machine = machine
                     self.machine_node = node
 
