@@ -1375,7 +1375,7 @@ This allows using a different mpirun command to launch unit tests
     <DIN_LOC_ROOT_CLMFORC>/project/tss</DIN_LOC_ROOT_CLMFORC>
     <DOUT_S_ROOT>/scratch/cluster/$USER/archive/$CASE</DOUT_S_ROOT>
     <BASELINE_ROOT>/fs/cgd/csm/ccsm_baselines</BASELINE_ROOT>
-    <CCSM_CPRNC>/fs/cgd/csm/tools/cime/tools/cprnc/cprnc</CCSM_CPRNC>
+    <CCSM_CPRNC>/fs/cgd/csm/tools/cime/tools/cprnc/cprnc.041720</CCSM_CPRNC>
     <GMAKE>gmake --output-sync</GMAKE>
     <GMAKE_J>4</GMAKE_J>
     <BATCH_SYSTEM>pbs</BATCH_SYSTEM>
@@ -1408,15 +1408,15 @@ This allows using a different mpirun command to launch unit tests
 	<command name="purge"></command>
       </modules>
       <modules compiler="intel">
-	<command name="load">compiler/intel/19.0.2</command>
-	<command name="load">tool/netcdf/4.6.1/intel</command>
+	<command name="load">compiler/intel/20.0.1</command>
+	<command name="load">tool/netcdf/4.7.4/intel/20.0.1</command>
       </modules>
       <modules compiler="intel" mpilib="mvapich2">
-	<command name="load">mvapich2/2.3/intel-cluster-19.0.1</command>
+	<command name="load">mpi/2.3.3/intel/20.0.1</command>
       </modules>
       <modules compiler="pgi">
-	<command name="load">compiler/pgi/18.10</command>
-	<command name="load">tool/netcdf/4.6.1/pgi</command>
+	<command name="load">compiler/pgi/20.1</command>
+	<command name="load">tool/netcdf/4.7.4/pgi/20.1</command>
       </modules>
       <modules compiler="nag">
 	<command name="load">compiler/nag/6.2</command>
@@ -1429,14 +1429,14 @@ This allows using a different mpirun command to launch unit tests
 	<command name="load">openmpi/4.0.0/nag-6.2</command>
       </modules>
       <modules compiler="gnu">
-	<command name="load">compiler/gnu/8.2.0</command>
-	<command name="load">tool/netcdf/4.6.1/gcc</command>
+	<command name="load">compiler/gnu/9.3.0</command>
+	<command name="load">tool/netcdf/4.7.4/gnu/9.3.0</command>
       </modules>
       <modules compiler="gnu" mpilib="openmpi">
-	<command name="load">openmpi/4.0.0/gnu-8.2.0</command>
+	<command name="load">openmpi/4.0.3/gnu/9.3.0</command>
       </modules>
       <modules compiler="gnu" mpilib="mvapich2">
-	<command name="load">mvapich2/2.3/gnu-8.2.0</command>
+	<command name="load">mpi/2.3.3/gnu/9.3.0</command>
       </modules>
     </module_system>
     <environment_variables>
