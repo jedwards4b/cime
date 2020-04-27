@@ -402,7 +402,13 @@ This allows using a different mpirun command to launch unit tests
 	<arg name="zthreadplacement"> omplace -tm open64 </arg>
       </arguments>
     </mpirun>
-    <mpirun mpilib="mpt" queue="share">
+    <mpirun mpilib="mpt" queue="share" comp_interface="nuopc">
+      <executable>mpirun `hostname`</executable>
+      <arguments>
+	<arg name="anum_tasks"> -np {{ total_tasks }}</arg>
+      </arguments>
+    </mpirun>
+    <mpirun mpilib="mpt" queue="share" comp_interface="mct">
       <executable>mpirun `hostname`</executable>
       <arguments>
 	<arg name="anum_tasks"> -np {{ total_tasks }}</arg>

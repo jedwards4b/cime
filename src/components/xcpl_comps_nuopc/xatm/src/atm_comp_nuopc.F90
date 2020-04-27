@@ -22,6 +22,7 @@ module atm_comp_nuopc
   use dead_nuopc_mod    , only : dead_init_nuopc, dead_final_nuopc, dead_meshinit
   use dead_nuopc_mod    , only : fld_list_add, fld_list_realize, fldsMax, fld_list_type
   use dead_nuopc_mod    , only : ModelInitPhase, ModelSetRunClock
+!$  use omp_lib, only: OMP_GET_THREAD_NUM, OMP_GET_NUM_THREADS, OMP_GET_MAX_THREADS, OMP_GET_NUM_PROCS
 
   implicit none
   private ! except
@@ -318,11 +319,14 @@ contains
     integer, intent(out) :: rc
 
     ! local variables
+    type(ESMF_VM)          :: vm
     type(ESMF_Mesh)        :: Emesh
     type(ESMF_Time)        :: nextTime
     real(r8)               :: nextsw_cday
     integer                :: n
     integer                :: shrlogunit                ! original log unit
+    integer                :: localPet, localPeCount
+    character(len=ESMF_MAXSTR) :: msgString
     character(len=*),parameter :: subname=trim(modName)//':(InitializeRealize: xatm) '
     !-------------------------------------------------------------------------------
 
@@ -335,6 +339,27 @@ contains
 
     call shr_file_getLogUnit (shrlogunit)
     call shr_file_setLogUnit (logUnit)
+
+    !--------------------------------
+    ! Test OpenMP interface
+    !--------------------------------
+    call ESMF_GridCompGet(gcomp, vm=vm, localPet=localPet, rc=rc)
+    if (chkerr(rc,__LINE__,u_FILE_u)) return
+
+    call ESMF_VMGet(vm, pet=localPet, peCount=localPeCount, rc=rc)
+    if (chkerr(rc,__LINE__,u_FILE_u)) return
+
+!$  call omp_set_num_threads(localPeCount)
+!$omp parallel private(msgString)
+!$omp critical
+!$      write(msgString,*) subname, ": thread_num=", omp_get_thread_num(), &
+!$      "   num_threads=", omp_get_num_threads(), &
+!$      "   max_threads=", omp_get_max_threads(), &
+!$      "   max available procs=", omp_get_num_procs()
+!$      if(mastertask) write(logunit,*) msgString
+!$      call ESMF_LogWrite(msgString, ESMF_LOGMSG_INFO, rc=rc)
+!$omp end critical
+!$omp end parallel
 
     !--------------------------------
     ! generate the mesh
@@ -412,7 +437,6 @@ contains
   !===============================================================================
 
   subroutine ModelAdvance(gcomp, rc)
-!$  use omp_lib, only: OMP_GET_THREAD_NUM, OMP_GET_NUM_THREADS, OMP_GET_MAX_THREADS, OMP_GET_NUM_PROCS
     use ESMF, only : ESMF_VM, ESMF_VMGet, ESMF_GridCompGet
 
     ! input/output variables
@@ -455,7 +479,8 @@ contains
 !$      write(msgString,*) subname, ": thread_num=", omp_get_thread_num(), &
 !$      "   num_threads=", omp_get_num_threads(), &
 !$      "   max_threads=", omp_get_max_threads(), &
-!$      "   num_procs=", omp_get_num_procs()
+!$      "   max available procs=", omp_get_num_procs()
+!$      if(mastertask) write(logunit,*) msgString
 !$      call ESMF_LogWrite(msgString, ESMF_LOGMSG_INFO, rc=rc)
 !$omp end critical
 !$omp end parallel

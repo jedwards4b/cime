@@ -311,6 +311,7 @@ contains
   !===============================================================================
 
   subroutine InitializeRealize(gcomp, importState, exportState, clock, rc)
+!$  use omp_lib, only: OMP_GET_THREAD_NUM, OMP_GET_NUM_THREADS, OMP_GET_MAX_THREADS, OMP_GET_NUM_PROCS
 
     ! intput/output variables
     type(ESMF_GridComp)  :: gcomp
@@ -324,6 +325,8 @@ contains
     type(ESMF_VM)          :: vm
     integer                :: n
     logical                :: connected                 ! is field connected?
+    integer                :: localPet, localPeCount
+    character(len=ESMF_MAXSTR) :: msgstring
     character(len=*),parameter :: subname=trim(modName)//':(InitializeRealize) '
     !-------------------------------------------------------------------------------
 
@@ -337,6 +340,26 @@ contains
     call shr_file_getLogUnit (shrlogunit)
     call shr_file_setLogUnit (logUnit)
 
+    !--------------------------------
+    ! Test OpenMP interface
+    !--------------------------------
+    call ESMF_GridCompGet(gcomp, vm=vm, localPet=localPet, rc=rc)
+    if (chkerr(rc,__LINE__,u_FILE_u)) return
+
+    call ESMF_VMGet(vm, pet=localPet, peCount=localPeCount, rc=rc)
+    if (chkerr(rc,__LINE__,u_FILE_u)) return
+
+!$  call omp_set_num_threads(localPeCount)
+!$omp parallel private(msgString)
+!$omp critical
+!$      write(msgString,*) subname, ": thread_num=", omp_get_thread_num(), &
+!$      "   num_threads=", omp_get_num_threads(), &
+!$      "   max_threads=", omp_get_max_threads(), &
+!$      "   num_procs=", omp_get_num_procs()
+!$      if(mastertask) write(logunit,*) msgString
+!$      call ESMF_LogWrite(msgString, ESMF_LOGMSG_INFO, rc=rc)
+!$omp end critical
+!$omp end parallel
     !--------------------------------
     ! generate the mesh
     !--------------------------------
@@ -403,15 +426,19 @@ contains
   !===============================================================================
 
   subroutine ModelAdvance(gcomp, rc)
+!$  use omp_lib, only: OMP_GET_THREAD_NUM, OMP_GET_NUM_THREADS, OMP_GET_MAX_THREADS, OMP_GET_NUM_PROCS
 
     ! input/output variables
     type(ESMF_GridComp)  :: gcomp
     integer, intent(out) :: rc
 
     ! local variables
+    type(ESMF_VM)     :: vm
     type(ESMF_Clock)  :: clock
     type(ESMF_State)  :: exportState
     integer           :: shrlogunit     ! original log unit
+    integer           :: localPet, localPeCount
+    character(len=ESMF_MAXSTR) :: msgstring
     character(len=*),parameter  :: subname=trim(modName)//':(ModelAdvance) '
     !-------------------------------------------------------------------------------
 
@@ -422,6 +449,26 @@ contains
     call shr_file_getLogUnit (shrlogunit)
     call shr_file_setLogUnit (logunit)
 
+    !--------------------------------
+    ! Test OpenMP interface
+    !--------------------------------
+    call ESMF_GridCompGet(gcomp, vm=vm, localPet=localPet, rc=rc)
+    if (chkerr(rc,__LINE__,u_FILE_u)) return
+
+    call ESMF_VMGet(vm, pet=localPet, peCount=localPeCount, rc=rc)
+    if (chkerr(rc,__LINE__,u_FILE_u)) return
+
+!$  call omp_set_num_threads(localPeCount)
+!$omp parallel private(msgString)
+!$omp critical
+!$      write(msgString,*) subname, ": thread_num=", omp_get_thread_num(), &
+!$      "   num_threads=", omp_get_num_threads(), &
+!$      "   max_threads=", omp_get_max_threads(), &
+!$      "   num_procs=", omp_get_num_procs()
+!$      if(mastertask) write(logunit,*) msgString
+!$      call ESMF_LogWrite(msgString, ESMF_LOGMSG_INFO, rc=rc)
+!$omp end critical
+!$omp end parallel
     !--------------------------------
     ! Pack export state
     !--------------------------------

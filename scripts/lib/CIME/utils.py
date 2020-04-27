@@ -1493,7 +1493,7 @@ def transform_vars(text, case=None, subgroup=None, overrides=None, default=None)
 
         elif case is not None and hasattr(case, variable.lower()) and getattr(case, variable.lower()) is not None:
             repl = getattr(case, variable.lower())
-            logger.debug("from case members: in {}, replacing {} with {}".format(text, whole_match, str(repl)))
+            logger.info("from case members: in {}, replacing {} with {}".format(text, whole_match, str(repl)))
             text = text.replace(whole_match, str(repl))
 
         elif case is not None and case.get_value(variable.upper(), subgroup=subgroup) is not None:

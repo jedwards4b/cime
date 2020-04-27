@@ -752,10 +752,11 @@ contains
     if (chkerr(rc,__LINE__,u_FILE_u)) return
 
     recvoffsets(1) = 0
+!$OMP PARALLEL PRIVATE(n)
     do n = 2,petCount
        recvoffsets(n) = recvoffsets(n-1) + recvCounts(n-1)
     end do
-
+!$OMP END PARALLEL
     call ESMF_VMAllGatherV(vm, lat, lsize, latG, recvCounts, recvOffsets, rc=rc)
     if (chkerr(rc,__LINE__,u_FILE_u)) return
 
@@ -777,7 +778,7 @@ contains
 
     allocate(elemIds(numTotElems))
     allocate(elemTypes(numTotElems))
-    elemTypes=(/ESMF_MESHELEMTYPE_QUAD/)
+    elemTypes=ESMF_MESHELEMTYPE_QUAD
     allocate(elemConn(4*numTotElems))
     allocate(elemCoords(2*numTotElems))
 
@@ -789,12 +790,10 @@ contains
     numConn = 0
 
     do n = 1,numTotElems
-       elemTypes(n) = ESMF_MESHELEMTYPE_QUAD
        elemCoords(2*n-1) = lon(n)
        elemCoords(2*n)   = lat(n)
 
        do n1 = 1,4
-
           numNodes = numNodes + 1
           nodeindx = numNodes
           if (n1 == 1 .or. n1 == 3) xid = mod(elemIds(n)-1,nx_global) + 1
@@ -816,11 +815,10 @@ contains
        enddo
     enddo
 
-
     allocate(nodeCoords(2*numNodes))
     allocate(nodeOwners(numNodes))
     allocate(iurpts(numNodes))
-
+!$OMP PARALLEL PRIVATE(n, xid0,yid0, xid,yid,iur,iul,ill,ilr,lonur,lonul,lonll,lonlr)
     do n = 1,numNodes
 
        xid0 = mod(nodeIds(n)-1, nx_global) + 1
@@ -862,7 +860,7 @@ contains
        nodeCoords(2*n-1) = 0.25_r8 * (lonur + lonul + lonll + lonlr)
        nodeCoords(2*n)   = 0.25_r8 * (latG(iur) + latG(iul) + latG(ill) + latG(ilr))
     enddo
-
+!$OMP END PARALLEL
     deallocate(lonG)
     deallocate(latG)
 
@@ -871,17 +869,19 @@ contains
     allocate(pes_local(nx_global*ny_global))
     allocate(pes_global(nx_global*ny_global))
     pes_local(:) = 0
+!$OMP PARALLEL PRIVATE(n)
     do n = 1,lsize
        pes_local(gindex(n)) = iam
     end do
-
+!$OMP END PARALLEL
     call ESMF_VMAllReduce(vm, sendData=pes_local, recvData=pes_global, count=nx_global*ny_global, &
          reduceflag=ESMF_REDUCE_SUM, rc=rc)
     if (chkerr(rc,__LINE__,u_FILE_u)) return
-
+!$OMP PARALLEL PRIVATE(n)
     do n = 1,numNodes
        nodeOwners(n) = pes_global(iurpts(n))
     end do
+!$OMP END PARALLEL
     deallocate(pes_local)
     deallocate(pes_global)
 

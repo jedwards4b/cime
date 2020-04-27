@@ -172,7 +172,7 @@ class Case(object):
             self.num_nodes, self.spare_nodes = env_mach_pes.get_total_nodes(self.total_tasks, self.thread_count, driver)
             self.num_nodes += self.spare_nodes
 
-        logger.debug("total_tasks {} thread_count {}".format(self.total_tasks, self.thread_count))
+        logger.debug("total_tasks {} thread_count {} tasks_per_node {}".format(self.total_tasks, self.thread_count, self.tasks_per_node))
 
         self.tasks_per_numa = int(math.ceil(self.tasks_per_node / 2.0))
         smt_factor = max(1,int(self.get_value("MAX_TASKS_PER_NODE") / max_mpitasks_per_node))

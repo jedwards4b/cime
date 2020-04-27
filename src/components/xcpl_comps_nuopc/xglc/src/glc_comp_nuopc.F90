@@ -22,6 +22,7 @@ module glc_comp_nuopc
   use dead_nuopc_mod   , only : dead_init_nuopc, dead_final_nuopc, dead_meshinit
   use dead_nuopc_mod   , only : fld_list_add, fld_list_realize, fldsMax, fld_list_type
   use dead_nuopc_mod   , only : ModelInitPhase, ModelSetRunClock
+!$  use omp_lib, only: OMP_GET_THREAD_NUM, OMP_GET_NUM_THREADS, OMP_GET_MAX_THREADS, OMP_GET_NUM_PROCS
 
   implicit none
   private ! except
@@ -123,7 +124,7 @@ contains
     ! local variables
     type(ESMF_VM)     :: vm
     character(CS)     :: stdname
-    integer           :: n
+    integer           :: n, i
     integer           :: lsize       ! local array size
     integer           :: shrlogunit  ! original log unit
     character(CL)     :: cvalue
@@ -167,9 +168,11 @@ contains
     allocate(lon(lsize))
     allocate(lat(lsize))
 
-    gindex(:) = gbuf(:,dead_grid_index)
-    lat(:)    = gbuf(:,dead_grid_lat)
-    lon(:)    = gbuf(:,dead_grid_lon)
+    do i=1,lsize
+       gindex(i) = gbuf(i,dead_grid_index)
+       lat(i)    = gbuf(i,dead_grid_lat)
+       lon(i)    = gbuf(i,dead_grid_lon)
+    enddo
 
     !--------------------------------
     ! advertise import and export fields
@@ -259,7 +262,6 @@ contains
   !===============================================================================
 
   subroutine InitializeRealize(gcomp, importState, exportState, clock, rc)
-
     ! input/output variables
     type(ESMF_GridComp)  :: gcomp
     type(ESMF_State)     :: importState, exportState
@@ -268,8 +270,11 @@ contains
 
     ! local variables
     type(ESMF_Mesh) :: Emesh
+    type(ESMF_VM)     :: vm
+    integer         :: localPet, localPeCount
     integer         :: shrlogunit                ! original log unit
     integer         :: n
+    character(len=ESMF_MAXSTR) :: msgString
     character(len=*),parameter :: subname=trim(modName)//':(InitializeRealize) '
     !-------------------------------------------------------------------------------
 
@@ -282,6 +287,23 @@ contains
 
     call shr_file_getLogUnit (shrlogunit)
     call shr_file_setLogUnit (logunit)
+
+    call ESMF_GridCompGet(gcomp, vm=vm, localPet=localPet, rc=rc)
+    if (chkerr(rc,__LINE__,u_FILE_u)) return
+
+    call ESMF_VMGet(vm, pet=localPet, peCount=localPeCount, rc=rc)
+    if (chkerr(rc,__LINE__,u_FILE_u)) return
+
+!$  call omp_set_num_threads(localPeCount)
+!$omp parallel private(msgString)
+!$omp critical
+!$      write(msgString,*) subname, ": thread_num=", omp_get_thread_num(), &
+!$      "   num_threads=", omp_get_num_threads(), &
+!$      "   max_threads=", omp_get_max_threads(), &
+!$      "   num_procs=", omp_get_num_procs()
+!$      call ESMF_LogWrite(msgString, ESMF_LOGMSG_INFO, rc=rc)
+!$omp end critical
+!$omp end parallel
 
     !--------------------------------
     ! generate the mesh
@@ -358,11 +380,14 @@ contains
     integer, intent(out) :: rc
 
     ! local variables
+    type(ESMF_VM)     :: vm
     type(ESMF_Clock)  :: clock
     type(ESMF_State)  :: exportState
     integer           :: n
     integer           :: shrlogunit     ! original log unit
+    integer           :: localPet, localPeCount
     real(r8), pointer :: dataptr(:)
+    character(len=ESMF_MAXSTR) :: msgString
     character(len=*),parameter  :: subname=trim(modName)//':(ModelAdvance) '
     !-------------------------------------------------------------------------------
 
@@ -379,6 +404,24 @@ contains
 
     call NUOPC_ModelGet(gcomp, modelClock=clock, exportState=exportState, rc=rc)
     if (chkerr(rc,__LINE__,u_FILE_u)) return
+
+    call ESMF_GridCompGet(gcomp, vm=vm, localPet=localPet, rc=rc)
+    if (chkerr(rc,__LINE__,u_FILE_u)) return
+
+    call ESMF_VMGet(vm, pet=localPet, peCount=localPeCount, rc=rc)
+    if (chkerr(rc,__LINE__,u_FILE_u)) return
+
+!$  call omp_set_num_threads(localPeCount)
+!$omp parallel private(msgString)
+!$omp critical
+!$      write(msgString,*) subname, ": thread_num=", omp_get_thread_num(), &
+!$      "   num_threads=", omp_get_num_threads(), &
+!$      "   max_threads=", omp_get_max_threads(), &
+!$      "   num_procs=", omp_get_num_procs()
+!$      call ESMF_LogWrite(msgString, ESMF_LOGMSG_INFO, rc=rc)
+!$omp end critical
+!$omp end parallel
+
 
     call state_setexport(exportState, rc=rc)
     if (chkerr(rc,__LINE__,u_FILE_u)) return

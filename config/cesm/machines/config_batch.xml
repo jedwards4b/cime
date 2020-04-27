@@ -246,17 +246,17 @@
   <batch_system MACH="cheyenne" type="pbs" comp_interface="nuopc">
     <directives queue="regular">
       <directive default="/bin/bash" > -S {{ shell }}  </directive>
-      <directive> -l select={{ num_nodes }}:ncpus={{ max_tasks_per_node }}:mpiprocs={{ tasks_per_node }}</directive>
+      <directive> -l select={{ num_nodes }}:ncpus={{ tasks_per_node }}:mpiprocs={{ tasks_per_node }}</directive>
     </directives>
 
     <directives queue="premium">
       <directive default="/bin/bash" > -S {{ shell }}  </directive>
-      <directive> -l select={{ num_nodes }}:ncpus={{ max_tasks_per_node }}:mpiprocs={{ tasks_per_node }}</directive>
+      <directive> -l select={{ num_nodes }}:ncpus={{ tasks_per_node }}:mpiprocs={{ tasks_per_node }}</directive>
     </directives>
 
     <directives queue="economy">
       <directive default="/bin/bash" > -S {{ shell }}  </directive>
-      <directive> -l select={{ num_nodes }}:ncpus={{ max_tasks_per_node }}:mpiprocs={{ tasks_per_node }}</directive>
+      <directive> -l select={{ num_nodes }}:ncpus={{ tasks_per_node }}:mpiprocs={{ tasks_per_node }}</directive>
     </directives>
 
     <directives queue="share">
