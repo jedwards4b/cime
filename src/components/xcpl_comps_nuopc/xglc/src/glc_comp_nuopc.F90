@@ -301,6 +301,7 @@ contains
 !$      "   num_threads=", omp_get_num_threads(), &
 !$      "   max_threads=", omp_get_max_threads(), &
 !$      "   num_procs=", omp_get_num_procs()
+!$      if (mastertask) write(logunit, *) msgString
 !$      call ESMF_LogWrite(msgString, ESMF_LOGMSG_INFO, rc=rc)
 !$omp end critical
 !$omp end parallel
@@ -418,6 +419,7 @@ contains
 !$      "   num_threads=", omp_get_num_threads(), &
 !$      "   max_threads=", omp_get_max_threads(), &
 !$      "   num_procs=", omp_get_num_procs()
+!$      if (mastertask) write(logunit, *) msgString
 !$      call ESMF_LogWrite(msgString, ESMF_LOGMSG_INFO, rc=rc)
 !$omp end critical
 !$omp end parallel

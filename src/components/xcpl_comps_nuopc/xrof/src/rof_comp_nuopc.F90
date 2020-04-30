@@ -22,6 +22,7 @@ module rof_comp_nuopc
   use dead_nuopc_mod    , only : dead_init_nuopc, dead_final_nuopc, dead_meshinit
   use dead_nuopc_mod    , only : fld_list_add, fld_list_realize, fldsMax, fld_list_type
   use dead_nuopc_mod    , only : ModelInitPhase, ModelSetRunClock
+!$  use omp_lib, only: OMP_GET_THREAD_NUM, OMP_GET_NUM_THREADS, OMP_GET_MAX_THREADS, OMP_GET_NUM_PROCS
 
   implicit none
   private ! except
@@ -271,9 +272,12 @@ contains
     integer, intent(out) :: rc
 
     ! local variables
+    type(ESMF_VM)          :: vm
     type(ESMF_Mesh)        :: Emesh
     integer                :: n
     integer                :: shrlogunit                ! original log unit
+    integer                  :: localPet, localPEcount
+    character(len=ESMF_MAXSTR) :: msgString
     character(len=*),parameter :: subname=trim(modName)//':(InitializeRealize) '
     !-------------------------------------------------------------------------------
 
@@ -353,7 +357,6 @@ contains
   !===============================================================================
 
   subroutine ModelAdvance(gcomp, rc)
-!$  use omp_lib, only: OMP_GET_THREAD_NUM, OMP_GET_NUM_THREADS, OMP_GET_MAX_THREADS, OMP_GET_NUM_PROCS
     use ESMF, only : ESMF_VM, ESMF_VMGet, ESMF_GridCompGet
     ! input/output variables
     type(ESMF_GridComp)  :: gcomp
@@ -397,6 +400,7 @@ contains
 !$      "   num_threads=", omp_get_num_threads(), &
 !$      "   max_threads=", omp_get_max_threads(), &
 !$      "   num_procs=", omp_get_num_procs()
+!$      if(mastertask) write(logunit,*) msgString
 !$      call ESMF_LogWrite(msgString, ESMF_LOGMSG_INFO, rc=rc)
 !$omp end critical
 !$omp end parallel

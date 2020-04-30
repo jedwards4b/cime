@@ -391,6 +391,7 @@ This allows using a different mpirun command to launch unit tests
       <arguments>
 	<arg name="labelstdout">-p "%g:"</arg>
 	<arg name="num_tasks"> -np {{ total_tasks }}</arg>
+	<arg name="pinning">/glade/work/jedwards/sandboxes/cheyenne_pinning/launcher</arg>
       </arguments>
     </mpirun>
     <mpirun mpilib="default">
@@ -455,20 +456,20 @@ This allows using a different mpirun command to launch unit tests
       </modules>
 
       <modules compiler="intel" mpilib="!mpi-serial" DEBUG="TRUE">
-        <command name="use">/glade/work/turuncu/PROGS/modulefiles/esmfpkgs/intel/19.0.5</command>
-        <command name="load">esmf-8.1.0b14-ncdfio-mpt-g</command>
+        <command name="use">/glade/work/himanshu/PROGS/modulefiles/esmfpkgs/intel/19.0.5</command>
+        <command name="load">esmf-8.1.0b16-ncdfio-mpt-g</command>
       </modules>
       <modules compiler="intel" mpilib="!mpi-serial" DEBUG="FALSE">
-        <command name="use">/glade/work/turuncu/PROGS/modulefiles/esmfpkgs/intel/19.0.5</command>
-        <command name="load">esmf-8.1.0b14-ncdfio-mpt-O</command>
+        <command name="use">/glade/work/himanshu/PROGS/modulefiles/esmfpkgs/intel/19.0.5</command>
+        <command name="load">esmf-8.1.0b16-ncdfio-mpt-O</command>
       </modules>
       <modules compiler="intel" mpilib="mpi-serial" DEBUG="TRUE">
-        <command name="use">/glade/work/turuncu/PROGS/modulefiles/esmfpkgs/intel/19.0.5</command>
-        <command name="load">esmf-8.1.0b14-ncdfio-mpiuni-g</command>
+        <command name="use">/glade/work/himanshu/PROGS/modulefiles/esmfpkgs/intel/19.0.5</command>
+        <command name="load">esmf-8.1.0b16-ncdfio-mpiuni-g</command>
       </modules>
       <modules compiler="intel" mpilib="mpi-serial" DEBUG="FALSE">
-        <command name="use">/glade/work/turuncu/PROGS/modulefiles/esmfpkgs/intel/19.0.5</command>
-        <command name="load">esmf-8.1.0b14-ncdfio-mpiuni-O</command>
+        <command name="use">/glade/work/himanshu/PROGS/modulefiles/esmfpkgs/intel/19.0.5</command>
+        <command name="load">esmf-8.1.0b16-ncdfio-mpiuni-O</command>
       </modules>
       <modules compiler="gnu" mpilib="!mpi-serial" DEBUG="TRUE">
         <command name="use">/glade/work/turuncu/PROGS/modulefiles/esmfpkgs/gnu/9.1.0</command>
@@ -520,6 +521,7 @@ This allows using a different mpirun command to launch unit tests
       <env name="MPI_USE_ARRAY"/>
     </environment_variables>
     <environment_variables comp_interface="nuopc">
+      <env name="MPI_SHEPHERD">true</env>
       <env name="ESMF_RUNTIME_PROFILE">ON</env>
       <env name="ESMF_RUNTIME_PROFILE_OUTPUT">SUMMARY</env>
       <env name="UGCSINPUTPATH">/glade/work/turuncu/FV3GFS/benchmark-inputs/2012010100/gfs/fcst</env>
