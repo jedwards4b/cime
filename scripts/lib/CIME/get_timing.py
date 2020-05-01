@@ -90,7 +90,7 @@ class _TimingParser:
     def _gettime2_nuopc(self):
         self.nprocs = 0
         self.ncount = 0
-        expression = re.compile(r'\s*\MED:\(med_fraction_set\)\s+(\d+)\s+(\d+)')
+        expression = re.compile(r'\s*\[MED-TO-ATM\] RunPhase1\s+(\d+)\s+(\d+)')
 
         for line in self.finlines:
             match = expression.match(line)
@@ -469,7 +469,7 @@ class _TimingParser:
         if adays > 0:
             self.write("    Model Cost:         {:10.2f}   pe-hrs/simulated_year \n".format((tmax*365.0*pecost)/(3600.0*adays)))
         if tmax > 0:
-            self.write("    Model Throughput:   {:10.2f}   simulated_years/day \n".format((86400.0*adays)/(tmax*365.0)) )
+            self.write("    Model Throughput:   {:10.2f}   simulated_years/day {} {}\n".format((86400.0*adays)/(tmax*365.0), tmax, adays))
 
         self.write("\n")
 
