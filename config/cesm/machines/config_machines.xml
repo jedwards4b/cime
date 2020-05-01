@@ -1162,7 +1162,7 @@ This allows using a different mpirun command to launch unit tests
     <OS>LINUX</OS>
     <COMPILERS>intel</COMPILERS>
     <MPILIBS>impi,mvapich</MPILIBS>
-    <PROJECT>FTA-Chang</PROJECT>
+    <PROJECT>ATM20005</PROJECT>
     <CIME_OUTPUT_ROOT>$ENV{SCRATCH}</CIME_OUTPUT_ROOT>
     <DIN_LOC_ROOT>/work/02503/edwardsj/CESM/inputdata/</DIN_LOC_ROOT>
     <DIN_LOC_ROOT_CLMFORC>/work/02503/edwardsj/CESM/inputdata/lmwg</DIN_LOC_ROOT_CLMFORC>
@@ -1202,8 +1202,7 @@ This allows using a different mpirun command to launch unit tests
         <command name="load">cmake/3.16.1</command>
       </modules>
       <modules mpilib="impi">
-	<command name="use"> /home1/00422/cazes/modulefiles/intel19</command>
-        <command name="load">impi/19.0.6</command>
+        <command name="load">impi/19.0.7</command>
         <command name="load">pnetcdf/1.11.2</command>
         <command name="load">parallel-netcdf/4.6.2</command>
       </modules>
