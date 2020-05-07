@@ -45,6 +45,7 @@ module lnd_comp_nuopc
   !--------------------------------------------------------------------------
 
   type(shr_strdata_type)       :: sdat                            ! instantiation of shr_strdata_type
+
   type(ESMF_Mesh)              :: mesh                            ! model mesh
   character(len=CS)            :: flds_scalar_name = ''
   integer                      :: flds_scalar_num = 0
@@ -158,7 +159,7 @@ contains
 
     rc = ESMF_SUCCESS
 
-    ! Obtain flds_scalar values, mpi values, multi-instance values and  
+    ! Obtain flds_scalar values, mpi values, multi-instance values and
     ! set logunit and set shr logging to my log file
     call dshr_init(gcomp, mpicom, my_task, inst_index, inst_suffix, &
          flds_scalar_name, flds_scalar_num, flds_scalar_index_nx, flds_scalar_index_ny, &
@@ -221,7 +222,6 @@ contains
 
   !===============================================================================
   subroutine InitializeRealize(gcomp, importState, exportState, clock, rc)
-
     ! input/output variables
     type(ESMF_GridComp)  :: gcomp
     type(ESMF_State)     :: importState, exportState
@@ -238,6 +238,7 @@ contains
     character(CL)   :: cvalue       ! temporary
     integer         :: shrlogunit   ! original log unit
     character(len=*),parameter :: subname=trim(modName)//':(InitializeRealize) '
+    character(len=*), parameter :: xmlfilename="dlnd.streams.xml"
     !-------------------------------------------------------------------------------
 
     rc = ESMF_SUCCESS
@@ -250,8 +251,11 @@ contains
 
     ! Initialize sdat
     call t_startf('dlnd_strdata_init')
-    call dshr_sdat_init(gcomp, clock, nlfilename, compid, logunit, 'lnd', mesh, read_restart, sdat, rc=rc)
+    call dshr_sdat_init(gcomp, clock, xmlfilename, compid, logunit, 'lnd', mesh, read_restart, sdat, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
+
+    call shr_strdata_init_from_infiles(sdat, xmlfilename, mesh, clock, compid, logunit, &
+         reset_mask, model_maskfile, rc)
     call t_stopf('dlnd_strdata_init')
 
     ! Realize the actively coupled fields, now that a mesh is established and
@@ -261,8 +265,9 @@ contains
 
     ! Read restart if necessary
     if (read_restart) then
-       call dshr_restart_read(restfilm, restfils, rpfile, inst_suffix, nullstr, &
-            logunit, my_task, mpicom, sdat)
+       call shr_sys_abort("TODO: read restart")
+!       call dshr_restart_read(restfilm, restfils, rpfile, inst_suffix, nullstr, &
+!            logunit, my_task, mpicom, sdat)
     end if
 
     ! get the time to interpolate the stream data to
@@ -351,9 +356,9 @@ contains
        call t_startf('dlnd_restart')
        call NUOPC_CompAttributeGet(gcomp, name='case_name', value=case_name, rc=rc)
        if (ChkErr(rc,__LINE__,u_FILE_u)) return
-
-       call dshr_restart_write(rpfile, case_name, 'dlnd', inst_suffix, next_ymd, next_tod, &
-            logunit, mpicom, my_task, sdat)
+       call shr_sys_abort("TODO: write restart file")
+!       call dshr_restart_write(rpfile, case_name, 'dlnd', inst_suffix, next_ymd, next_tod, &
+!            logunit, mpicom, my_task, sdat)
        call t_stopf('dlnd_restart')
     endif
 
@@ -475,7 +480,7 @@ contains
     if (chkerr(rc,__LINE__,u_FILE_u)) return
 
     ! Obtain fractional land from first stream
-    call shr_strdata_get_stream_domain(sdat, 1, domain_fracname, lfrac, rc=rc) 
+    call shr_stream_get_domain(streamdata(1), 1, domain_fracname, lfrac, "LND", rc=rc)
     if (chkerr(rc,__LINE__,u_FILE_u)) return
 
     ! Create stream-> export state mapping

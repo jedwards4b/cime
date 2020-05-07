@@ -23,7 +23,7 @@ module dshr_strdata_mod
   use dshr_stream_mod  , only : shr_stream_getNFiles
   use dshr_stream_mod  , only : shr_stream_getCurrFile, shr_stream_setCurrFile
   use dshr_stream_mod  , only : shr_stream_getMeshFilename
-  use dshr_stream_mod  , only : shr_stream_init_from_infiles, shr_stream_init_from_fortran
+  use dshr_stream_mod  , only : shr_stream_init_from_xml, shr_stream_init_from_fortran
   use dshr_stream_mod  , only : shr_stream_restWrite, shr_stream_restRead
   use dshr_stream_mod  , only : shr_stream_findBounds
   use dshr_stream_mod  , only : shr_stream_getnextfilename, shr_stream_getprevfilename
@@ -55,7 +55,6 @@ module dshr_strdata_mod
   public  :: shr_strdata_get_stream_domain ! public since needed by dshr_mod
   public  :: shr_strdata_print
 
-  private :: shr_strdata_readnml_from_infiles
   private :: shr_strdata_init_model_domain
   private :: shr_strdata_readLBUB
 
@@ -66,20 +65,15 @@ module dshr_strdata_mod
   character(len=*) ,parameter, public  :: shr_strdata_nullstr = 'null'
   character(len=*) ,parameter          :: shr_strdata_unset = 'NOT_SET'
   real(r8)         ,parameter, private :: dtlimit_default = 1.5_r8
-  integer          ,parameter          :: master_task = 0
+  integer          ,parameter          :: mastertask = 0
 
   type shr_strdata_type
 
      integer                        :: nstreams                          ! number of streams set in shr_strdata_readnml
      integer                        :: nvectors                          ! number of vectors set in shr_strdata_readnml
-     character(CL)                  :: taxMode (nStrMax)                 ! stream time axis cycling mode
-     real(r8)                       :: dtlimit (nStrMax)                 ! stream dt max/min limit
-     character(CL)                  :: tintalgo(nStrMax)                 ! stream time interpolation algorithm
-     character(CL)                  :: readmode(nStrMax)                 ! stream file(s) read mode
 
-     ! mpi info
-     integer                        :: mpicom
-     integer                        :: my_task
+     integer  :: mpicom
+     integer  :: my_task
 
      ! pio info
      integer                        :: io_type
@@ -107,43 +101,41 @@ module dshr_strdata_mod
      integer, pointer               :: model_gindex(:)                   ! model global index spzce
 
      ! stream domain info
-     type(shr_stream_streamType)    :: stream(nStrMax)                    ! stream datatype
-     character(CL)                  :: stream_desc(nStrMax)               ! stream description from shr_strdata_nml
-     character(CL)                  :: stream_vectors(nVecMax)            ! stream vectors names from shr_strdata_nml
-     character(CL)                  :: stream_meshfile(nStrMax)           ! stream mesh file from stream txt file
-     type(ESMF_Mesh)                :: stream_mesh(nStrMax)               ! stream mesh created from stream mesh file
-     type(io_desc_t)                :: stream_pio_iodesc(nStrMax)         ! stream pio descriptor
+     type(shr_stream_streamType)    , pointer    :: streamdata(:) => null()                   ! stream datatype
+     character(CL)                  , allocatable :: stream_desc(:)               ! stream description from shr_strdata_nml
+     character(CL)                  , allocatable :: stream_vectors(:)            ! stream vectors names from shr_strdata_nml
+     character(CL)                  , allocatable :: stream_meshfile(:)           ! stream mesh file from stream txt file
+     type(ESMF_Mesh)                , allocatable :: stream_mesh(:)               ! stream mesh created from stream mesh file
+     type(io_desc_t)                , allocatable :: stream_pio_iodesc(:)         ! stream pio descriptor
 
      ! stream-> model mapping info
-     logical                        :: domaps(nStrMax)
-     character(CL)                  :: mapalgo (nStrMax)                 ! scalar map algorithm
-     character(CL)                  :: mapmask (nStrMax)                 ! scalar map mask
-     type(ESMF_RouteHandle)         :: routehandle(nstrMax)              ! stream n -> model mesh mapping
+     logical                        , allocatable :: domaps(:)
+     type(ESMF_RouteHandle)         , allocatable :: routehandle(:)              ! stream n -> model mesh mapping
 
      ! field bundles
-     type(ESMF_FieldBundle)         :: fldbun_stream_input_lb(nstrMax)   ! stream input n field bundle for lb of time period (stream grid)
-     type(ESMF_FieldBundle)         :: fldbun_stream_input_ub(nstrMax)   ! stream input n field bundle for ub of time period (stream grid)
-     type(ESMF_FieldBundle)         :: fldbun_stream_model_lb(nstrMax)   ! stream n field bundle for lb of time period (stream grid)
-     type(ESMF_FieldBundle)         :: fldbun_stream_model_ub(nstrMax)   ! stream n field bundle for ub of time period (stream grid)
-     type(ESMF_FieldBundle)         :: fldbun_model_lb(nstrMax)          ! stream n field bundle for lb of time period (model grid)
-     type(ESMF_FieldBundle)         :: fldbun_model_ub(nstrMax)          ! stream n field bundle for ub of time period (model grid)
-     type(ESMF_FieldBundle)         :: fldbun_model(nStrMax)             ! stream n field bundle for model time (model grid)
+     type(ESMF_FieldBundle)         , allocatable :: fldbun_stream_input_lb(:)   ! stream input n field bundle for lb of time period (stream grid)
+     type(ESMF_FieldBundle)         , allocatable :: fldbun_stream_input_ub(:)   ! stream input n field bundle for ub of time period (stream grid)
+     type(ESMF_FieldBundle)         , allocatable :: fldbun_stream_model_lb(:)   ! stream n field bundle for lb of time period (stream grid)
+     type(ESMF_FieldBundle)         , allocatable :: fldbun_stream_model_ub(:)   ! stream n field bundle for ub of time period (stream grid)
+     type(ESMF_FieldBundle)         , allocatable :: fldbun_model_lb(:)          ! stream n field bundle for lb of time period (model grid)
+     type(ESMF_FieldBundle)         , allocatable :: fldbun_model_ub(:)          ! stream n field bundle for ub of time period (model grid)
+     type(ESMF_FieldBundle)         , allocatable :: fldbun_model(:)             ! stream n field bundle for model time (model grid)
      type(ESMF_FieldBundle), allocatable :: fldbun_stream_alltimes(:,:)  ! field bundle for stream n for all time slices for stream
 
      ! time info
      type(ESMF_CLock)               :: model_clock
      integer                        :: ymd, tod                          ! model time
      character(CL)                  :: model_calendar                    ! model calendar for ymd,tod
-     integer                        :: ymdLB(nStrMax)                    ! stream n ymd lower bound
-     integer                        :: todLB(nStrMax)
-     integer                        :: ymdUB(nStrMax)
-     integer                        :: todUB(nStrMax)
-     integer                        :: ustrm(nVecMax)
-     integer                        :: vstrm(nVecMax)
-     real(r8)                       :: dtmin(nStrMax)
-     real(r8)                       :: dtmax(nStrMax)
+     integer, allocatable                        :: ymdLB(:)                    ! stream n ymd lower bound
+     integer, allocatable                        :: todLB(:)
+     integer, allocatable                        :: ymdUB(:)
+     integer, allocatable                        :: todUB(:)
+     integer, allocatable                        :: ustrm(:)
+     integer, allocatable                        :: vstrm(:)
+     real(r8), allocatable                       :: dtmin(:)
+     real(r8), allocatable                       :: dtmax(:)
      real(r8), allocatable          :: tavCoszen(:)
-     type(ESMF_Field)               :: field_coszen(nStrMax)             ! needed for coszen time interp
+     type(ESMF_Field), allocatable               :: field_coszen(:)             ! needed for coszen time interp
 
   end type shr_strdata_type
 
@@ -164,12 +156,12 @@ module dshr_strdata_mod
 contains
 !===============================================================================
 
-  subroutine shr_strdata_init_from_infiles(sdat, nlfilename, mesh, clock, &
+  subroutine shr_strdata_init_from_infiles(sdat, xmlfilename, mesh, clock, &
         mpicom, compid, logunit, reset_mask, model_maskfile, rc)
 
     ! input/output variables
     type(shr_strdata_type)     , intent(inout) :: sdat
-    character(len=*)           , intent(in)    :: nlfilename ! for shr_strdata_nml namelist
+    character(len=*)           , intent(in)    :: xmlfilename ! for shr_strdata_nml namelist
     type(ESMF_Mesh)            , intent(inout) :: mesh
     type(ESMF_Clock)           , intent(in)    :: clock
     integer                    , intent(in)    :: mpicom
@@ -200,28 +192,25 @@ contains
     sdat%mpicom = mpicom
     sdat%my_task = my_task
 
-    ! Read shr_strdata_nml from nlfilename
-    ! Read sdat namelist (need to do this here in order to get the datamode value - which
-    ! is needed or order to do the advertise phase
-    call shr_strdata_readnml_from_infiles(sdat, trim(nlfilename), mpicom=mpicom)
+    call shr_stream_init_from_xml(xmlfilename, sdat%streamdata, my_task==mastertask, rc=rc)
 
     ! Loop over all active streams and read in stream txt files
-    do ns = 1,sdat%nstreams
+!    do ns = 1,sdat%nstreams
 
-       if (trim(sdat%stream_desc(ns)) /= shr_strdata_nullstr) then
-          if (my_task == master_task) then
-             ! Set yearAlign, yearFirst, yearLast for sdat%stream_desc(n)
-             str = adjustL(sdat%stream_desc(ns))  ! stream info from namelist
-             i = index(str," ")
-             fileName = str(:i)
-             read(str(i:),*) yearAlign, yearFirst, yearLast
+!       if (trim(sdat%stream_desc(ns)) /= shr_strdata_nullstr) then
+!          if (my_task == mastertask) then
+!             ! Set yearAlign, yearFirst, yearLast for sdat%stream_desc(n)
+!             str = adjustL(sdat%stream_desc(ns))  ! stream info from namelist
+!             i = index(str," ")
+!             fileName = str(:i)
+!             read(str(i:),*) yearAlign, yearFirst, yearLast
 
              ! Initialize stream datatype by reading stream txt files
-             call shr_stream_init_from_infiles(sdat%stream(ns), &
-                  fileName, yearFirst, yearLast, yearAlign, trim(sdat%taxMode(ns)))
-          end if
-       end if
-    end do
+!             call shr_stream_init_from_infiles(sdat%streamdata(ns), &
+!                  fileName, yearFirst, yearLast, yearAlign, trim(sdat%taxMode(ns)))
+!          end if
+!       end if
+!    end do
 
     ! Initialize the sdat model domain info
     call shr_strdata_init_model_domain(sdat, mesh,  mpicom, compid, &
@@ -282,19 +271,9 @@ contains
 
     sdat%nstreams    = 1
     sdat%model_mesh  = model_mesh
-    sdat%taxMode(1)  = stream_taxMode
-    sdat%dtlimit(1)  = stream_dtlimit
-    sdat%mapalgo(1)  = stream_mapalgo
-    sdat%mapmask(1)  = stream_mapmask
-    sdat%tintalgo(1) = stream_tintalgo
-    sdat%readmode(1) = stream_readmode ! single or full_file
-    if (trim(sdat%taxMode(1)) == trim(shr_stream_taxis_extend)) then
-       ! reset dtlimit if necessary
-       sdat%dtlimit(1) = 1.0e30
-    end if
 
     ! Initialize sdat stream info
-    call shr_stream_init_from_fortran(sdat%stream(1), stream_meshfile, &
+    call shr_stream_init_from_fortran(sdat%streamdata(1), stream_meshfile, &
          stream_yearFirst, stream_yearLast, stream_yearAlign, stream_offset, stream_taxmode, &
          stream_fldlistFile, stream_fldlistModel, stream_fileNames)
 
@@ -484,13 +463,13 @@ contains
     do ns = 1,sdat%nstreams
 
        ! Initialize calendar for stream n
-       call shr_mpi_bcast(sdat%stream(ns)%calendar, mpicom)
+       call shr_mpi_bcast(sdat%streamdata(ns)%calendar, mpicom)
 
        ! Create the target stream mesh from the stream mesh file
        ! TODO: add functionality if the stream mesh needs to be created from a grid
-       call shr_stream_getMeshFileName (sdat%stream(ns), filename)
+       call shr_stream_getMeshFileName (sdat%streamdata(ns), filename)
        call shr_mpi_bcast(filename, mpicom)
-       if (my_task == master_task) then
+       if (my_task == mastertask) then
           inquire(file=trim(filename),exist=fileExists)
        end if
        call shr_mpi_bcast(fileexists, mpicom)
@@ -502,14 +481,14 @@ contains
        if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
        ! Determine colon delimited field name string for stream fields with model names
-       if (my_task == master_task) then
-          call shr_stream_getModelFieldList(sdat%stream(ns), fldList_model)
+       if (my_task == mastertask) then
+          call shr_stream_getModelFieldList(sdat%streamdata(ns), fldList_model)
        end if
        call shr_mpi_bcast(fldList_model, mpicom)
 
        ! Determine colon delimited field name string for stream fields with stream names
-       if (my_task == master_task) then
-          call shr_stream_getStreamFieldList(sdat%stream(ns), fldList_stream)
+       if (my_task == mastertask) then
+          call shr_stream_getStreamFieldList(sdat%streamdata(ns), fldList_stream)
        end if
        call shr_mpi_bcast(fldList_stream, mpicom)
 
@@ -536,7 +515,7 @@ contains
        ! Create field bundles on stream mesh but with fldlist_model names
        sdat%fldbun_stream_model_lb(ns) = ESMF_FieldBundleCreate(rc=rc) ! stream mesh at lower time bound
        sdat%fldbun_stream_model_ub(ns) = ESMF_FieldBundleCreate(rc=rc) ! stream mesh at upper time bound
-       if (my_task==master_task) then
+       if (my_task==mastertask) then
           write(logunit,F00)' initializing fldbun_stream_model_lb and fldbun_stream_model_up on stream mesh'
        end if
        do nfld = 1, shr_string_listGetNum(fldlist_model)
@@ -551,7 +530,7 @@ contains
           if (chkerr(rc,__LINE__,u_FILE_u)) return
           call ESMF_FieldBundleAdd(sdat%fldbun_stream_model_ub(ns), (/lfield/), rc=rc)
           if (chkerr(rc,__LINE__,u_FILE_u)) return
-          if (my_task==master_task) then
+          if (my_task==mastertask) then
              write(logunit,F00)' adding field '//trim(fldname)//' to fldbun_stream_model_lb and fldbun_stream_model_ub'
           end if
        end do ! end of loop over streams (ns)
@@ -683,58 +662,40 @@ contains
     end if
 
     ! print sdat output
-    if (my_task == master_task) then
+    if (my_task == mastertask) then
        call shr_strdata_print(sdat,'sdat data ')
        write(logunit,*) ' successfully initialized sdat'
     endif
 
   end subroutine shr_strdata_init
-
   !===============================================================================
-  subroutine shr_strdata_get_stream_domain(sdat, stream_index, fldname, flddata, rc)
+  subroutine shr_strdata_get_stream_domain(sdat, stream_index, mpicom, my_task, fldname, flddata)
 
     ! Obtain the data for fldname from the stream domain data
 
     ! input/output variables
     type(shr_strdata_type) , intent(inout) :: sdat
     integer                , intent(in)    :: stream_index
+    integer                , intent(in)    :: mpicom
+    integer                , intent(in)    :: my_task
     character(len=*)       , intent(in)    :: fldname
     real(r8)               , pointer       :: flddata(:)
-    integer                , intent(out)   :: rc
 
     ! local variables
     type(var_desc_t)  :: varid
     type(file_desc_t) :: pioid
     integer           :: rcode
     character(CL)     :: filename
-    type(io_desc_t)   :: pio_iodesc
     ! ----------------------------------------------
 
-    rc = ESMF_SUCCESS
-
-    ! Determine the file to open
-    if (sdat%my_task == master_task) then
-       call shr_stream_getData(sdat%stream(stream_index), 1, filename)
+    if (my_task == mastertask) then
+       call shr_stream_getDomainFile(sdat%streamdata(stream_index), filename)
     end if
-    call shr_mpi_bcast(filename, sdat%mpicom, 'streamfile')
-
-    ! Open the file
+    call shr_mpi_bcast(filename, mpicom, 'streamfile')
     rcode = pio_openfile(sdat%pio_subsystem, pioid, sdat%io_type, trim(filename), pio_nowrite)
-
-    ! Create the pio iodesc for fldname
-    call shr_strdata_set_stream_iodesc(sdat%pio_subsystem, pioid, &
-         trim(fldname), sdat%stream_mesh(stream_index), pio_iodesc, rc=rc)
-    if (ChkErr(rc,__LINE__,u_FILE_u)) return
-
-    ! Now read in the data for fldname
     call pio_seterrorhandling(pioid, PIO_BCAST_ERROR)
     rcode = pio_inq_varid(pioid, trim(fldname), varid)
-    call pio_read_darray(pioid, varid, pio_iodesc, flddata, rcode)
-
-    ! Free the memory associate with the iodesc
-    call pio_freedecomp(pioid, pio_iodesc)
-
-    ! Close the file
+    call pio_read_darray(pioid, varid, sdat%pio_iodesc(stream_index), flddata, rcode)
     call pio_closefile(pioid)
 
   end subroutine shr_strdata_get_stream_domain
@@ -894,21 +855,21 @@ contains
           ! case(0)
           ymdmod(ns) = ymd
           todmod    = tod
-          if (trim(sdat%model_calendar) /= trim(sdat%stream(ns)%calendar)) then
+          if (trim(sdat%model_calendar) /= trim(sdat%streamdata(ns)%calendar)) then
              if (( trim(sdat%model_calendar) == trim(shr_cal_gregorian)) .and. &
-                  (trim(sdat%stream(ns)%calendar) == trim(shr_cal_noleap))) then
+                  (trim(sdat%streamdata(ns)%calendar) == trim(shr_cal_noleap))) then
                 ! case (1), set feb 29 = feb 28
                 call shr_cal_date2ymd (ymd,year,month,day)
                 if (month == 2 .and. day == 29) then
                    call shr_cal_ymd2date(year,2,28,ymdmod(ns))
                 endif
              else if ((trim(sdat%model_calendar) == trim(shr_cal_noleap)) .and. &
-                      (trim(sdat%stream(ns)%calendar) == trim(shr_cal_gregorian))) then
+                      (trim(sdat%streamdata(ns)%calendar) == trim(shr_cal_gregorian))) then
                 ! case (2), feb 29 input data will be skipped automatically
              else
                 ! case (3), abort
                 write(logunit,*) trim(subname),' ERROR: mismatch calendar ', &
-                     trim(sdat%model_calendar),':',trim(sdat%stream(ns)%calendar)
+                     trim(sdat%model_calendar),':',trim(sdat%streamdata(ns)%calendar)
                 call shr_sys_abort(trim(subname)//' ERROR: mismatch calendar ')
              endif
           endif
@@ -923,7 +884,7 @@ contains
 
           select case(sdat%readMode(ns))
           case ('single')
-             call shr_strdata_readLBUB(sdat%mpicom, sdat%my_task, sdat%stream(ns), sdat%stream_mesh(ns), &
+             call shr_strdata_readLBUB(sdat%mpicom, sdat%my_task, sdat%streamdata(ns), sdat%stream_mesh(ns), &
                   sdat%fldbun_stream_input_lb(ns), sdat%fldbun_stream_input_ub(ns), &
                   sdat%fldbun_stream_model_lb(ns), sdat%fldbun_stream_model_ub(ns), &
                   sdat%pio_subsystem, sdat%io_type, sdat%stream_pio_iodesc(ns), ymdmod(ns), todmod, &
@@ -951,8 +912,8 @@ contains
 
              ! Reset time bounds if newdata read in
              call shr_cal_date2ymd(sdat%ymdLB(ns),year,month,day)
-             call shr_cal_timeSet(timeLB,sdat%ymdLB(ns),0,sdat%stream(ns)%calendar)
-             call shr_cal_timeSet(timeUB,sdat%ymdUB(ns),0,sdat%stream(ns)%calendar)
+             call shr_cal_timeSet(timeLB,sdat%ymdLB(ns),0,sdat%streamdata(ns)%calendar)
+             call shr_cal_timeSet(timeUB,sdat%ymdUB(ns),0,sdat%streamdata(ns)%calendar)
              timeint = timeUB-timeLB
              call ESMF_TimeIntervalGet(timeint,StartTimeIn=timeLB,d=dday)
              if (ChkErr(rc,__LINE__,u_FILE_u)) return
@@ -1144,7 +1105,7 @@ contains
              ! get coszen
              call t_startf(trim(lstr)//trim(timname)//'_coszenC')
              call shr_tInterp_getCosz(coszen, sdat%model_lon, sdat%model_lat, ymdmod(ns), todmod, &
-                  sdat%eccen, sdat%mvelpp, sdat%lambm0, sdat%obliqr, sdat%stream(ns)%calendar)
+                  sdat%eccen, sdat%mvelpp, sdat%lambm0, sdat%obliqr, sdat%streamdata(ns)%calendar)
              call t_stopf(trim(lstr)//trim(timname)//'_coszenC')
 
              ! get avg cosz factor
@@ -1157,7 +1118,7 @@ contains
                 call shr_tInterp_getAvgCosz(sdat%tavCoszen, sdat%model_lon, sdat%model_lat,  &
                      sdat%ymdLB(ns), sdat%todLB(ns),  sdat%ymdUB(ns), sdat%todUB(ns),  &
                      sdat%eccen, sdat%mvelpp, sdat%lambm0, sdat%obliqr, sdat%modeldt, &
-                     sdat%stream(ns)%calendar, rc=rc)
+                     sdat%streamdata(ns)%calendar, rc=rc)
                 call t_stopf(trim(lstr)//trim(timname)//'_coszenN')
              endif
 
@@ -1187,7 +1148,7 @@ contains
 
              call t_startf(trim(lstr)//trim(timname)//'_tint')
              call shr_tInterp_getFactors(sdat%ymdlb(ns), sdat%todlb(ns), sdat%ymdub(ns), sdat%todub(ns), &
-                  ymdmod(ns), todmod, flb, fub, calendar=sdat%stream(ns)%calendar, algo=trim(sdat%tintalgo(ns)), rc=rc)
+                  ymdmod(ns), todmod, flb, fub, calendar=sdat%streamdata(ns)%calendar, algo=trim(sdat%tintalgo(ns)), rc=rc)
              if (chkerr(rc,__LINE__,u_FILE_u)) return
              if (debug > 0) then
                 write(logunit,*) trim(subname),' interp = ',ns,flb,fub
@@ -1293,7 +1254,7 @@ contains
     sdat%modeldt = modeldt
 
   end subroutine shr_strdata_setOrbs
-
+#ifdef DOTHIS
   !===============================================================================
   subroutine shr_strdata_readnml_from_infiles(sdat, file, mpicom)
 
@@ -1357,7 +1318,7 @@ contains
     endif
 
     !--master--task--
-    if (my_task == master_task) then
+    if (my_task == mastertask) then
 
        ! set default values for namelist vars
        streams(:)  = trim(shr_strdata_nullstr)
@@ -1387,7 +1348,7 @@ contains
 
        ! copy temporary/local namelist vars into data structure
        do n=1,nStrMax
-          call shr_stream_default(sdat%stream(n))
+          call shr_stream_default(sdat%streamdata(n))
        enddo
        sdat%stream_desc(:)    = streams(:)
        sdat%taxMode(:)        = taxMode(:)
@@ -1414,7 +1375,7 @@ contains
              sdat%nvectors = n
           end if
        end do
-    endif   ! master_task
+    endif   ! mastertask
 
     if (present(mpicom)) then
        call shr_mpi_bcast(sdat%model_calendar ,mpicom ,'calendar')
@@ -1444,7 +1405,7 @@ contains
     sdat%model_calendar = shr_cal_noleap
 
   end subroutine shr_strdata_readnml_from_infiles
-
+#endif
   !===============================================================================
   subroutine shr_strdata_print(sdat,name)
 
@@ -1589,7 +1550,7 @@ contains
 
     if (rDateM < rDateLB .or. rDateM > rDateUB) then
        call t_startf(trim(istr)//'_fbound')
-       if (my_task == master_task) then ! Note that the stream bounds is only done on the master task
+       if (my_task == mastertask) then ! Note that the stream bounds is only done on the master task
           call shr_stream_findBounds(stream, mDate, mSec,  &
                ivals(1), dDateLB, ivals(2), ivals(5), filename_lb, &
                ivals(3), dDateUB, ivals(4), ivals(6), filename_ub)
@@ -1651,7 +1612,7 @@ contains
     ! determine previous & next data files in list of files
 
     call t_startf(trim(istr)//'_filemgt')
-    if (my_task == master_task .and. newdata) then
+    if (my_task == mastertask .and. newdata) then
        call shr_stream_getPrevFileName(stream, filename_lb, filename_prev)
        call shr_stream_getNextFileName(stream, filename_ub, filename_next)
        inquire(file=trim(filename_next),exist=fileExists)
@@ -1713,7 +1674,7 @@ contains
 
     ! Set up file to read from
     call t_barrierf(trim(istr)//'_BARRIER', mpicom)
-    if (my_task == master_task) then
+    if (my_task == mastertask) then
        inquire(file=trim(fileName),exist=fileExists)
        if (.not. fileExists) then
           write(logunit,F00) "ERROR: file does not exist: ", trim(fileName)
@@ -1728,17 +1689,17 @@ contains
     else
        ! otherwise close the old file if open and open new file
        if (fileopen) then
-          if (my_task == master_task) write(logunit,F00) 'close  : ',trim(currfile)
+          if (my_task == mastertask) write(logunit,F00) 'close  : ',trim(currfile)
           call pio_closefile(pioid)
        endif
-       if (my_task == master_task) write(logunit,F00) 'opening   : ',trim(filename)
+       if (my_task == mastertask) write(logunit,F00) 'opening   : ',trim(filename)
        rcode = pio_openfile(pio_subsystem, pioid, pio_iotype, trim(filename), pio_nowrite)
        call shr_stream_setCurrFile(stream, fileopen=.true., currfile=trim(filename), currpioid=pioid)
     endif
 
     ! Always use pio to read in stream data
     call t_startf(trim(istr)//'_readpio')
-    if (my_task == master_task) then
+    if (my_task == mastertask) then
        write(logunit,F02) 'file ' // trim(boundstr) //': ',trim(filename), nt
     endif
 

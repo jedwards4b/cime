@@ -224,7 +224,7 @@ contains
   end subroutine dshr_init
 
   !===============================================================================
-  subroutine dshr_sdat_init(gcomp, clock, nlfilename, compid, logunit, compname, &
+  subroutine dshr_sdat_init(gcomp, clock, xmlfilename, compid, logunit, compname, &
        mesh, read_restart, sdat, reset_mask, model_maskfile, rc)
 
     ! ----------------------------------------------
@@ -234,7 +234,7 @@ contains
     ! input/output variables
     type(ESMF_GridComp), intent(inout)         :: gcomp
     type(ESMF_Clock)           , intent(in)    :: clock
-    character(len=*)           , intent(in)    :: nlfilename ! for shr_strdata_nml namelist
+    character(len=*)           , intent(in)    :: xmlfilename ! for streams.xml
     integer                    , intent(in)    :: logunit
     character(len=*)           , intent(in)    :: compname
     integer                    , intent(out)   :: compid
@@ -268,7 +268,7 @@ contains
     ! generate local mpi comm
     call ESMF_GridCompGet(gcomp, vm=vm, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
-    call ESMF_VMGet(vm, mpiCommunicator=mpicom, localPet=my_task, rc=rc)
+    call ESMF_VMGet(vm, localPet=my_task, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
     ! Set compid (for mct)
@@ -339,7 +339,7 @@ contains
     end if
 
     ! Initialize sdat from data model input files
-    call shr_strdata_init_from_infiles(sdat, nlfilename, mesh, clock, mpicom, compid, logunit, &
+    call shr_strdata_init_from_infiles(sdat, xmlfilename, mesh, clock, compid, logunit, &
          reset_mask=reset_mask, model_maskfile=model_maskfile, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
@@ -1045,7 +1045,7 @@ contains
     endif
     call shr_mpi_bcast(exists, mpicom, 'exists')
     if (exists) then
-       if (my_task == master_task) write(logunit, F00) ' reading data mdoel restart ', trim(rest_filem)
+       if (my_task == master_task) write(logunit, F00) ' reading data model restart ', trim(rest_filem)
        if (present(fld) .and. present(fldname)) then
           rcode = pio_openfile(sdat%pio_subsystem, pioid, sdat%io_type, trim(rest_filem), pio_nowrite)
           call pio_seterrorhandling(pioid, PIO_BCAST_ERROR)

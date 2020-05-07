@@ -408,12 +408,12 @@ endif
 #===============================================================================
 # User-specified INCLDIR
 #===============================================================================
-
-INCLDIR := -I.
+FoX = /glade/work/jedwards/tools/fox/intel/19.0.5
+INCLDIR := -I. -I$(FoX)/finclude
 ifdef USER_INCLDIR
   INCLDIR += $(USER_INCLDIR)
 endif
-
+SLIBS += -L$(FoX)/lib/ -l FoX_wkml -lFoX_dom -lFoX_sax -lFoX_wcml -lFoX_wxml -lFoX_common -lFoX_utils -lFoX_fsys
 #===============================================================================
 # MPI-serial library (part of MCT)
 #===============================================================================
