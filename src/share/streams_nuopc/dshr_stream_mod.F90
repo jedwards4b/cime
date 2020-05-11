@@ -50,9 +50,10 @@ module dshr_stream_mod
   use shr_log_mod    , only : s_logunit  => shr_log_Unit
   use shr_log_mod    , only : OOBMsg => shr_log_OOBMsg
   use shr_log_mod    , only : errMsg => shr_log_errMsg
-  use pio            , only : file_desc_t
+  use pio            , only : file_desc_t, io_desc_t
   use netcdf
   use perf_mod
+  use ESMF           , only : ESMF_FieldBundle, ESMF_Mesh, ESMF_RouteHandle
 
   implicit none
   private ! default private
@@ -81,7 +82,7 @@ module dshr_stream_mod
   public :: shr_stream_dataDump          ! internal stream data for debugging
   public :: shr_stream_restWrite         ! write a streams restart file
   public :: shr_stream_restRead          ! read  a streams restart file
-
+  public :: shr_stream_getTinterpAlgo
   public :: shr_stream_init_from_xml
 
   character(CS),parameter,public :: shr_stream_taxis_cycle  = 'cycle'
@@ -89,11 +90,6 @@ module dshr_stream_mod
   character(CS),parameter,public :: shr_stream_taxis_limit  = 'limit'
   character(CS),parameter,public :: shr_stream_file_null    = 'not_set'
 
-  ! Define a dynamic vector for shr_stream_fileType
-!#define VECTOR_NAME fileVector
-!#define TYPE_NAME type(shr_stream_fileType)
-!#define THROW(string) call shr_sys_abort(string)
-!#include "dynamic_vector_typedef.inc"
 
   ! a useful derived type to use inside shr_streamType ---
   type shr_stream_fileType
@@ -117,19 +113,21 @@ module dshr_stream_mod
      integer           :: yearAlign                    ! align yearFirst with this model year
      character(CS)     :: taxMode                      ! cycling option for time axis
      character(CS)     :: tInterpAlgo                  ! Algorithm to use for time interpolation
+     character(CS)     :: readMode
      real(r8)          :: dtlimit
-
+     character(CS)     :: mapalgo
+     character(CS)     :: mapmask
      ! data used for time interpolation - obtained from stream txt file
      integer           :: offset                       ! offset in seconds of stream data
 
      ! data used for time interpolation - obtained by reading first stream data file
-     character(CL)     :: calendar                     ! stream calendar
+     character(CS)     :: calendar                     ! stream calendar
 
      ! stream data metadata - obtained from stream txt file
      character(CL)     :: meshFileName                 ! filename for mesh for all fields on stream (full pathname)
      type(shr_stream_fileType), allocatable :: file(:) ! filenames of stream data files (full pathname)
-     character(CXX)    :: fldListFile                  ! field list: file's  field names
-     character(CXX)    :: fldListModel                 ! field list: model's field names
+!     character(CXX)    :: fldListFile                  ! field list: file's  field names
+!     character(CXX)    :: fldListModel                 ! field list: model's field names
 
      ! useful for quicker searching ---
      integer           :: k_lvd,n_lvd                  ! file/sample of least valid date
@@ -141,6 +139,19 @@ module dshr_stream_mod
      logical           :: fileopen                     ! is current file open
      character(CL)     :: currfile                     ! current filename
      type(file_desc_t) :: currpioid                    ! current pio file desc
+     type(io_desc_t)   :: pio_iodesc
+
+          ! field bundles
+     type(ESMF_FieldBundle)          :: fldbun_stream_input_lb   ! stream input n field bundle for lb of time period (stream grid)
+     type(ESMF_FieldBundle)          :: fldbun_stream_input_ub   ! stream input n field bundle for ub of time period (stream grid)
+     type(ESMF_FieldBundle)          :: fldbun_stream_model_lb   ! stream n field bundle for lb of time period (stream grid)
+     type(ESMF_FieldBundle)          :: fldbun_stream_model_ub   ! stream n field bundle for ub of time period (stream grid)
+     type(ESMF_FieldBundle)          :: fldbun_model_lb          ! stream n field bundle for lb of time period (model grid)
+     type(ESMF_FieldBundle)          :: fldbun_model_ub          ! stream n field bundle for ub of time period (model grid)
+     type(ESMF_FieldBundle)          :: fldbun_model             ! stream n field bundle for model time (model grid)
+     type(ESMF_FieldBundle), allocatable          :: fldbun_stream_alltimes(:)  ! field bundle for stream n for all time slices for stream
+     type(ESMF_MESH)                 :: stream_mesh
+     type(ESMF_RouteHandle)          :: routehandle
      type(stream_data_variable), allocatable :: varlist(:)
   end type shr_stream_streamType
 
@@ -162,8 +173,6 @@ module dshr_stream_mod
 contains
 !===============================================================================
 
-  ! Complete the dynamic vector definition.
-!#include "dynamic_vector_procdef.inc"
   subroutine shr_stream_init_from_xml(xmlfilename, streamdat, mastertask, rc)
     use FoX_DOM
     type(shr_stream_streamType), intent(inout), pointer :: streamdat(:)
@@ -198,6 +207,12 @@ contains
              call extractDataContent(p, streamdat(i)%tInterpAlgo)
           else
              streamdat(i)%tInterpAlgo = "unused"
+          endif
+          p => item(getElementsByTagname(streamnode, "readMode"), 0)
+          if(associated(p)) then
+             call extractDataContent(p, streamdat(i)%readMode)
+          else
+             streamdat(i)%readMode = "single"
           endif
 
           p=> item(getElementsByTagname(streamnode, "yearFirst"), 0)
@@ -248,7 +263,7 @@ contains
           endif
           filelist => getElementsByTagname(p,"file")
           streamdat(i)%nfiles = getLength(filelist)
-          print *,__FILE__,__LINE__,i, allocated(streamdat(i)%file)
+
           allocate(streamdat(i)%file( streamdat(i)%nfiles))
           do n=1, streamdat(i)%nfiles
              p => item(filelist, n-1)
@@ -262,15 +277,23 @@ contains
           do n=1, streamdat(i)%nvars
              p => item(varlist, n-1)
              call extractDataContent(p, tmpstr)
-             streamdat(i)%varlist(n)%nameinfile = tmpstr(0:index(tmpstr, " "))
+             streamdat(i)%varlist(n)%nameinfile = tmpstr(1:index(tmpstr, " "))
              streamdat(i)%varlist(n)%nameinmodel = tmpstr(index(trim(tmpstr), " ", .true.)+1:)
           enddo
+
+          call shr_stream_getCalendar(streamdat(i), 1, streamdat(i)%calendar)
 
 
        enddo
        call destroy(Sdoc)
     endif
     call broadcast_streamdata(nstrms, streamdat, mastertask)
+
+    ! initialize flag that stream has been set
+    do i=1, nstrms
+       call shr_stream_setInit(streamdat(i))
+    enddo
+
   end subroutine shr_stream_init_from_xml
 
   subroutine broadcast_streamdata(nstrms, streamdat, mastertask)
@@ -312,225 +335,34 @@ contains
           allocate(streamdat(i)%varlist(streamdat(i)%nvars))
        endif
        do n=1,streamdat(i)%nfiles
-          call ESMF_VMBroadCast(vm, streamdat(i)%file(n)%name, 1, 0, rc=rc)
+          call ESMF_VMBroadCast(vm, streamdat(i)%file(n)%name, CL, 0, rc=rc)
        enddo
        do n=1,streamdat(i)%nvars
-          call ESMF_VMBroadCast(vm, streamdat(i)%varlist(n)%nameinfile, 1, 0, rc=rc)
-          call ESMF_VMBroadCast(vm, streamdat(i)%varlist(n)%nameinmodel, 1, 0, rc=rc)
+          call ESMF_VMBroadCast(vm, streamdat(i)%varlist(n)%nameinfile, CS, 0, rc=rc)
+          call ESMF_VMBroadCast(vm, streamdat(i)%varlist(n)%nameinmodel, CS, 0, rc=rc)
        enddo
 
-       call ESMF_VMBroadCast(vm, streamdat(i)%taxmode, 1, 0, rc=rc)
-       call ESMF_VMBroadCast(vm, streamdat(i)%tinterpAlgo, 1, 0, rc=rc)
+       call ESMF_VMBroadCast(vm, streamdat(i)%meshfilename, CL, 0, rc=rc)
+       call ESMF_VMBroadCast(vm, streamdat(i)%taxmode, CS, 0, rc=rc)
+       call ESMF_VMBroadCast(vm, streamdat(i)%readmode, CS, 0, rc=rc)
+       call ESMF_VMBroadCast(vm, streamdat(i)%tinterpAlgo, CS, 0, rc=rc)
        rtmp(1) = streamdat(i)%dtlimit
        call ESMF_VMBroadCast(vm, rtmp, 1, 0, rc=rc)
        streamdat(i)%dtlimit = rtmp(1)
+
     enddo
+
   end subroutine broadcast_streamdata
 
-#ifdef DOTHIS
-  subroutine shr_stream_init_from_infiles(strm, infoFile, yearFirst, yearLast, yearAlign, taxMode, rc)
-
-    ! --------------------------------------------------------
-    ! initialize stream datatype by reading a description text file
-    ! o yearFirst,yearLast,yearAlign are provided by calling routine
-    ! o parse infoFile for remaining, except for...
-    ! o fileNT,fileDates, & fileSecs, which are initially set to -1, but but are replaced with
-    !   valid values as each file is opened for the first time
-    ! --------------------------------------------------------
-
-    ! input/output variables
-    type(shr_stream_streamType) ,intent(out) :: strm      ! data stream
-    character(*)                ,intent(in)  :: infoFile  ! file with stream info, must read
-    integer                     ,intent(in)  :: yearFirst ! first year to use
-    integer                     ,intent(in)  :: yearLast  ! last  year to use
-    integer                     ,intent(in)  :: yearAlign ! align yearFirst with this model year
-    character(*) ,optional      ,intent(in)  :: taxMode   ! time axis cycling option
-    integer      ,optional      ,intent(out) :: rc        ! return code
-
-    ! local variables
-    integer                   :: n             ! generic index
-    character(CL)             :: str           ! string to parse from input data file
-    integer                   :: int           ! integer to parse from input data file
-    character(CL)             :: subStr        ! sub-string of interest
-    integer                   :: nUnit         ! file i/o unit number
-    character(CS)             :: startTag      ! input file start tag
-    character(CS)             :: endTag        ! input file   end tag
-    character(CS)             :: fldNameFile   ! field name in data file field list
-    character(CS)             :: fldNameModel  ! field name in model     field list
-    character(CXX)            :: fldListFile   ! list of data file fields, colon delim list
-    character(CXX)            :: fldListModel  ! list of model     fields, colon delim list
-    character(CL)             :: calendar      ! stream calendar
-    integer                   :: rCode, rCode2 ! return code
-    type(shr_stream_fileType) :: tempFile      ! File being constructed.
-!    type(fileVector)          :: fileVec       ! Vector used to construct file array.
-    character(*),parameter    :: subName = '(shr_stream_init) '
-    character(*),parameter    :: F00   = "('(shr_stream_init) ',8a)"
-    !---------------------------------------------------------------
-
-    rCode = 0
-    write(s_logunit,F00) 'Reading file ',trim(infoFile)
-
-    call shr_stream_default(strm)
-
-    strm%yearFirst        = yearFirst
-    strm%yearLast         = yearLast
-    strm%yearAlign        = yearAlign
-    if (present(taxMode)) then
-       strm%taxMode       = trim(taxMode)
-    endif
-
-    !-----------------------------------------------------------------------------
-    if (debug>0) write(s_logunit,F00) '  reading stream mesh filename'
-    !-----------------------------------------------------------------------------
-
-    ! find start tag then read data
-    open(newunit=nUnit,file=infoFile,STATUS='OLD',FORM='FORMATTED',ACTION='READ')
-    startTag =  "<stream_info>"
-    endTag   = "</stream_info>"
-    call shr_stream_readUpToTag(nUnit,startTag,rc=rCode)
-    if (rCode /= 0) goto 999
-    startTag =  "<stream_mesh_file>"
-    endTag   = "</stream_mesh_file>"
-    call shr_stream_readUpToTag(nUnit,startTag,rc=rCode)
-    if (rCode /= 0) goto 999
-
-    read(nUnit,'(a)',END=999) str
-    call shr_string_leftalign_and_convert_tabs(str)
-    strm%meshFileName = str
-    if (debug>0) write(s_logunit,F00) '  * stream_meshfile = ', trim(strm%meshFileName)
-    close(nUnit)
-
-    !-----------------------------------------------------------------------------
-    if (debug>0) write(s_logunit,F00) '  reading field data variable names'
-    !-----------------------------------------------------------------------------
-
-    ! find start tag
-    open(newunit=nUnit,file=infoFile,STATUS='OLD',FORM='FORMATTED',ACTION='READ')
-    startTag =  "<stream_info>"
-    endTag   = "</stream_info>"
-    call shr_stream_readUpToTag(nUnit,startTag,rc=rCode)
-    if (rCode /= 0) goto 999
-    startTag =  "<stream_data_variables>"
-    endTag   = "</stream_data_variables>"
-    call shr_stream_readUpToTag(nUnit,startTag,rc=rCode)
-    if (rCode /= 0) goto 999
-
-    ! read data
-    n = 0
-    do while (.true.)
-       read(nUnit,'(a)',END=999) str
-       call shr_string_leftalign_and_convert_tabs(str)
-       n = n+1
-       if (str(1:len_trim(endTag)) == trim(endTag)) exit
-       fldNameFile  = ""
-       fldNameModel = ""
-       read(str,*,iostat=rCode) fldNameFile,fldNameModel
-       if (len_trim(fldNameFile)==0 .or. len_trim(fldNameModel)==0 ) then
-          write(s_logunit,F00) "ERROR: reading field names"
-          write(s_logunit,F00) '* fldNameFile  = ',trim(fldNameFile)
-          write(s_logunit,F00) '* fldNameModel = ',trim(fldNameModel)
-          call shr_sys_abort(subName//"ERROR: reading field names")
-       end if
-       if (n==1) then
-          strm%fldListFile  = trim(fldNameFile )
-          strm%fldListModel = trim(fldNameModel)
-       else
-          strm%fldListFile  = trim(strm%fldListFile ) // ":" // trim(fldNameFile )
-          strm%fldListModel = trim(strm%fldListModel) // ":" // trim(fldNameModel)
-       end if
-    end do
-    if (debug>0) then
-       write(s_logunit,F00) '  * file  field list = ',trim(strm%fldListFile )
-       write(s_logunit,F00) '  * model field list = ',trim(strm%fldListModel)
-    end if
-    if (n==0) then
-       write(s_logunit,F00) "ERROR: no input field names"
-       call shr_sys_abort(subName//"ERROR: no input field names")
-    end if
-    close(nUnit)
-
-    !-----------------------------------------------------------------------------
-    if (debug>0) write(s_logunit,F00) '  reading offset'
-    !-----------------------------------------------------------------------------
-
-    ! find start tag
-    open(newunit=nUnit,file=infoFile,STATUS='OLD',FORM='FORMATTED',ACTION='READ')
-    startTag =  "<stream_info>"
-    endTag   = "</stream_info>"
-    call shr_stream_readUpToTag(nUnit,startTag,rc=rCode)
-    if (rCode /= 0) goto 999
-    startTag =  "<stream_offset>"
-    endTag   = "</stream_offset>"
-    call shr_stream_readUpToTag(nUnit,startTag,optionalTag=.true.,rc=rCode)
-    if (rCode == 0) then
-       ! read data
-       read(nUnit,*,END=999) int
-       strm%offset = int
-    else
-       strm%offset = 0
-    end if
-    if (debug>0) write(s_logunit,F00) '  * offset ',strm%offset
-    close(nUnit)
-
-    !-----------------------------------------------------------------------------
-    if (debug>0) write(s_logunit,F00) '  reading field data file names'
-    !-----------------------------------------------------------------------------
-
-    ! find start tag
-    open(newunit=nUnit,file=infoFile,STATUS='OLD',FORM='FORMATTED',ACTION='READ')
-    startTag =  "<stream_info>"
-    endTag   = "</stream_info>"
-    call shr_stream_readUpToTag(nUnit,startTag,rc=rCode)
-    if (rCode /= 0) goto 999
-    startTag =  "<stream_data_files>"
-    endTag   = "</stream_data_files>"
-    call shr_stream_readUpToTag(nUnit,startTag,rc=rCode)
-    if (rCode /= 0) goto 999
-
-    ! read data
-    do while (.true.)
-       read(nUnit,'(a)',END=999) str
-       call shr_string_leftalign_and_convert_tabs(str)
-       if (str(1:len_trim(endTag)) == trim(endTag)) exit
-       tempFile%name = str
-       call fileVec%push_back(tempFile)
-       if (debug>0) write(s_logunit,F00) '  * ',trim(str)
-    end do
-    strm%nFiles = fileVec%vsize()
-
-    ! move the vector's internal array out into strm%file.
-    call fileVec%move_out(strm%file)
-
-    if (strm%nFiles==0) then
-       write(s_logunit,F00) "ERROR: no input file names"
-       call shr_sys_abort(subName//"ERROR: no input file names")
-    end if
-    close(nUnit)
-
-    !-----------------------------------------------------------------------------
-    ! get initial calendar value
-    !-----------------------------------------------------------------------------
-
-    call shr_stream_getCalendar(strm,1,calendar)
-    strm%calendar = trim(calendar)
-
-    !-----------------------------------------------------------------------------
-    ! normal return or end-of-file problem?
-    !-----------------------------------------------------------------------------
-    call shr_stream_setInit(strm)
-    if ( present(rc) ) rc = rCode
-    return
-
-999 continue
-    write(s_logunit,F00) "ERROR: unexpected end-of-file while reading ",trim(startTag)
-    write(s_logunit,F00) " error code = ", rCode
-    call shr_sys_abort(subName//"ERROR: unexpected end-of-file")
-    close(nUnit)
-    if ( present(rc) ) rc = rCode
-
-  end subroutine shr_stream_init_from_infiles
-#endif
   !===============================================================================
+  character(len=CS) function shr_stream_getTinterpAlgo(stream)
+    ! input/output variables
+    type(shr_stream_streamType) ,intent(inout) :: stream         ! data stream
+
+    shr_stream_getTinterpAlgo = stream%TinterpAlgo
+  end function shr_stream_getTinterpAlgo
+
+
 
   subroutine shr_stream_init_from_fortran(strm, meshfile, &
        yearFirst, yearLast, yearAlign, offset, taxmode, &
@@ -571,8 +403,11 @@ contains
     strm%offset       = offset
     strm%taxMode      = trim(taxMode)
     strm%meshFileName = trim(meshFile)
-    strm%fldListFile  = trim(fldListFile)
-    strm%fldListModel = trim(fldListModel)
+
+! TODO: translate here
+!    strm%fldListFile  = trim(fldListFile)
+!    strm%fldListModel = trim(fldListModel)
+
     strm%nfiles = size(filenames)
     allocate(strm%file(strm%nfiles))
     ! create a linked list of data files in stream
@@ -634,8 +469,11 @@ contains
     if (present(yearAlign    )) strm%yearAlign    = yearAlign
     if (present(offset       )) strm%offset       = offset
     if (present(taxMode      )) strm%taxMode      = trim(taxMode)
-    if (present(fldListFile  )) strm%fldListFile  = trim(fldListFile)
-    if (present(fldListModel )) strm%fldListModel = trim(fldListModel)
+
+!  TODO: FIX this
+!    if (present(fldListFile  )) strm%fldListFile  = trim(fldListFile)
+!    if (present(fldListModel )) strm%fldListModel = trim(fldListModel)
+
     if (present(meshFileName )) strm%meshFileName = trim(meshFileName)
 
     if (present(filenames)) then
@@ -691,8 +529,6 @@ contains
     strm%found_gvd    = .false.
     strm%fileopen     = .false.
     strm%currfile     = ''
-    strm%fldListFile  = ' '
-    strm%fldListModel = ' '
     strm%calendar     = shr_cal_noleap
 
   end subroutine shr_stream_default
@@ -1481,10 +1317,12 @@ contains
 
     !input/output parameters:
     type(shr_stream_streamType) ,intent(in)  :: stream  ! stream in question
-    character(*)                ,intent(out) :: list    ! field list
+    character(*)                ,intent(out) :: list(:)    ! field list
     !-------------------------------------------------------------------------------
-
-    list = stream%fldListModel
+    integer :: i
+    do i=1,stream%nvars
+       list(i) = stream%varlist(i)%nameinmodel
+    enddo
 
   end subroutine shr_stream_getModelFieldList
 
@@ -1495,10 +1333,13 @@ contains
 
     !input/output parameters:
     type(shr_stream_streamType) ,intent(in)  :: stream  ! stream in question
-    character(*)                ,intent(out) :: list    ! field list
+    character(*)                ,intent(out) :: list(:)    ! field list
     !-------------------------------------------------------------------------------
+    integer :: i
 
-    list = stream%fldListFile
+    do i=1,stream%nvars
+       list(i) = stream%varlist(i)%nameinfile
+    enddo
 
   end subroutine shr_stream_getStreamFieldList
 
@@ -1512,8 +1353,7 @@ contains
     integer                     ,intent(in)  :: k       ! index of field
     character(*)                ,intent(out) :: name    ! k-th name in list
     !-------------------------------------------------------------------------------
-
-    call shr_string_listGetName(stream%fldListFile, k, name)
+    name = stream%varlist(k)%nameinfile
 
   end subroutine shr_stream_getFileFieldName
 
@@ -1840,9 +1680,9 @@ contains
        write(nUnit) strm(k)%n_gvd          ! sample of greatest valid date
        write(nUnit) strm(k)%found_gvd      ! T <=> k_gvd,n_gvd have been set
 
-       write(nUnit) strm(k)%fldListFile    ! field list: file's  field names
-       write(nUnit) strm(k)%fldListModel   ! field list: model's field names
-       write(nUnit) tInterpAlgo            ! unused
+!       write(nUnit) strm(k)%fldListFile    ! field list: file's  field names
+!       write(nUnit) strm(k)%fldListModel   ! field list: model's field names
+       write(nUnit) strm(k)%tInterpAlgo            ! unused
        write(nUnit) strm(k)%meshFileName   ! mesh filename
 
     end do
@@ -2061,9 +1901,9 @@ contains
        write(s_logunit,F01) "yearF/L/A    = ", strm%yearFirst,strm%yearLast,strm%yearAlign
        write(s_logunit,F01) "offset       = ", strm%offset
        write(s_logunit,F00) "taxMode      = ", trim(strm%taxMode)
-
-       write(s_logunit,F00) "fldListFile  = ", trim(strm%fldListFile)
-       write(s_logunit,F00) "fldListModel = ", trim(strm%fldListModel)
+       do k=1,strm%nvars
+          write(s_logunit,F00) "fldlistfile = ",trim(strm%varlist(k)%nameinfile)," fldlistModel = ",trim(strm%varlist(k)%nameinmodel)
+       enddo
        write(s_logunit,F00) "meshFileName = ", trim(strm%meshFileName)
     end if
 

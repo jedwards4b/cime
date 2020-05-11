@@ -18,7 +18,7 @@ module lnd_comp_nuopc
   use shr_cal_mod       , only : shr_cal_ymd2date
   use shr_mpi_mod       , only : shr_mpi_bcast
   use dshr_methods_mod  , only : dshr_state_getfldptr, dshr_state_diagnose, chkerr, memcheck
-  use dshr_strdata_mod  , only : shr_strdata_type, shr_strdata_advance, shr_strdata_get_stream_domain
+  use dshr_strdata_mod  , only : shr_strdata_type, shr_strdata_advance, shr_strdata_init_from_infiles
   use dshr_mod          , only : dshr_model_initphase, dshr_init, dshr_sdat_init, dshr_state_setscalar
   use dshr_mod          , only : dshr_set_runclock, dshr_log_clock_advance, dshr_create_mesh_from_grid
   use dshr_mod          , only : dshr_restart_read, dshr_restart_write
@@ -251,11 +251,10 @@ contains
 
     ! Initialize sdat
     call t_startf('dlnd_strdata_init')
+
     call dshr_sdat_init(gcomp, clock, xmlfilename, compid, logunit, 'lnd', mesh, read_restart, sdat, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    call shr_strdata_init_from_infiles(sdat, xmlfilename, mesh, clock, compid, logunit, &
-         reset_mask, model_maskfile, rc)
     call t_stopf('dlnd_strdata_init')
 
     ! Realize the actively coupled fields, now that a mesh is established and
@@ -480,8 +479,8 @@ contains
     if (chkerr(rc,__LINE__,u_FILE_u)) return
 
     ! Obtain fractional land from first stream
-    call shr_stream_get_domain(streamdata(1), 1, domain_fracname, lfrac, "LND", rc=rc)
-    if (chkerr(rc,__LINE__,u_FILE_u)) return
+!    call shr_stream_get_domain(streamdata(1), 1, domain_fracname, lfrac, "LND", rc=rc)
+!    if (chkerr(rc,__LINE__,u_FILE_u)) return
 
     ! Create stream-> export state mapping
     ! Note that strm_flds is the model name for the stream field
@@ -537,7 +536,7 @@ contains
     ! time and spatially interpolate to model time and grid
     call t_barrierf('dlnd_BARRIER',mpicom)
     call t_startf('dlnd_strdata_advance')
-    call shr_strdata_advance(sdat, target_ymd, target_tod, mpicom, logunit, 'dlnd', rc=rc)
+    call shr_strdata_advance(sdat, target_ymd, target_tod, logunit, 'dlnd', rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
     call t_stopf('dlnd_strdata_advance')
 

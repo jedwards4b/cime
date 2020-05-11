@@ -296,7 +296,6 @@ contains
     ! if not single column
     !   - obtain the mesh directly from the mesh input
     !   - ***TODO: remove the hard-wired domain_atm name here**
-
     if (trim(mesh_filename) == 'create_mesh') then
        ! get the data model grid from the domain file
        call NUOPC_CompAttributeGet(gcomp, name='domain_atm', value=mesh_filename, rc=rc)
@@ -340,7 +339,8 @@ contains
 
     ! Initialize sdat from data model input files
     call shr_strdata_init_from_infiles(sdat, xmlfilename, mesh, clock, compid, logunit, &
-         reset_mask=reset_mask, model_maskfile=model_maskfile, rc=rc)
+         my_task==master_task, reset_mask=reset_mask, model_maskfile=model_maskfile, rc=rc)
+
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
   end subroutine dshr_sdat_init
