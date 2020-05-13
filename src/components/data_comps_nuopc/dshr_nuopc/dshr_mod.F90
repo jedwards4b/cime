@@ -224,9 +224,8 @@ contains
   end subroutine dshr_init
 
   !===============================================================================
-  subroutine dshr_sdat_init(gcomp, clock, nlfilename, compid, logunit, compname, &
-       model_meshfile, model_maskfile, model_mesh, read_restart, sdat, &
-       reset_mask, model_createmesh_fromfile, rc)
+  subroutine dshr_sdat_init(gcomp, clock, xmlfilename, compid, logunit, compname, &
+       mesh, read_restart, sdat, reset_mask, model_maskfile, rc)
 
     ! ----------------------------------------------
     ! Initialize sdat
@@ -235,7 +234,7 @@ contains
     ! input/output variables
     type(ESMF_GridComp), intent(inout)         :: gcomp
     type(ESMF_Clock)           , intent(in)    :: clock
-    character(len=*)           , intent(in)    :: nlfilename ! for shr_strdata_nml namelist
+    character(len=*)           , intent(in)    :: xmlfilename ! for shr_strdata_nml namelist
     integer                    , intent(in)    :: logunit
     character(len=*)           , intent(in)    :: compname
     integer                    , intent(out)   :: compid
@@ -283,7 +282,7 @@ contains
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
     read(cvalue,*) read_restart
 
-    ! Obtain the data model mesh 
+    ! Obtain the data model mesh
     ! (1) if asked to create the mesh - create mesh from input file given by model_createmesh_fromfile
     ! (2) if single column - read in the data model domain file - and find the nearest neighbor
     ! (3) if not single column - obtain the mesh directly from the mesh input
@@ -333,18 +332,10 @@ contains
     if (my_task == master_task) then
        write(logunit,F00) trim(subname)// " obtaining "//trim(compname)//" mesh from "// trim(model_meshfile)
     end if
-
     ! Initialize sdat from data model input files
-    if (trim(model_meshfile) == trim(model_maskfile)) then
-       ! do not read in a separate mask
-       call shr_strdata_init_from_infiles(sdat, nlfilename, model_mesh, clock, mpicom, compid, logunit, &
-            reset_mask=reset_mask, rc=rc)
-       if (ChkErr(rc,__LINE__,u_FILE_u)) return
-    else
-       call shr_strdata_init_from_infiles(sdat, nlfilename, model_mesh, clock, mpicom, compid, logunit, &
-            reset_mask=reset_mask, model_maskfile=model_maskfile, rc=rc)
-       if (ChkErr(rc,__LINE__,u_FILE_u)) return
-    end if
+    call shr_strdata_init_from_infiles(sdat, xmlfilename, mesh, clock, compid, logunit,my_task==master_task, &
+         reset_mask=reset_mask, model_maskfile=model_maskfile, rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
   end subroutine dshr_sdat_init
 
