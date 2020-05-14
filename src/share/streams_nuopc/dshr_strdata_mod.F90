@@ -67,21 +67,15 @@ module dshr_strdata_mod
   integer          ,parameter          :: master_task = 0
 
   type shr_strdata_perstream
-!     character(CS)                  :: taxMode                  ! stream time axis cycling mode
-!     real(r8)                       :: dtlimit                  ! stream dt max/min limit
-!     character(CS)                  :: tintalgo                 ! stream time interpolation algorithm
-!     character(CS)                  :: readmode                 ! stream file(s) read mode
+     character(CL)                       :: stream_vectors            ! stream vectors names from shr_strdata_nml
+     character(CL)                       :: stream_meshfile           ! stream mesh file from stream txt file
+     type(ESMF_Mesh)                     :: stream_mesh               ! stream mesh created from stream mesh file
+     type(io_desc_t)                     :: stream_pio_iodesc         ! stream pio descriptor
+     logical                             :: stream_pio_iodesc_set =.false.  ! true=>pio iodesc has been set
 
-     character(CL)                  :: stream_vectors            ! stream vectors names from shr_strdata_nml
-     character(CL)                  :: stream_meshfile           ! stream mesh file from stream txt file
-     type(ESMF_Mesh)                :: stream_mesh               ! stream mesh created from stream mesh file
-     type(io_desc_t)                :: stream_pio_iodesc         ! stream pio descriptor
-
-     ! stream-> model mapping info
-     logical                        :: domaps
-!     character(CL)                  :: mapalgo                  ! scalar map algorithm
-!     character(CL)                  :: mapmask                  ! scalar map mask
-     type(ESMF_RouteHandle)         :: routehandle              ! stream n -> model mesh mapping
+                                                                      ! stream-> model mapping info
+     logical                             :: domaps
+     type(ESMF_RouteHandle)              :: routehandle               ! stream n -> model mesh mapping
 
      ! field bundles
      type(ESMF_FieldBundle)         :: fldbun_stream_input_lb   ! stream input n field bundle for lb of time period (stream grid)
@@ -585,6 +579,9 @@ contains
            dstMaskValues = (/0/), &  ! ignore destination points where the mask is 0
            srcTermProcessing=srcTermProcessing_Value, ignoreDegenerate=.true., rc=rc)
        if (chkerr(rc,__LINE__,u_FILE_u)) return
+       if (allocated(fldList_model)) then
+          deallocate(fldList_model, fldList_stream)
+       endif
 
     end do ! end of loop over streams
 

@@ -44,33 +44,35 @@ module lnd_comp_nuopc
   ! Private module data
   !--------------------------------------------------------------------------
 
-  type(shr_strdata_type)       :: sdat                            ! instantiation of shr_strdata_type
-  type(ESMF_Mesh)              :: mesh                            ! model mesh
-  character(len=CS)            :: flds_scalar_name = ''
-  integer                      :: flds_scalar_num = 0
-  integer                      :: flds_scalar_index_nx = 0
-  integer                      :: flds_scalar_index_ny = 0
-  integer                      :: compid                          ! mct comp id
-  integer                      :: mpicom                          ! mpi communicator
-  integer                      :: my_task                         ! my task in mpi communicator mpicom
-  logical                      :: masterproc                      ! true of my_task == master_task
-  integer                      :: inst_index                      ! number of current instance (ie. 1)
-  character(len=16)            :: inst_name                       ! fullname of current instance (ie. "lnd_0001")
-  character(len=16)            :: inst_suffix = ""                ! char string associated with instance (ie. "_0001" or "")
-  integer                      :: logunit                         ! logging unit number
-  logical                      :: read_restart                    ! start from restart
-  character(*) , parameter     :: nullstr = 'undefined'
+  type(shr_strdata_type)   :: sdat                                ! instantiation of shr_strdata_type
+  type(ESMF_Mesh)          :: model_mesh                          ! model mesh
+  character(len=CS)        :: flds_scalar_name = ''
+  integer                  :: flds_scalar_num = 0
+  integer                  :: flds_scalar_index_nx = 0
+  integer                  :: flds_scalar_index_ny = 0
+  integer                  :: compid                              ! mct comp id
+  integer                  :: mpicom                              ! mpi communicator
+  integer                  :: my_task                             ! my task in mpi communicator mpicom
+  logical                  :: masterproc                          ! true of my_task == master_task
+  integer                  :: inst_index                          ! number of current instance (ie. 1)
+  character(len=16)        :: inst_suffix = ""                    ! char string associated with instance (ie. "_0001" or "")
+  integer                  :: logunit                             ! logging unit number
+  logical                  :: read_restart                        ! start from restart
+  character(*) , parameter :: nullstr = 'undefined'
 
-  ! dlnd_in namelist input
-  character(CL)                :: nlfilename                      ! filename to obtain namelist info from
-  character(CL)                :: xmlfilename                      ! filename to obtain stream info from
-  character(CL)                :: dataMode                        ! flags physics options wrt input data
-  character(CL)                :: domain_fracname = 'undefined'   ! name of fraction field on first stream file
-  logical                      :: force_prognostic_true = .false. ! if true set prognostic true
-  character(CL)                :: restfilm = nullstr              ! model restart file namelist
-  character(CL)                :: restfils = nullstr              ! stream restart file namelist
-  integer                      :: nx_global
-  integer                      :: ny_global
+                                                                  ! dlnd_in namelist input
+  character(CL)            :: dataMode = nullstr                  ! flags physics options wrt input data
+  character(CL)            :: model_meshfile = nullstr            ! full pathname to model meshfile
+  character(CL)            :: model_maskfile = nullstr            ! full pathname to obtain mask from
+  character(CL)            :: model_createmesh_fromfile = nullstr ! full pathname to obtain mask from
+  character(CL)            :: xmlfilename                         ! filename to obtain stream info from
+  character(CL)            :: nlfilename = nullstr                ! filename to obtain namelist info from
+  logical                  :: force_prognostic_true = .false.     ! if true set prognostic true
+  character(CL)            :: restfilm = nullstr                  ! model restart file namelist
+  character(CL)            :: restfils = nullstr                  ! stream restart file namelist
+  integer                  :: nx_global                           ! global nx dimension of model mesh
+  integer                  :: ny_global                           ! global ny dimension of model mesh
+  character(CL)            :: stream_fracname = nullstr           ! name of fraction field in first stream file
 
   ! linked lists
   type(fldList_type) , pointer :: fldsImport => null()
@@ -518,8 +520,7 @@ contains
     if (chkerr(rc,__LINE__,u_FILE_u)) return
 
     ! Obtain fractional land from first stream
-
-    call shr_strdata_get_stream_domain(sdat, 1, domain_fracname, lfrac, rc=rc)
+    call shr_strdata_get_stream_domain(sdat, 1, stream_fracname, lfrac, rc=rc)
     if (chkerr(rc,__LINE__,u_FILE_u)) return
 
     ! Create stream-> export state mapping
