@@ -190,7 +190,7 @@ module atm_comp_nuopc
   real(r8), pointer :: Sx_avsdf(:) => null()
   real(r8), pointer :: Sx_anidf(:) => null()
 
-  ! stream internal data 
+  ! stream data
   real(r8), pointer :: strm_z(:)         => null()
   real(r8), pointer :: strm_wind(:)      => null()
   real(r8), pointer :: strm_tdew(:)      => null()
@@ -1040,6 +1040,15 @@ contains
     ! initialize dfields for export fields that have a corresponding stream field
     !-----------------------------
 
+    call dshr_dfield_add( dfields, sdat, state_fld='Sa_tbot'   , strm_fld='tbot', &
+         state=exportState, state_ptr=Sa_tbot    , logunit=logunit, masterproc=masterproc, rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    call dshr_dfield_add( dfields, sdat, state_fld='Sa_pbot'   , strm_fld='pbot', &
+         state=exportState, state_ptr=Sa_pbot    , logunit=logunit, masterproc=masterproc, rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    call dshr_dfield_add( dfields, sdat, state_fld='Sa_shum'   , strm_fld='shum', &
+         state=exportState, state_ptr=Sa_shum    , logunit=logunit, masterproc=masterproc, rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
     call dshr_dfield_add(dfields, sdat, state_fld='Sa_topo'    , strm_fld='topo'  , &
          state=exportState, state_ptr=Sa_topo    , logunit=logunit, masterproc=masterproc, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
@@ -1058,6 +1067,7 @@ contains
     call dshr_dfield_add( dfields, sdat, state_fld='Sa_dens'    , strm_fld='dens'  , &
          state=exportState, state_ptr=Sa_dens    , logunit=logunit, masterproc=masterproc, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
+
     call dshr_dfield_add( dfields, sdat, state_fld='Sa_pslv'    , strm_fld='pslv'  , &
          state=exportState, state_ptr=Sa_pslv    , logunit=logunit, masterproc=masterproc, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
@@ -1088,6 +1098,18 @@ contains
     call dshr_dfield_add( dfields, sdat, state_fld='Faxa_swnet' , strm_fld='swnet' , &
          state=exportState, state_ptr=Faxa_swnet , logunit=logunit, masterproc=masterproc, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    call dshr_dfield_add( dfields, sdat, state_fld='Faxa_lwdn' , strm_fld='lwdn', &
+         state=exportState, state_ptr=Faxa_lwdn, logunit=logunit, masterproc=masterproc, rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+
+    if (flds_co2a .or. flds_co2b .or. flds_co2c) then
+       call dshr_dfield_add( dfields, sdat, state_fld='Sa_co2prog', strm_fld='co2prog', &
+            state=exportState, state_ptr=Sa_co2prog, logunit=logunit, masterproc=masterproc, rc=rc)
+       if (ChkErr(rc,__LINE__,u_FILE_u)) return
+       call dshr_dfield_add( dfields, sdat, state_fld='Sa_co2diag', strm_fld='co2diag', &
+            state=exportState, state_ptr=Sa_co2diag, logunit=logunit, masterproc=masterproc, rc=rc)
+       if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    end if
 
     if (presaero) then
        allocate(strm_flds(3))
@@ -1117,47 +1139,22 @@ contains
        strm_flds = (/'rainc_16O', 'rainc_18O', 'rainc_HDO'/)
        call dshr_dfield_add( dfields, sdat, state_fld='Faxa_rainc_wiso', strm_flds=strm_flds, &
             state=exportState, state_ptr=Faxa_rainc_wiso, logunit=logunit, masterproc=masterproc, rc=rc)
-    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+       if (ChkErr(rc,__LINE__,u_FILE_u)) return
        strm_flds = (/'rainl_16O', 'rainl_18O', 'rainl_HDO'/)
        call dshr_dfield_add( dfields, sdat, state_fld='Faxa_rainl_wiso', strm_flds=strm_flds, &
             state=exportState, state_ptr=Faxa_rainl_wiso, logunit=logunit, masterproc=masterproc, rc=rc)
-    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+       if (ChkErr(rc,__LINE__,u_FILE_u)) return
        strm_flds = (/'snowc_16O', 'snowc_18O', 'snowc_HDO'/)
        call dshr_dfield_add( dfields, sdat, state_fld='Faxa_snowc_wiso', strm_flds=strm_flds, &
             state=exportState, state_ptr=Faxa_snowc_wiso, logunit=logunit, masterproc=masterproc, rc=rc)
-    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+       if (ChkErr(rc,__LINE__,u_FILE_u)) return
        strm_flds = (/'snowl_16O', 'snowl_18O', 'snowl_HDO'/)
        call dshr_dfield_add( dfields, sdat, state_fld='Faxa_snowl_wiso', strm_flds=strm_flds, &
             state=exportState, state_ptr=Faxa_snowl_wiso, logunit=logunit, masterproc=masterproc, rc=rc)
-    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+       if (ChkErr(rc,__LINE__,u_FILE_u)) return
        strm_flds = (/'shum_16O', 'shum_18O', 'shum_HDO'/)
        call dshr_dfield_add( dfields, sdat, state_fld='Sa_shum_wiso', strm_flds=strm_flds, &
             state=exportState, state_ptr=Sa_shum_wiso, logunit=logunit, masterproc=masterproc, rc=rc)
-    if (ChkErr(rc,__LINE__,u_FILE_u)) return
-    end if
-
-    call dshr_dfield_add( dfields, sdat, state_fld='Sa_tbot'   , strm_fld='tbot', &
-         state=exportState, state_ptr=Sa_tbot, logunit=logunit, masterproc=masterproc, rc=rc)
-    if (ChkErr(rc,__LINE__,u_FILE_u)) return
-    call dshr_dfield_add( dfields, sdat, state_fld='Sa_pbot'   , strm_fld='pbot', &
-         state=exportState, state_ptr=Sa_pbot, logunit=logunit, masterproc=masterproc, rc=rc)
-    if (ChkErr(rc,__LINE__,u_FILE_u)) return
-    call dshr_dfield_add( dfields, sdat, state_fld='Sa_shum'   , strm_fld='shum', &
-         state=exportState, state_ptr=Sa_shum, logunit=logunit, masterproc=masterproc, rc=rc)
-    if (ChkErr(rc,__LINE__,u_FILE_u)) return
-    call dshr_dfield_add( dfields, sdat, state_fld='Faxa_lwdn' , strm_fld='lwdn', &
-         state=exportState, state_ptr=Faxa_lwdn, logunit=logunit, masterproc=masterproc, rc=rc)
-    if (ChkErr(rc,__LINE__,u_FILE_u)) return
-    call dshr_dfield_add( dfields, sdat, state_fld='Faxa_swdn'  , strm_fld='swdn'  , &
-         state=exportState, state_ptr=Faxa_swdn, strm_ptr=strm_swdn, logunit=logunit, masterproc=masterproc, rc=rc)
-    if (ChkErr(rc,__LINE__,u_FILE_u)) return
-
-    if (flds_co2a .or. flds_co2b .or. flds_co2c) then
-       call dshr_dfield_add( dfields, sdat, state_fld='Sa_co2prog', strm_fld='co2prog', &
-            state=exportState, state_ptr=Sa_co2prog, logunit=logunit, masterproc=masterproc, rc=rc)
-       if (ChkErr(rc,__LINE__,u_FILE_u)) return
-       call dshr_dfield_add( dfields, sdat, state_fld='Sa_co2diag', strm_fld='co2diag', &
-            state=exportState, state_ptr=Sa_co2diag, logunit=logunit, masterproc=masterproc, rc=rc)
        if (ChkErr(rc,__LINE__,u_FILE_u)) return
     end if
 
@@ -1165,7 +1162,7 @@ contains
     ! initialize pointers for stream fields that have no corresponding import or export fields
     ! the following calls initialize the pointers like strm_wind below, which effectively initialize the memory
     ! for these fields
-    ! if a field is not in the any of the streams that is read in, then no pointer will be set and the 
+    ! if a field is not in the any of the streams that is read in, then no pointer will be set and the
     ! module array will not be associate
     !-----------------------------
 
