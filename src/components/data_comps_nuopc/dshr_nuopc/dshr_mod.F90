@@ -37,7 +37,7 @@ module dshr_mod
   use shr_cal_mod      , only : shr_cal_noleap, shr_cal_gregorian, shr_cal_calendarname
   use shr_cal_mod      , only : shr_cal_datetod2string
   use shr_const_mod    , only : shr_const_spval
-  use dshr_strdata_mod , only : shr_strdata_type, shr_strdata_init_from_infiles
+  use dshr_strdata_mod , only : shr_strdata_type, shr_strdata_init_from_xml
   use dshr_strdata_mod , only : shr_strdata_restWrite, shr_strdata_restRead
   use dshr_methods_mod , only : chkerr
   use perf_mod         , only : t_startf, t_stopf
@@ -333,9 +333,16 @@ contains
        write(logunit,F00) trim(subname)// " obtaining "//trim(compname)//" mesh from "// trim(model_meshfile)
     end if
     ! Initialize sdat from data model input files
-    call shr_strdata_init_from_infiles(sdat, xmlfilename, mesh, clock, compid, logunit,my_task==master_task, &
-         reset_mask=reset_mask, model_maskfile=model_maskfile, rc=rc)
-    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    if (trim(model_meshfile) == trim(model_maskfile)) then
+       ! do not read in a separate mask
+       call shr_strdata_init_from_xml(sdat, xmlfilename, model_mesh, clock, mpicom, compid, logunit, &
+            reset_mask=reset_mask, rc=rc)
+       if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    else
+       call shr_strdata_init_from_xml(sdat, xmlfilename, model_mesh, clock, mpicom, compid, logunit, &
+            reset_mask=reset_mask, model_maskfile=model_maskfile, rc=rc)
+       if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    end if
 
   end subroutine dshr_sdat_init
 
