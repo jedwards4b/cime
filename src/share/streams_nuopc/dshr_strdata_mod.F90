@@ -142,7 +142,7 @@ contains
     ! input/output variables
     type(shr_strdata_type)     , intent(inout) :: sdat
     character(len=*)           , intent(in)    :: xmlfilename
-    type(ESMF_Mesh)            , intent(inout) :: model_mesh
+    type(ESMF_Mesh)            , intent(in)    :: model_mesh
     type(ESMF_Clock)           , intent(in)    :: clock
     integer                    , intent(in)    :: compid
     integer                    , intent(in)    :: logunit
@@ -360,11 +360,6 @@ contains
        if (ChkErr(rc,__LINE__,u_FILE_u)) return
        deallocate(elemMask)
     else if (lreset_mask) then
-       allocate(elemMask(sdat%model_lsize))
-       elemMask(:) = 1._r8
-       call ESMF_MeshSet(sdat%model_mesh, elementMask=elemMask, rc=rc)
-       if (ChkErr(rc,__LINE__,u_FILE_u)) return
-       deallocate(elemMask)
     end if
 
   end subroutine shr_strdata_init_model_domain
