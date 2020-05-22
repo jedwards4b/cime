@@ -137,7 +137,7 @@ contains
 !===============================================================================
 
   subroutine shr_strdata_init_from_xml(sdat, xmlfilename, model_mesh, clock, mpicom, &
-       compid, logunit, reset_mask, model_maskfile, rc)
+       compid, logunit, model_maskfile, rc)
 
     ! input/output variables
     type(shr_strdata_type)     , intent(inout) :: sdat
@@ -146,8 +146,6 @@ contains
     type(ESMF_Clock)           , intent(in)    :: clock
     integer                    , intent(in)    :: compid
     integer                    , intent(in)    :: logunit
-    logical                    , intent(in)    :: masterproc
-    logical         , optional , intent(in)    :: reset_mask
     character(len=*), optional , intent(in)    :: model_maskfile
     integer                    , intent(out)   :: rc
 
@@ -180,7 +178,7 @@ contains
 
     ! Initialize sdat model domain
     sdat%model_mesh = model_mesh
-    call shr_strdata_init_model_domain(sdat, reset_mask=reset_mask, model_maskfile=model_maskfile, rc=rc)
+    call shr_strdata_init_model_domain(sdat, model_maskfile=model_maskfile, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
     ! Now finish initializing sdat
@@ -259,7 +257,7 @@ contains
   end subroutine shr_strdata_init_from_inline
 
   !===============================================================================
-  subroutine shr_strdata_init_model_domain( sdat, reset_mask, model_maskfile, rc)
+  subroutine shr_strdata_init_model_domain( sdat, model_maskfile, rc)
 
     ! ----------------------------------------------
     ! Initialize sdat model domain info
@@ -267,7 +265,6 @@ contains
 
     ! input/output variables
     type(shr_strdata_type)     , intent(inout) :: sdat
-    logical         , optional , intent(in)    :: reset_mask
     character(len=*), optional , intent(in)    :: model_maskfile
     integer                    , intent(out)   :: rc
 
@@ -295,11 +292,6 @@ contains
 
     rc = ESMF_SUCCESS
 
-    if (present(reset_mask)) then
-       lreset_mask = reset_mask
-    else
-       lreset_mask = .false.
-    end if
     if (present(model_maskfile)) then
        lmodel_maskfile = trim(model_maskfile)
     else
@@ -359,7 +351,6 @@ contains
        call ESMF_MeshSet(sdat%model_mesh, elementMask=elemMask, rc=rc)
        if (ChkErr(rc,__LINE__,u_FILE_u)) return
        deallocate(elemMask)
-    else if (lreset_mask) then
     end if
 
   end subroutine shr_strdata_init_model_domain
