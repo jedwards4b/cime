@@ -42,7 +42,8 @@ class Files(EntryID):
             elif attribute:
                 self._cpl_comp = attribute
             else:
-                expect(False, "Could not determine CPL component")
+                self._cpl_comp['component'] = 'cpl'
+
         if "COMP_ROOT_DIR" in vid:
             if vid in self.COMP_ROOT_DIR:
                 if attribute is not None:
