@@ -458,10 +458,20 @@ class Case(object):
         logger.debug(" Possible components for COMPSETS_SPEC_FILE are {}".format(components))
 
         self.set_lookup_value("COMP_INTERFACE", driver)
+        if self._cime_model == 'ufs':
+            config = {}
+            if 'ufsatm' in compset_name:
+                config['component']='nems'
+            else:
+                config['component']='cpl'
+
+            comp_root_dir_cpl = files.get_value("COMP_ROOT_DIR_CPL", attribute=config)
+
         if self._cime_model == 'cesm':
             comp_root_dir_cpl = files.get_value("COMP_ROOT_DIR_CPL")
-            self.set_lookup_value("COMP_ROOT_DIR_CPL",comp_root_dir_cpl)
-
+        if self._cime_model in ('cesm','ufs'):
+           self.set_lookup_value("COMP_ROOT_DIR_CPL",comp_root_dir_cpl)
+        print "HERE comp_root_dir_cpl {}".format(comp_root_dir_cpl)
         # Loop through all of the files listed in COMPSETS_SPEC_FILE and find the file
         # that has a match for either the alias or the longname in that order
         for component in components:
@@ -624,6 +634,7 @@ class Case(object):
         # Model components would normally start at zero but since we are
         # dealing with a compset, 0 is reserved for the time field
         drv_config_file = files.get_value("CONFIG_CPL_FILE")
+        print drv_config_file, compset_name
         drv_comp = Component(drv_config_file, "CPL")
         comp_classes = drv_comp.get_valid_model_components()
         comp_hash = {} # Hash model name to component class index
