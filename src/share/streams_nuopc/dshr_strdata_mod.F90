@@ -69,8 +69,8 @@ module dshr_strdata_mod
      logical                             :: stream_pio_iodesc_set =.false.  ! true=>pio iodesc has been set
      integer                             :: stream_pio_iovartype = PIO_REAL ! stream pio variable type
      type(ESMF_RouteHandle)              :: routehandle                     ! stream n -> model mesh mapping
-     character(CS), allocatable          :: fldlist_stream(:)               ! names of fields read in from stream
-     character(CS), allocatable          :: fldlist_model(:)                ! names of fields in model (1/1 correspondence with fldlist_stream)
+     character(CS), allocatable          :: fldlist_stream(:)               ! names of stream file fields
+     character(CS), allocatable          :: fldlist_model(:)                ! names of stream model fields
      type(ESMF_FieldBundle)              :: fldbun_stream_lb                ! stream n field bundle for lb of time period (stream grid)
      type(ESMF_FieldBundle)              :: fldbun_stream_ub                ! stream n field bundle for ub of time period (stream grid)
      type(ESMF_FieldBundle)              :: fldbun_model_lb                 ! stream n field bundle for lb of time period (model grid)
@@ -478,14 +478,14 @@ contains
           call ESMF_FieldBundleAdd(sdat%pstrm(ns)%fldbun_stream_ub, (/lfield/), rc=rc)
           if (chkerr(rc,__LINE__,u_FILE_u)) return
           if (masterproc) then
-             write(sdat%logunit,F00)' adding field '//trim(sdat%pstrm(ns)%fldlist_model(nfld))//&
-                  ' to fldbun_stream_lb and fldbun_stream_ub'
+             write(sdat%logunit,F00)' adding stream field '//trim(sdat%pstrm(ns)%fldlist_model(nfld))//&
+                  ' read in from file field '//sdat%pstrm(ns)%fldlist_stream(nfld)
           end if
        end do ! end of loop over streams (ns)
 
-       ! Create a field for coszen time interpolation for this stream if needed
+       ! Create a field on the model mesh for coszen time interpolation for this stream if needed
        if (trim(sdat%stream(ns)%tinterpalgo) == 'coszen') then
-          sdat%pstrm(ns)%field_coszen = ESMF_FieldCreate(sdat%pstrm(ns)%stream_mesh, ESMF_TYPEKIND_r8, name='tavCosz', &
+          sdat%pstrm(ns)%field_coszen = ESMF_FieldCreate(sdat%model_mesh, ESMF_TYPEKIND_r8, name='tavCosz', &
                meshloc=ESMF_MESHLOC_ELEMENT, rc=rc)
        endif
 
@@ -867,7 +867,7 @@ contains
              call shr_sys_abort(subName//"ERROR: Unsupported readmode: "//trim(sdat%stream(ns)%readmode))
           end select
 
-          if (debug > 0) then
+          if (debug > 0 .and. sdat%my_task == master_task) then
              write(logunit,*) trim(subname),' newData flag = ',ns,newData(ns)
              write(logunit,*) trim(subname),' LB ymd,tod = ',ns,sdat%pstrm(ns)%ymdLB,sdat%pstrm(ns)%todLB
              write(logunit,*) trim(subname),' UB ymd,tod = ',ns,sdat%pstrm(ns)%ymdUB,sdat%pstrm(ns)%todUB
@@ -936,6 +936,9 @@ contains
        do m = 1,sdat%nvectors
           nu = sdat%pstrm(m)%ustrm ! nu is the stream index that contains the u vector
           nv = sdat%pstrm(m)%vstrm ! nv is the stream index that contains the v vector
+
+          nu = 0
+          nv = 0
 
           ! TODO: this is not correct logic - need to change it
           if ((nu > 0 .or. nv > 0) .and. (newdata(nu) .or. newdata(nv))) then
@@ -1086,7 +1089,7 @@ contains
                 if (ChkErr(rc,__LINE__,u_FILE_u)) return
                 call dshr_fldbun_getfldptr(sdat%pstrm(ns)%fldbun_model_lb, sdat%pstrm(ns)%fldlist_model(nf), dataptr_lb, rc=rc)
                 if (ChkErr(rc,__LINE__,u_FILE_u)) return
-                do i = 1,lsize
+                do i = 1,size(dataptr)
                    if (coszen(i) > solZenMin) then
                       dataptr(i) = dataptr_lb(i)*coszen(i)/sdat%tavCoszen(i)
                    else
@@ -1109,7 +1112,7 @@ contains
                   ymdmod(ns), todmod, flb, fub, calendar=sdat%stream(ns)%calendar, logunit=sdat%logunit, &
                   algo=trim(sdat%stream(ns)%tinterpalgo), rc=rc)
              if (chkerr(rc,__LINE__,u_FILE_u)) return
-             if (debug > 0) then
+             if (debug > 0 .and. sdat%my_task == master_task) then
                 write(logunit,F01) trim(subname),' interp = ',ns,flb,fub
              endif
 
@@ -1451,6 +1454,7 @@ contains
     character(*), parameter       :: subname = '(shr_strdata_readstrm) '
     character(*), parameter       :: F00   = "('(shr_strdata_readstrm) ',8a)"
     character(*), parameter       :: F02   = "('(shr_strdata_readstrm) ',2a,i8)"
+    integer :: i
     !-------------------------------------------------------------------------------
 
     rc = ESMF_SUCCESS
@@ -1510,6 +1514,9 @@ contains
        rcode = pio_inq_varid(pioid, trim(fldlist_stream(nf)), varid)
        if ( rcode /= PIO_NOERR ) then
           call shr_sys_abort(' ERROR: setting varid for variable: '// trim(fldlist_stream(nf)))
+       end if
+       if (debug>0 .and. my_task==master_task)  then
+          write(logunit,F00)' reading '//trim(fldlist_stream(nf))//' into '//trim(fldlist_model(nf))
        end if
        frame = nt ! set frame to time index
        call pio_setframe(pioid, varid, int(nt,kind=Pio_Offset_Kind))
@@ -1664,6 +1671,7 @@ contains
     integer :: ns, nf
     logical :: found
     character(len=*), parameter :: subname='(shr_strdata_get_stream_pointer)'
+    character(*)    , parameter :: F00 = "('(shr_strdata_get_stream_pointer) ',8a)"
     ! ----------------------------------------------
 
     rc = ESMF_SUCCESS
@@ -1678,7 +1686,7 @@ contains
                   strm_ptr, rc=rc)
              if (chkerr(rc,__LINE__,u_FILE_u)) return
              if (masterproc) then
-                write(logunit,*)'(dshr_addfield_add) strm_ptr is allocated for stream field strm_'//trim(strm_fld)
+                write(logunit,F00)' strm_ptr is allocated for stream field strm_'//trim(strm_fld)
              end if
              found = .true.
              exit
