@@ -19,7 +19,6 @@ module dshr_strdata_mod
   use dshr_stream_mod  , only : shr_stream_taxis_cycle, shr_stream_taxis_extend, shr_stream_findBounds
   use dshr_stream_mod  , only : shr_stream_getCurrFile, shr_stream_setCurrFile, shr_stream_getMeshFilename
   use dshr_stream_mod  , only : shr_stream_init_from_xml, shr_stream_init_from_inline
-!  use dshr_stream_mod  , only : shr_stream_restWrite, shr_stream_restRead
   use dshr_stream_mod  , only : shr_stream_getnextfilename, shr_stream_getprevfilename, shr_stream_getData
   use dshr_tinterp_mod , only : shr_tInterp_getCosz, shr_tInterp_getAvgCosz, shr_tInterp_getFactors
   use dshr_methods_mod , only : dshr_fldbun_getfldptr, dshr_fldbun_getfieldN, dshr_fldbun_fldchk, chkerr
@@ -115,15 +114,6 @@ module dshr_strdata_mod
      real(r8), allocatable          :: tavCoszen(:)                    ! cosz t-interp data
   end type shr_strdata_type
 
-  integer          ,parameter :: CompareXYabs      = 1   ! X,Y  relative error
-  integer          ,parameter :: CompareXYrel      = 2   ! X,Y  absolute error
-  integer          ,parameter :: CompareAreaAbs    = 3   ! area relative error
-  integer          ,parameter :: CompareAreaRel    = 4   ! area absolute error
-  integer          ,parameter :: CompareMaskIdent  = 5   ! masks are identical
-  integer          ,parameter :: CompareMaskZeros  = 6   ! masks have same zeros
-  integer          ,parameter :: CompareMaskSubset = 7   ! mask is subset of other
-  integer          ,parameter :: CompareXYabsMask  = 101 ! X,Y  relative error
-  integer          ,parameter :: iotype_std_netcdf = -99 ! non pio option
   real(r8)         ,parameter :: deg2rad = SHR_CONST_PI/180.0_r8
   character(*)     ,parameter :: u_FILE_u = &
        __FILE__
