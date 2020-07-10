@@ -287,11 +287,17 @@ def set_model(model):
     Set the model to be used in this session
     """
     cime_config = get_cime_config()
-    cime_models = get_all_cime_models()
+    if (cime_config.has_option('main','CIME_MODEL')):
+        config_model = cime_config.get('main','CIME_MODEL')
+    if config_model == model:
+        return
+    expect(model in cime_models,"model {} not recognized. The acceptable values of CIME_MODEL currently are {}".format(model, cime_models))
     if not cime_config.has_section('main'):
         cime_config.add_section('main')
-    expect(model in cime_models,"model {} not recognized. The acceptable values of CIME_MODEL currently are {}".format(model, cime_models))
     cime_config.set('main','CIME_MODEL',model)
+    with open(os.path.join(os.environ.get("HOME"),".cime","config"),"w") as f:
+        cime_config.write(f)
+
 
 def get_model():
     """
@@ -314,16 +320,20 @@ def get_model():
     >>> reset_cime_config()
     """
     model = os.environ.get("CIME_MODEL")
+    config_model = None
+    cime_config = get_cime_config()
+    if (cime_config.has_option('main','CIME_MODEL')):
+        config_model = cime_config.get('main','CIME_MODEL')
+
+    if model and config_model and model != config_model:
+        logger.warning("Conflict in CIME_MODEL settings,\nconfig: {}\nenvironment: {}\n using config file setting".format(config_model, model))
+        model = config_model
+    elif config_model:
+        logger.debug("Setting CIME_MODEL={} from ~/.cime/config".format(config_model))
+        model = config_model
+
     cime_models = get_all_cime_models()
-    if model in cime_models:
-        logger.debug("Setting CIME_MODEL={} from environment".format(model))
-    else:
-        expect(model is None,"model {} not recognized. The acceptable values of CIME_MODEL currently are {}".format(model, cime_models))
-        cime_config = get_cime_config()
-        if (cime_config.has_option('main','CIME_MODEL')):
-            model = cime_config.get('main','CIME_MODEL')
-            if model is not None:
-                logger.debug("Setting CIME_MODEL={} from ~/.cime/config".format(model))
+    expect(model in cime_models,"model {} not recognized. The acceptable values of CIME_MODEL currently are {}".format(model, cime_models))
 
     # One last try
     if (model is None):
