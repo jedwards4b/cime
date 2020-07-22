@@ -82,6 +82,7 @@ def buildlib(bldroot, installpath, case):
     if not os.path.isdir(pio_dir):
         os.makedirs(pio_dir)
     casetools = case.get_value("CASETOOLS")
+
     if pio_version == 1 or scorpio_src_root_dir:
         cmake_opts = "\"-D GENF90_PATH=$CIMEROOT/src/externals/genf90 \""
     else:
@@ -136,13 +137,15 @@ def buildlib(bldroot, installpath, case):
         pnetcdf_string = "D_PNETCDF"
         netcdf4_string = "D_NETCDF4"
     else:
-        globs_to_copy = (os.path.join("src","clib","libpioc.*"),
-                         os.path.join("src","flib","libpiof.*"),
-                         os.path.join("src","clib","*.h"),
-                         os.path.join("src","flib","*.mod"))
+        globs_to_copy = (os.path.join(pio_dir,"src","clib","libpioc.*"),
+                         os.path.join(pio_dir,"src","flib","libpiof.*"),
+                         os.path.join(case.get_value("CIMEROOT"),"src","externals","pio2",
+                                      "src","clib","*.h"),
+                         os.path.join(pio_dir,"src","flib","*.mod"))
         for glob_to_copy in globs_to_copy:
             installed_file_time = 0
-            for item in glob.glob(os.path.join(pio_dir,glob_to_copy)):
+
+            for item in glob.glob(glob_to_copy):
                 if item.endswith(".a") or item.endswith(".so"):
                     installdir = "lib"
                 else:
