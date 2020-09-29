@@ -1162,7 +1162,7 @@ This allows using a different mpirun command to launch unit tests
     <OS>LINUX</OS>
     <COMPILERS>intel</COMPILERS>
     <MPILIBS>impi,mvapich</MPILIBS>
-    <PROJECT>FTA-Chang</PROJECT>
+    <PROJECT>ATM20005</PROJECT>
     <CIME_OUTPUT_ROOT>$ENV{SCRATCH}</CIME_OUTPUT_ROOT>
     <DIN_LOC_ROOT>/work/02503/edwardsj/CESM/inputdata/</DIN_LOC_ROOT>
     <DIN_LOC_ROOT_CLMFORC>/work/02503/edwardsj/CESM/inputdata/lmwg</DIN_LOC_ROOT_CLMFORC>
@@ -1202,15 +1202,13 @@ This allows using a different mpirun command to launch unit tests
         <command name="load">cmake/3.16.1</command>
       </modules>
       <modules mpilib="impi">
-	<command name="use"> /home1/00422/cazes/modulefiles/intel19</command>
-        <command name="load">impi/19.0.6</command>
+        <command name="load">impi/19.0.7</command>
         <command name="load">pnetcdf/1.11.2</command>
         <command name="load">parallel-netcdf/4.6.2</command>
       </modules>
       <modules mpilib="mvapich">
 	<command name="rm">impi</command>
-        <command name="use">/scratch1/01255/siliu/mvapich2/modulefiles/</command>
-        <command name="load">mvapich2-test/2.x-intel19-new</command>
+	<command name="load">mvapich2-x/2.3</command>
         <command name="load">pnetcdf/1.11.2</command>
         <command name="load">parallel-netcdf/4.6.2</command>
       </modules>
@@ -2324,7 +2322,7 @@ This allows using a different mpirun command to launch unit tests
     <OS>LINUX</OS>
     <COMPILERS>intel</COMPILERS>
     <MPILIBS>impi,mvapich2</MPILIBS>
-    <PROJECT>TG-ATM180016</PROJECT>
+    <PROJECT>TG-ATM140021</PROJECT>
     <CIME_OUTPUT_ROOT>$ENV{SCRATCH}</CIME_OUTPUT_ROOT>
     <DIN_LOC_ROOT>/work/02503/edwardsj/CESM/inputdata</DIN_LOC_ROOT>
     <DIN_LOC_ROOT_CLMFORC>/work/02503/edwardsj/CESM/inputdata/lmwg</DIN_LOC_ROOT_CLMFORC>
@@ -2360,14 +2358,14 @@ This allows using a different mpirun command to launch unit tests
       <modules>
         <command name="purge"></command>
         <command name="load">TACC</command>
-        <command name="load">python/2.7.13</command>
+        <command name="load">python/2.7.15</command>
         <command name="load">intel/18.0.2</command>
-        <command name="load">cmake/3.10.2</command>
+        <command name="load">cmake/3.16.1</command>
       </modules>
       <modules mpilib="mvapich2">
-        <command name="load">mvapich2/2.3b</command>
+        <command name="load">mvapich2/2.3.3</command>
         <command name="load">pnetcdf/1.11.0</command>
-        <command name="load">parallel-netcdf/4.3.3.1</command>
+        <command name="load">parallel-netcdf/4.6.2</command>
       </modules>
       <modules mpilib="impi">
         <command name="rm">mvapich2</command>
