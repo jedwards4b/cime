@@ -60,6 +60,13 @@
       <support>Non-standard grid for testing of the interpolation in DATM rather than coupler</support>
     </model_grid>
 
+    <model_grid alias="g09g17_g09g17" compset="DATM.+DROF">
+      <grid name="atm">g09g17</grid>
+      <grid name="lnd">g09g17</grid>
+      <grid name="ocnice">g09g17</grid>
+      <support>Non-standard grid for ECESM roms embedded in pop</support>
+    </model_grid>
+
     <model_grid alias="1D_1D" compset="DATM.+DROF">
       <grid name="atm">01col</grid>
       <grid name="lnd">01col</grid>
@@ -1338,6 +1345,13 @@
       <desc>gx1v7 is displaced Greenland pole 1-deg grid with Caspian as a land feature:</desc>
     </domain>
 
+    <domain name="g09g17">
+      <nx>189931</nx>  <ny>1</ny>
+      <file grid="atm|lnd">$DIN_LOC_ROOT/share/domains/domain.ocn.gom09_gx1v7.200610.nc</file>
+      <file grid="ocnice">$DIN_LOC_ROOT/share/domains/domain.ocn.gom09_gx1v7.200610.nc</file>
+      <desc>g09g17 is an ECESM grid with roms gom09 embedded in pop gx1v7:</desc>
+    </domain>
+
     <domain name="gx3v7">
       <nx>100</nx> <ny>116</ny>
       <file grid="ocnice">$DIN_LOC_ROOT/share/domains/domain.ocn.gx3v7.120323.nc</file>
@@ -1922,6 +1936,10 @@
     <gridmap rof_grid="rx1" ocn_grid="gx1v7" >
       <map name="ROF2OCN_LIQ_RMAPNAME">cpl/gridmaps/rx1/map_rx1_to_gx1v7_nn_open_ocean_nnsm_e1000r300_marginal_sea_170413.nc</map>
       <map name="ROF2OCN_ICE_RMAPNAME">cpl/gridmaps/rx1/map_rx1_to_gx1v7_nnsm_e1000r300_170413.nc</map>
+    </gridmap>
+    <gridmap rof_grid="rx1" ocn_grid="g09g17" >
+      <map name="ROF2OCN_LIQ_RMAPNAME">cpl/gridmaps/rx1/map.rx1_to_g09g17_nn_open_ocean_nnsm_e1000r300_marginal_sea_200610.nc</map>
+      <map name="ROF2OCN_ICE_RMAPNAME">cpl/gridmaps/rx1/map.rx1_to_g09g17_nn_open_ocean_nnsm_e1000r300_marginal_sea_200610.nc</map>
     </gridmap>
     <gridmap rof_grid="rx1" ocn_grid="tx1v1" >
       <map name="ROF2OCN_LIQ_RMAPNAME">cpl/gridmaps/rx1/map_rx1_to_tx1v1_e1000r300_161214.nc</map>

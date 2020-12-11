@@ -1,3 +1,18 @@
+Originator: Brian Kauffman
+Date: 2020-dec-11
+Tag: ihesp-embedded-master_201211
+Answer Changes:
+Tests: C_OC.g09g17_g09g17.02 -- 2020-Sep 2-year run for BAMS paper
+Dependencies:  ocpl,datm,dice must support g09g17 grid
+
+Brief Summary:
+used in C_OC.g09g17_g09g17.02 -- 2020-Sep composite grid, clean 2-year run for
+
+introduces g09g17 composite pop/roms ocean grid
+
+
+======================================================================
+=== branch for iHESP E-CESM ==========================================
 ======================================================================
 
 Originator: Chris Fischer 
