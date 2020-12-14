@@ -96,11 +96,11 @@ class EnvMachPes(EnvBase):
             pstrid = self.get_value("PSTRID", attribute={"compclass":comp})
             # mct is unaware of threads and they should not be counted here
             # esmf is thread aware and so they are included
-            if comp_interface == "nuopc":
-                nthrds = self.get_value("NTHRDS", attribute={"compclass":comp})
-            else:
-                nthrds = 1
-
+#            if comp_interface == "nuopc":
+#                nthrds = self.get_value("NTHRDS", attribute={"compclass":comp})
+#            else:
+#                nthrds = 1
+            nthrds = 1
             if comp != "CPL" and comp_interface!="nuopc":
                 ninst = self.get_value("NINST", attribute={"compclass":comp})
                 maxinst = max(maxinst, ninst)
@@ -112,11 +112,11 @@ class EnvMachPes(EnvBase):
 
     def get_tasks_per_node(self, total_tasks, max_thread_count):
         expect(total_tasks > 0,"totaltasks > 0 expected, totaltasks = {}".format(total_tasks))
-        if self._comp_interface == 'nuopc':
-            tasks_per_node = self.get_value("MAX_MPITASKS_PER_NODE")
-        else:
-            tasks_per_node = min(self.get_value("MAX_TASKS_PER_NODE")// max_thread_count,
-                                 self.get_value("MAX_MPITASKS_PER_NODE"), total_tasks)
+#        if self._comp_interface == 'nuopc':
+#            tasks_per_node = self.get_value("MAX_MPITASKS_PER_NODE")
+#        else:
+        tasks_per_node = min(self.get_value("MAX_TASKS_PER_NODE")// max_thread_count,
+                              self.get_value("MAX_MPITASKS_PER_NODE"), total_tasks)
         return tasks_per_node if tasks_per_node > 0 else 1
 
     def get_total_nodes(self, total_tasks, max_thread_count):
@@ -124,8 +124,8 @@ class EnvMachPes(EnvBase):
         Return (num_active_nodes, num_spare_nodes)
         """
         # threads have already been included in nuopc interface
-        if self._comp_interface == 'nuopc':
-            max_thread_count = 1
+#        if self._comp_interface == 'nuopc':
+#            max_thread_count = 1
         tasks_per_node = self.get_tasks_per_node(total_tasks, max_thread_count)
         num_nodes = int(math.ceil(float(total_tasks) / tasks_per_node))
         return num_nodes, self.get_spare_nodes(num_nodes)
