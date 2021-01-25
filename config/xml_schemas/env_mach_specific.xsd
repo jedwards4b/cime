@@ -17,6 +17,8 @@
 <!-- simple elements -->
 <xs:element name="header" type="xs:string"/>
 <xs:element name="executable" type="xs:string"/>
+<xs:element name="run_exe" type="xs:string"/>
+<xs:element name="run_misc_suffix" type="xs:string"/>
 <xs:element name="type" type="xs:NCName"/>
 <xs:element name="desc" type="xs:string"/>
 
@@ -152,6 +154,10 @@
       <xs:sequence>
         <xs:element ref="executable"/>
         <xs:element minOccurs="0" maxOccurs="1" ref="arguments"/>
+        <!-- run_exe: The run executable to use; overrides default_run_exe -->                                        
+        <xs:element ref="run_exe" minOccurs="0"/>                                                                     
+        <!-- run_misc_suffix: the misc run suffix to use; overrides default_run_misc_suffix -->                       
+        <xs:element ref="run_misc_suffix" minOccurs="0"/>                            
       </xs:sequence>
       <xs:attribute ref="compiler"/>
       <xs:attribute ref="mpilib"/>

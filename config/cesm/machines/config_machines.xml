@@ -1168,17 +1168,18 @@ This allows using a different mpirun command to launch unit tests
     <DIN_LOC_ROOT_CLMFORC>/work/02503/edwardsj/CESM/inputdata/lmwg</DIN_LOC_ROOT_CLMFORC>
     <DOUT_S_ROOT>$ENV{SCRATCH}/archive/$CASE</DOUT_S_ROOT>
     <BASELINE_ROOT>/work/02503/edwardsj/CESM/cesm_baselines</BASELINE_ROOT>
-    <CCSM_CPRNC>/work/02503/edwardsj/CESM/tools/cprnc</CCSM_CPRNC>
+    <CCSM_CPRNC>/work/02503/edwardsj/CESM/cime/tools/cprnc/cprnc</CCSM_CPRNC>
     <GMAKE_J>4</GMAKE_J>
     <BATCH_SYSTEM>slurm</BATCH_SYSTEM>
     <SUPPORTED_BY>cseg</SUPPORTED_BY>
     <MAX_TASKS_PER_NODE>112</MAX_TASKS_PER_NODE>
     <MAX_MPITASKS_PER_NODE>56</MAX_MPITASKS_PER_NODE>
     <mpirun mpilib="impi">
-      <executable>ibrun</executable>
+      <executable>sbcast ${EXEROOT}/cesm.exe /tmp/cesm.exe; ibrun</executable>
       <arguments>
 	<arg name="ntasks"> -n {{ total_tasks }} </arg>
       </arguments>
+      <run_exe>/tmp/cesm.exe</run_exe>
     </mpirun>
     <mpirun mpilib="mvapich">
       <executable>ibrun</executable>
@@ -1239,7 +1240,6 @@ This allows using a different mpirun command to launch unit tests
     <env name="MV2_UD_MAX_RECV_WQE">4096</env>
     <env name="TACC_MPI_GETMODE">mvapich2_ssh</env>
   </environment_variables>
-
   </machine>
 
   <machine MACH="gaea">
