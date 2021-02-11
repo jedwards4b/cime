@@ -573,6 +573,7 @@
       <queue walltimemax="24:00:00" nodemin="1" nodemax="128" default="true">medium</queue>
       <queue walltimemax="168:00:00" nodemin="1" nodemax="64" >long</queue>
       <queue walltimemax="504:00:00" nodemin="1" nodemax="32" >xlong</queue>
+      <queue walltimemax="24:00:00" nodemin="1" nodemax="800" >special</queue>
     </queues>
   </batch_system>
   
