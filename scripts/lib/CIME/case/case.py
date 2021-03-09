@@ -214,8 +214,8 @@ class Case(object):
         self._env_entryid_files.append(EnvBuild(self._caseroot, components=components, read_only=self._force_read_only))
         self._comp_interface = self._env_entryid_files[-1].get_value("COMP_INTERFACE")
 
-        self._env_entryid_files.append(EnvMachPes(self._caseroot, components=components, read_only=self._force_read_only,
-                                                  comp_interface=self._comp_interface))
+        self._env_entryid_files.append(EnvMachPes(self._caseroot, components=components, read_only=self._force_read_only))
+
         self._env_entryid_files.append(EnvBatch(self._caseroot, read_only=self._force_read_only))
         self._env_entryid_files.append(EnvWorkflow(self._caseroot, read_only=self._force_read_only))
 
