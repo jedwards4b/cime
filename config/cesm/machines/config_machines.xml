@@ -1315,7 +1315,7 @@ This allows using a different mpirun command to launch unit tests
     <CIME_OUTPUT_ROOT>$ENV{SCRATCH}</CIME_OUTPUT_ROOT>
     <DIN_LOC_ROOT>/scratch/group/ihesp/software/cesm/inputdata</DIN_LOC_ROOT>
     <DIN_LOC_ROOT_CLMFORC>/scratch/group/ihesp/software/cesm/inputdata/lmwg</DIN_LOC_ROOT_CLMFORC>
-    <DOUT_S_ROOT>$WORK/archive/$CASE</DOUT_S_ROOT>
+    <DOUT_S_ROOT>$ENV{SCRATCH}/archive/$CASE</DOUT_S_ROOT>
     <BASELINE_ROOT>/scratch/group/ihesp/software/cesm/cesm_baselines</BASELINE_ROOT>
     <CCSM_CPRNC>/scratch/group/ihesp/software/cesm/cime/tools/cprnc/cprnc</CCSM_CPRNC>
     <GMAKE_J>4</GMAKE_J>
@@ -1324,9 +1324,9 @@ This allows using a different mpirun command to launch unit tests
     <MAX_TASKS_PER_NODE>96</MAX_TASKS_PER_NODE>
     <MAX_MPITASKS_PER_NODE>48</MAX_MPITASKS_PER_NODE>
     <mpirun mpilib="impi">
-      <executable>srun</executable>
+      <executable>mpirun</executable>
       <arguments>
-         <arg name="num_tasks"> -n $TOTALPES</arg>
+         <arg name="num_tasks"> -np $TOTALPES</arg>
       </arguments>
     </mpirun>
     <module_system type="module">
@@ -1340,25 +1340,39 @@ This allows using a different mpirun command to launch unit tests
       <cmd_path lang="csh">module</cmd_path>
       <modules>
         <command name="purge"></command>
-        <command name="load">intel/2019b</command>
+        <command name="unuse">/sw/eb/mods/all/MPI/intel/2019.5.281/impi/2018.5.288:/sw/eb/mods/all/Compiler/intel/2019.5.281:/sw/eb/mods/all/Compiler/GCCcore/8.3.0:/sw/hprc/mods/all/Core:/sw/eb/mods/all/Core:/sw/lmod/hprc/mods/Linux:/sw/lmod/8.4.3/modulefiles/Core</command>
+        <command name="use">/scratch/group/ihesp/software/easybuild/eb/x86_64/mods/all/Core</command>
+        <command name="load">intel/2020b</command>
+        <command name="load">CMake/3.18.4</command>
+        <command name="load">cURL/7.72.0</command>
+        <command name="load">Python/2.7.18</command>
+        <command name="load">XML-LibXML/2.0206</command>
+        <command name="load">PnetCDF/1.12.1</command>
+        <command name="load">netCDF/4.7.4</command>
+        <command name="load">netCDF-Fortran/4.5.3</command>
+     <!--   <command name="load">intel/2019b</command>
         <command name="load">CMake/3.15.3</command>
         <command name="load">cURL/7.66.0</command>
         <command name="load">Python/2.7.16</command>
         <command name="load">XML-LibXML/2.0201</command>
+        <command name="load">PnetCDF/1.12.1</command>
+        <command name="load">netCDF/4.7.4</command>
+        <command name="load">netCDF-Fortran/4.5.3</command> -->
       </modules>
-      <modules mpilib="impi">
+<!--      <modules mpilib="impi">
         <command name="load">impi/2018.5.288</command>
-        <command name="load">HDF5/1.10.5</command>
+        <command name="load">HDF5/1.10.5</command> -->
       <!--  <command name="load">PnetCDF/1.12.1</command> -->
       <!--  <command name="load">netCDF/4.6.1</command> -->
     <!--    <command name="load">netCDF-Fortran/4.5.2</command>
         <command name="load">netCDF-C++4/4.3.1</command> -->
-      </modules>
+<!--      </modules>-->
     </module_system>
     <environment_variables>
       <env name="OMP_STACKSIZE">256M</env>
-      <env name="I_MPI_PMI_LIBRARY">/usr/lib64/libpmi.so</env>
-      <env name="I_MPI_DEBUG">4</env>
+    <!--  <env name="I_MPI_PMI_LIBRARY">/usr/lib64/libpmi.so</env> -->
+      <env name="I_MPI_FABRICS">shm:ofi</env>
+      <!--<env name="I_MPI_DEBUG">4</env>-->
     </environment_variables>
   </machine>
 
