@@ -1372,7 +1372,7 @@ module shr_reprosum_mod
       else
          llogunit = s_logunit
       endif
-
+!$OMP CRITICAL
       ! check that "fast" reproducible sum is accurate enough.
       exceeds_limit = 0
       max_rel_diff = 0.0_r8
@@ -1407,7 +1407,7 @@ module shr_reprosum_mod
          endif
          shr_reprosum_tolExceeded = .true.
        endif
-
+!$OMP END CRITICAL
 
    end function shr_reprosum_tolExceeded
 
