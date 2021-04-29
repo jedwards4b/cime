@@ -6,13 +6,12 @@ if there is no queueing system.  A cesm workflow may include multiple
 jobs.
 submit, check_case and check_da_settings are members of class Case in file case.py
 """
-from six.moves                      import configparser
 from CIME.XML.standard_module_setup import *
 from CIME.utils                     import expect, run_and_log_case_status, CIMEError
 from CIME.locked_files              import unlock_file, lock_file
 from CIME.test_status               import *
 
-import socket
+import socket, ConfigParser
 
 logger = logging.getLogger(__name__)
 
@@ -184,7 +183,7 @@ def submit(self, job=None, no_batch=False, prereq=None, allow_fail=False, resubm
     # any submit options used on the original submit and use them again
     submit_options = os.path.join(caseroot, ".submit_options")
     if resubmit and os.path.exists(submit_options):
-        config = configparser.RawConfigParser()
+        config = ConfigParser.RawConfigParser()
         config.read(submit_options)
         if not skip_pnl and config.has_option('SubmitOptions','skip_pnl'):
             skip_pnl = config.getboolean('SubmitOptions', 'skip_pnl')

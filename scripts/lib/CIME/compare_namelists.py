@@ -1,4 +1,4 @@
-import os, re, logging, six
+import os, re, logging
 
 from collections import OrderedDict
 from CIME.utils  import expect, CIMEError
@@ -361,7 +361,7 @@ def _compare_values(name, gold_value, comp_value, case):
                 comments += "  dict variable '{}' has extra key {} with value {}\n".format(name, key, comp_value[key])
 
     else:
-        expect(isinstance(gold_value, six.string_types), "Unexpected type found: '{}'".format(type(gold_value)))
+        expect(isinstance(gold_value, str), "Unexpected type found: '{}'".format(type(gold_value)))
         norm_gold_value = _normalize_string_value(name, gold_value, case)
         norm_comp_value = _normalize_string_value(name, comp_value, case)
 
