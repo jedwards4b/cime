@@ -11,7 +11,7 @@ from CIME.utils                     import expect, run_and_log_case_status, CIME
 from CIME.locked_files              import unlock_file, lock_file
 from CIME.test_status               import *
 
-import socket, ConfigParser
+import socket, configparser
 
 logger = logging.getLogger(__name__)
 

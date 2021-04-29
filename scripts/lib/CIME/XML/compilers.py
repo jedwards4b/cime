@@ -9,7 +9,6 @@ from CIME.XML.compilerblock import CompilerBlock
 from CIME.BuildTools.makemacroswriter import MakeMacroWriter
 from CIME.BuildTools.cmakemacroswriter import CMakeMacroWriter
 from CIME.BuildTools.macroconditiontree import merge_optional_trees
-import six
 
 logger = logging.getLogger(__name__)
 
@@ -161,7 +160,7 @@ class Compilers(GenericXML):
             else:
                 format_ = output_format
 
-            if isinstance(macros_file, six.string_types):
+            if isinstance(macros_file, str):
                 with open(macros_file, "w") as macros:
                     self._write_macros_file(format_, macros)
             else:

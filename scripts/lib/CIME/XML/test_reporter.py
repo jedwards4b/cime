@@ -3,11 +3,10 @@ Interface to the testreporter xml.  This class inherits from GenericXML.py
 
 """
 #pylint: disable=import-error
-from six.moves import urllib
-import six
 from CIME.XML.standard_module_setup import *
 from CIME.XML.generic_xml import GenericXML
 from CIME.utils import expect,get_model
+import urllib
 
 class TestReporter(GenericXML):
 
@@ -56,9 +55,9 @@ class TestReporter(GenericXML):
         # Post test result XML to CESM test database
         #
         xmlstr = self.get_raw_record()
-        username=six.moves.input("Username:")
+        username=input("Username:")
         os.system("stty -echo")
-        password=six.moves.input("Password:")
+        password=input("Password:")
         os.system("stty echo")
         params={'username':username,'password':password,'testXML':xmlstr}
         url="https://csegweb.cgd.ucar.edu/testdb/cgi-bin/processXMLtest.cgi"

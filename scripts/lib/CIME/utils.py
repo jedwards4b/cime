@@ -3,12 +3,10 @@ Common functions used by cime python scripts
 Warning: you cannot use CIME Classes in this module as it causes circular dependencies
 """
 import io, logging, gzip, sys, os, time, re, shutil, glob, string, random, imp, fnmatch
-import errno, signal, warnings, filecmp
+import errno, signal, warnings, filecmp, configparser
 import stat as statlib
-import six
 from contextlib import contextmanager
 #pylint: disable=import-error
-from six.moves import configparser
 from distutils import file_util
 
 # Return this error code if the scripts worked but tests failed
@@ -484,12 +482,12 @@ def run_cmd(cmd, input_str=None, from_dir=None, verbose=None,
     # Real defaults for these value should be subprocess.PIPE
     if arg_stdout is _hack:
         arg_stdout = subprocess.PIPE
-    elif isinstance(arg_stdout, six.string_types):
+    elif isinstance(arg_stdout, str):
         arg_stdout = _convert_to_fd(arg_stdout, from_dir)
 
     if arg_stderr is _hack:
         arg_stderr = subprocess.STDOUT if combine_output else subprocess.PIPE
-    elif isinstance(arg_stderr, six.string_types):
+    elif isinstance(arg_stderr, str):
         arg_stderr = _convert_to_fd(arg_stdout, from_dir)
 
     if (verbose != False and (verbose or logger.isEnabledFor(logging.DEBUG))):
@@ -526,19 +524,17 @@ def run_cmd(cmd, input_str=None, from_dir=None, verbose=None,
 
     # In Python3, subprocess.communicate returns bytes. We want to work with strings
     # as much as possible, so we convert bytes to string (which is unicode in py3) via
-    # decode. For python2, we do NOT want to do this since decode will yield unicode
-    # strings which are not necessarily compatible with the system's default base str type.
-    if not six.PY2:
-        if output is not None:
-            try:
-                output = output.decode('utf-8', errors='ignore')
-            except AttributeError:
-                pass
-        if errput is not None:
-            try:
-                errput = errput.decode('utf-8', errors='ignore')
-            except AttributeError:
-                pass
+    # decode.
+    if output is not None:
+        try:
+            output = output.decode('utf-8', errors='ignore')
+        except AttributeError:
+            pass
+    if errput is not None:
+        try:
+            errput = errput.decode('utf-8', errors='ignore')
+        except AttributeError:
+            pass
 
     # Always strip outputs
     if output:
@@ -547,16 +543,10 @@ def run_cmd(cmd, input_str=None, from_dir=None, verbose=None,
         errput = errput.strip()
 
     stat = proc.wait()
-    if six.PY2:
-        if isinstance(arg_stdout, file): # pylint: disable=undefined-variable
-            arg_stdout.close() # pylint: disable=no-member
-        if isinstance(arg_stderr, file) and arg_stderr is not arg_stdout: # pylint: disable=undefined-variable
-            arg_stderr.close() # pylint: disable=no-member
-    else:
-        if isinstance(arg_stdout, io.IOBase):
-            arg_stdout.close() # pylint: disable=no-member
-        if isinstance(arg_stderr, io.IOBase) and arg_stderr is not arg_stdout:
-            arg_stderr.close() # pylint: disable=no-member
+    if isinstance(arg_stdout, io.IOBase):
+        arg_stdout.close() # pylint: disable=no-member
+    if isinstance(arg_stderr, io.IOBase) and arg_stderr is not arg_stdout:
+        arg_stderr.close() # pylint: disable=no-member
 
 
     if (verbose != False and (verbose or logger.isEnabledFor(logging.DEBUG))):
@@ -597,11 +587,11 @@ def run_cmd_no_fail(cmd, input_str=None, from_dir=None, verbose=None,
         errput = output if not errput else errput
         if errput is None:
             if combine_output:
-                if isinstance(arg_stdout, six.string_types):
+                if isinstance(arg_stdout, str):
                     errput = "See {}".format(_get_path(arg_stdout, from_dir))
                 else:
                     errput = ""
-            elif isinstance(arg_stderr, six.string_types):
+            elif isinstance(arg_stderr, str):
                 errput = "See {}".format(_get_path(arg_stderr, from_dir))
             else:
                 errput = ""
@@ -1271,11 +1261,11 @@ def convert_to_string(value, type_str=None, vid=""):
     >>> convert_to_string(6.01, type_str="real") == '6.01'
     True
     """
-    if value is not None and not isinstance(value, six.string_types):
+    if value is not None and not isinstance(value, str):
         if type_str == "char":
-            expect(isinstance(value, six.string_types), "Wrong type for entry id '{}'".format(vid))
+            expect(isinstance(value, str), "Wrong type for entry id '{}'".format(vid))
         elif type_str == "integer":
-            expect(isinstance(value, six.integer_types), "Wrong type for entry id '{}'".format(vid))
+            expect(isinstance(value, int), "Wrong type for entry id '{}'".format(vid))
             value = str(value)
         elif type_str == "logical":
             expect(type(value) is bool, "Wrong type for entry id '{}'".format(vid))
@@ -1793,7 +1783,7 @@ CASE_SUCCESS = "success"
 CASE_FAILURE = "error"
 def run_and_log_case_status(func, phase, caseroot='.',
                             custom_starting_msg_functor=None,
-                            custom_success_msg_functor=None, 
+                            custom_success_msg_functor=None,
                             is_batch=False):
     starting_msg = None
 
@@ -1821,7 +1811,7 @@ def run_and_log_case_status(func, phase, caseroot='.',
         if phase == "case.submit" and is_batch:
             append_case_status(phase, "starting", msg=custom_success_msg,
                             caseroot=caseroot)
-        append_case_status(phase, CASE_SUCCESS, msg=custom_success_msg, 
+        append_case_status(phase, CASE_SUCCESS, msg=custom_success_msg,
                            caseroot=caseroot)
 
     return rv
