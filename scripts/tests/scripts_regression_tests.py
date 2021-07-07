@@ -2621,6 +2621,11 @@ class L_TestSaveTimings(TestCreateTestCommon):
         self.assertEqual(len(lids), 1, msg="Expected one LID, found %s" % lids)
 
         if manual_timing:
+            machine = case.get_value("MACH")
+            # avoid an error on undefined env variable
+            if machine == "izumi":
+                os.environ["PBS_NODEFILE"] = ""
+                
             run_cmd_assert_result(self, "cd %s && %s/save_provenance postrun" % (casedir, TOOLS_DIR))
         if CIME.utils.get_model() == "e3sm":
             provenance_glob = os.path.join(timing_dir, "performance_archive", getpass.getuser(), casename, lids[0] + "*")
