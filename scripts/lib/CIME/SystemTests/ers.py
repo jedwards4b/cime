@@ -18,6 +18,11 @@ class ERS(SystemTestsCommon):
         stop_n      = self._case.get_value("STOP_N")
         stop_option = self._case.get_value("STOP_OPTION")
         rest_n      = self._case.get_value("REST_N")
+
+        # Set write_restart_at_endofrun false so that test picks up correct rpointer files
+        with open("user_nl_cpl", "a") as fd:
+            fd.write("\nwrite_restart_at_endofrun=.false.\n")
+
         expect(stop_n > 0, "Bad STOP_N: {:d}".format(stop_n))
 
         expect(stop_n > 2, "ERROR: stop_n value {:d} too short".format(stop_n))
