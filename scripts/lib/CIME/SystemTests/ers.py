@@ -20,8 +20,9 @@ class ERS(SystemTestsCommon):
         rest_n      = self._case.get_value("REST_N")
 
         # Set write_restart_at_endofrun false so that test picks up correct rpointer files
-        with open("user_nl_cpl", "a") as fd:
-            fd.write("\nwrite_restart_at_endofrun=.false.\n")
+        if self._case.get_value("COMP_INTERFACE") == "nuopc":
+            with open("user_nl_cpl", "a") as fd:
+                fd.write("\nwrite_restart_at_endofrun=.false.\n")
 
         expect(stop_n > 0, "Bad STOP_N: {:d}".format(stop_n))
 
