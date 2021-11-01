@@ -5,9 +5,11 @@ create_dirs and create_namelists are members of Class case from file case.py
 
 from CIME.XML.standard_module_setup import *
 from CIME.utils import run_sub_or_cmd, safe_copy
-import glob
+import time, glob
 logger = logging.getLogger(__name__)
 
+NAMELIST_FILEPATTERNS = ["*_in_[0-9]*", "*modelio*", "*_in", "nuopc.runconfig",
+                       "*streams*txt*", "*streams.xml", "*stxt", "*maps.rc", "*cism*.config*", "nuopc.runseq"]
 def create_dirs(self):
     """
     Make necessary directories for case
@@ -18,7 +20,6 @@ def create_dirs(self):
     incroot  = self.get_value("INCROOT")
     rundir   = self.get_value("RUNDIR")
     caseroot = self.get_value("CASEROOT")
-
     docdir = os.path.join(caseroot, "CaseDocs")
     dirs_to_make = []
     models = self.get_values("COMP_CLASSES")
@@ -29,12 +30,15 @@ def create_dirs(self):
     dirs_to_make.extend([exeroot, libroot, incroot, rundir, docdir])
 
     for dir_to_make in dirs_to_make:
-        if (not os.path.isdir(dir_to_make)):
+        if (not os.path.isdir(dir_to_make) and not os.path.islink(dir_to_make)):
             try:
                 logger.debug("Making dir '{}'".format(dir_to_make))
                 os.makedirs(dir_to_make)
             except OSError as e:
-                expect(False, "Could not make directory '{}', error: {}".format(dir_to_make, e))
+                # In a multithreaded situation, we may have lost a race to create this dir.
+                # We do not want to crash if that's the case.
+                if not os.path.isdir(dir_to_make):
+                    expect(False, "Could not make directory '{}', error: {}".format(dir_to_make, e))
 
     # As a convenience write the location of the case directory in the bld and run directories
     for dir_ in (exeroot, rundir):
@@ -60,9 +64,6 @@ def create_namelists(self, component=None):
 
     self.stage_refcase()
 
-
-    logger.info("Creating component namelists")
-
     # Create namelists - must have cpl last in the list below
     # Note - cpl must be last in the loop below so that in generating its namelist,
     # it can use xml vars potentially set by other component's buildnml scripts
@@ -70,13 +71,14 @@ def create_namelists(self, component=None):
     models += [models.pop(0)]
     for model in models:
         model_str = model.lower()
+        logger.info("  {} {} ".format(time.strftime("%Y-%m-%d %H:%M:%S"),model_str))
         config_file = self.get_value("CONFIG_{}_FILE".format(model_str.upper()))
         config_dir = os.path.dirname(config_file)
         if model_str == "cpl":
             compname = "drv"
         else:
             compname = self.get_value("COMP_{}".format(model_str.upper()))
-        if component is None or component == model_str:
+        if component is None or component == model_str or compname=="ufsatm":
             # first look in the case SourceMods directory
             cmd = os.path.join(caseroot, "SourceMods", "src."+compname, "buildnml")
             if os.path.isfile(cmd):
@@ -85,9 +87,23 @@ def create_namelists(self, component=None):
                 # otherwise look in the component config_dir
                 cmd = os.path.join(config_dir, "buildnml")
             expect(os.path.isfile(cmd), "Could not find buildnml file for component {}".format(compname))
-            run_sub_or_cmd(cmd, (caseroot), "buildnml", (self, caseroot, compname), case=self)
+            logger.info("Create namelist for component {}".format(compname))
+            run_sub_or_cmd(cmd, (caseroot), "buildnml",
+                           (self, caseroot, compname), case=self)
 
-    logger.info("Finished creating component namelists")
+        logger.debug("Finished creating component namelists, component {} models = {}".format(component, models))
+
+    # Some systems (eg TACC) require that we copy inputdata to a temporary staging directory
+    din_staging_root = self.get_value("DIN_STAGING_ROOT")
+    if din_staging_root and din_staging_root != "UNSET":
+        din_loc_root = self.get_value("DIN_LOC_ROOT")
+        for cpglob in NAMELIST_FILEPATTERNS:
+            for file_to_edit in glob.iglob(os.path.join(rundir, cpglob)):
+                with open(file_to_edit, "r") as file:
+                    filedata = file.read()
+                filedata = filedata.replace(din_loc_root, din_staging_root)
+                with open(file_to_edit, "w") as file:
+                    file.write(filedata)
 
     # Save namelists to docdir
     if (not os.path.isdir(docdir)):
@@ -98,13 +114,13 @@ def create_namelists(self, component=None):
         except (OSError, IOError) as e:
             expect(False, "Failed to write {}/README: {}".format(docdir, e))
 
-    for cpglob in ["*_in_[0-9]*", "*modelio*", "*_in",
-                   "*streams*txt*", "*stxt", "*maps.rc", "*cism.config*"]:
-        for file_to_copy in glob.glob(os.path.join(rundir, cpglob)):
+    for cpglob in NAMELIST_FILEPATTERNS:
+        for file_to_copy in glob.iglob(os.path.join(rundir, cpglob)):
             logger.debug("Copy file from '{}' to '{}'".format(file_to_copy, docdir))
             safe_copy(file_to_copy, docdir)
 
     # Copy over chemistry mechanism docs if they exist
-    if (os.path.isdir(os.path.join(casebuild, "camconf"))):
-        for file_to_copy in glob.glob(os.path.join(casebuild, "camconf", "*chem_mech*")):
+    atmconf = self.get_value("COMP_ATM") + "conf"
+    if (os.path.isdir(os.path.join(casebuild, atmconf))):
+        for file_to_copy in glob.glob(os.path.join(casebuild, atmconf, "*chem_mech*")):
             safe_copy(file_to_copy, docdir)

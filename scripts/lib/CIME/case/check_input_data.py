@@ -6,7 +6,7 @@ from CIME.utils import SharedArea, find_files, safe_copy, expect
 from CIME.XML.inputdata import Inputdata
 import CIME.Servers
 
-import glob, hashlib, shutil
+import glob, hashlib, shutil, time, threading
 
 logger = logging.getLogger(__name__)
 # The inputdata_checksum.dat file will be read into this hash if it's available
@@ -275,7 +275,8 @@ def check_input_data(case, protocol="svn", address=None, input_data_root=None, d
 
     data_list_files = find_files(data_list_dir, "*.input_data_list")
     expect(data_list_files, "No .input_data_list files found in dir '{}'".format(data_list_dir))
-
+    din_staging_root = case.get_value("DIN_STAGING_ROOT", resolved=True)
+    filelist = []
     no_files_missing = True
     if download:
         if protocol not in vars(CIME.Servers):
@@ -308,6 +309,7 @@ def check_input_data(case, protocol="svn", address=None, input_data_root=None, d
                 if(full_path):
                     # expand xml variables
                     full_path = case.get_resolved_value(full_path)
+                    filelist.append(full_path)
                     rel_path  = full_path.replace(input_data_root, "")
                     model = os.path.basename(data_list_file).split('.')[0]
 
@@ -349,7 +351,9 @@ def check_input_data(case, protocol="svn", address=None, input_data_root=None, d
                 else:
                     model = os.path.basename(data_list_file).split('.')[0]
                     logging.warning("Model {} no file specified for {}".format(model, description))
-
+    if no_files_missing and din_staging_root and din_staging_root != "UNSET":
+        _stage_inputdata(input_data_root, din_staging_root, filelist)
+        
     return no_files_missing
 
 def verify_chksum(input_data_root, rundir, filename, isdirectory):
@@ -386,8 +390,6 @@ def verify_chksum(input_data_root, rundir, filename, isdirectory):
                        "chksum mismatch for file {} expected {} found {}".
                        format(os.path.join(input_data_root,fname),chksum, chksum_hash[fname]))
 
-
-
 def md5(fname):
     """
     performs an md5 sum one chunk at a time to avoid memory issues with large files.
@@ -397,3 +399,38 @@ def md5(fname):
         for chunk in iter(lambda: f.read(4096), b""):
             hash_md5.update(chunk)
     return hash_md5.hexdigest()
+
+def _stage_inputdata(src_root, dest_root, filelist):
+    """
+    On some systems it is desirable to stage the inputdata needed for a case to the scratch filesystem
+    TACC systems are an example where they don't want you to read the STOCKYARD file system from compute nodes
+    """
+    for _file in filelist:
+        outfile = _file.replace(src_root, dest_root)
+        outdir = os.path.dirname(outfile)
+        md5_input = 0
+        md5_output = 5
+        if not os.path.exists(outdir):
+            os.makedirs(outdir)
+        elif os.path.isfile(outfile):
+            md5_input = md5inputdata(_file)
+            md5_output = md5inputdata(outfile)
+
+        if md5_input != md5_output:
+            logger.info("Staging inputdata file {} to {}".format(_file, outfile))
+            t = threading.Thread(target=safe_copy, args=(_file, outfile))
+            t.start()
+            
+    while(threading.active_count() > 1):
+        time.sleep(1)
+
+def md5inputdata(fname):
+    md5file = fname+".md5"
+    if os.path.isfile(md5file):
+        with open(md5file, "r") as fi:
+            md5sum = fi.read()
+    else:
+        md5sum = md5(fname)
+        with open(md5file, "w") as fo:
+            fo.write(md5sum)
+    return md5sum
