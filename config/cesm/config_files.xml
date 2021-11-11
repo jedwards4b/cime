@@ -290,6 +290,17 @@
     <schema>$CIMEROOT/config/xml_schemas/config_compsets.xsd</schema>
   </entry>
 
+  <entry id="COMP_ROOT_DIR_DOC">
+    <type>char</type>
+    <default_value>unset</default_value>
+    <values>
+      <value component="cdoc" comp_interface="nuopc"   >$SRCROOT/components/cdoc</value>
+    </values>
+    <group>case_comps</group>
+    <file>env_case.xml</file>
+    <desc>Root directory of the case diagnostics component  </desc>
+  </entry>
+
   <entry id="COMPSETS_SPEC_FILE">
     <type>char</type>
     <default_value>unset</default_value>
