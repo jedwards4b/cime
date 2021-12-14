@@ -107,7 +107,7 @@ class NamelistGenerator(object):
 
         # Add attributes to definition object
         self._definition.add_attributes(config)
-
+        logger.debug("nmlgen::init_defaults infiles {}".format(infiles))
         # Parse the infile and create namelist settings for the contents of infile
         # this will override all other settings in add_defaults
         for file_ in infiles:
@@ -650,7 +650,7 @@ class NamelistGenerator(object):
                             else:
                                 logger.debug("Line already in file {}".format(string))
 
-    def write_output_file(self, namelist_file, data_list_path=None, groups=None, sorted_groups=True):
+    def write_output_file(self, namelist_file, data_list_path=None, groups=None, sorted_groups=True, format_='nml'):
         """Write out the namelists and input data files.
 
         The `namelist_file` and `modelio_file` are the locations to which the
@@ -658,7 +658,6 @@ class NamelistGenerator(object):
         `data_list_path` argument is the location of the `*.input_data_list`
         file, which will have the input data files added to it.
         """
-        self._definition.validate(self._namelist)
         if groups is None:
             groups = self._namelist.get_group_names()
 
@@ -668,11 +667,14 @@ class NamelistGenerator(object):
         if "seq_maps" in groups:
             groups.remove("seq_maps")
 
+        self._definition.validate(self._namelist, groups=groups)
+
         # write namelist file
-        self._namelist.write(namelist_file, groups=groups, sorted_groups=sorted_groups)
+        self._namelist.write(namelist_file, groups=groups, sorted_groups=sorted_groups,format_=format_)
 
         if data_list_path is not None:
             self._write_input_files(data_list_path)
+
 
     def add_nmlcontents(self, filename, group, append=True, format_="nmlcontents", sorted_groups=True):
         """ Write only contents of nml group """

@@ -106,16 +106,24 @@ class EnvironmentContext(object):
             else:
                 del os.environ[k]
 
-def expect(condition, error_msg, exc_type=SystemExit, error_prefix="ERROR:"):
+# This should be the go-to exception for CIME use. It's a subclass
+# of SystemExit in order suppress tracebacks, which users generally
+# hate seeing. It's a subclass of Exception because we want it to be
+# "catchable". If you are debugging CIME and want to see the stacktrace,
+# run your CIME command with the --debug flag.
+class CIMEError(SystemExit, Exception):
+    pass
+
+def expect(condition, error_msg, exc_type=CIMEError, error_prefix="ERROR:"):
     """
     Similar to assert except doesn't generate an ugly stacktrace. Useful for
     checking user error, not programming error.
 
     >>> expect(True, "error1")
-    >>> expect(False, "error2")
+    >>> expect(False, "error2") # doctest: +IGNORE_EXCEPTION_DETAIL
     Traceback (most recent call last):
         ...
-    SystemExit: ERROR: error2
+    CIMEError: ERROR: error2
     """
     # Without this line we get a futurewarning on the use of condition below
     warnings.filterwarnings("ignore")
@@ -123,12 +131,9 @@ def expect(condition, error_msg, exc_type=SystemExit, error_prefix="ERROR:"):
         if logger.isEnabledFor(logging.DEBUG):
             import pdb
             pdb.set_trace()
-        try:
-            msg = str(error_prefix + " " + error_msg)
-        except UnicodeEncodeError:
-            msg = (error_prefix + " " + error_msg).encode('utf-8')
-        raise exc_type(msg)
 
+        msg = error_prefix + " " + error_msg
+        raise exc_type(msg)
 
 def id_generator(size=6, chars=string.ascii_lowercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
@@ -348,10 +353,10 @@ def run_sub_or_cmd(cmd, cmdargs, subname, subargs, logfile=None, case=None, from
             else:
                 getattr(mod, subname)(*subargs)
 
-        except (SyntaxError, AttributeError) as _:
-            pass # Need to try to run as shell command
-
-        except:
+        except (SyntaxError, AttributeError) as e:
+            logger.error(e)
+        except Exception as e:
+            logger.error(e)
             if logfile:
                 with open(logfile, "a") as log_fd:
                     log_fd.write(str(sys.exc_info()[1]))
@@ -1760,3 +1765,18 @@ def run_bld_cmd_ensure_logging(cmd, arg_logger, from_dir=None):
 
 def get_batch_script_for_job(job):
     return job if "st_archive" in job else "." + job
+
+def string_in_list(_string, _list):
+    """Case insensitive search for string in list
+    returns the matching list value
+    >>> string_in_list("Brack",["bar", "bracK", "foo"])
+    'bracK'
+    >>> string_in_list("foo", ["FFO", "FOO", "foo2", "foo3"])
+    'FOO'
+    >>> string_in_list("foo", ["FFO", "foo2", "foo3"])
+    """
+    for x in _list:
+        if _string.lower() == x.lower():
+            return x
+    return None
+

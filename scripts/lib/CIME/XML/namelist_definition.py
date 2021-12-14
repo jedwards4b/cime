@@ -56,6 +56,7 @@ class NamelistDefinition(EntryID):
         self._entry_types = {}
         self._group_names = {}
         self._nodes = {}
+        self._maxlen = {}
 
     def set_nodes(self, skip_groups=None):
         """
@@ -87,6 +88,7 @@ class NamelistDefinition(EntryID):
                 self._entry_types[name] = self._get_type(node)
                 self._valid_values[name] = self._get_valid_values(node)
                 self._group_names[name] = self._get_group_name(node)
+                _,self._maxlen[name],_ = self.split_type_string(name)
         return default_nodes
 
     def _get_group_name(self, node=None):
@@ -164,7 +166,6 @@ class NamelistDefinition(EntryID):
             value = ''
         else:
             value =  self._split_defaults_text(value)
-
         return value
 
     @staticmethod
@@ -224,6 +225,7 @@ class NamelistDefinition(EntryID):
 
         # Separate into a type and an optional length.
         type_, star, length = type_string.partition('*')
+
         if star == '*':
             # Length allowed only for character variables.
             expect(type_ == 'character',
@@ -334,19 +336,24 @@ class NamelistDefinition(EntryID):
             variable_template = "Variable {!r} from file " + repr(str(msgfn))
         return variable_template
 
-    def validate(self, namelist,filename=None):
+    def validate(self, namelist,filename=None, groups=None):
         """Validate a namelist object against this definition.
 
         The optional `filename` argument can be used to assist in error
         reporting when the namelist comes from a specific, known file.
         """
         variable_template = self._generate_variable_template(filename)
+        
+        if not groups:
+            groups = namelist.get_group_names()
 
         # Iterate through variables.
-        for group_name in namelist.get_group_names():
+        for group_name in groups:
             for variable_name in namelist.get_variable_names(group_name):
                 # Check that the variable is defined...
+
                 qualified_variable_name = get_fortran_name_only(variable_name)
+
                 self._expect_variable_in_definition(qualified_variable_name, variable_template)
 
                 # Check if can actually change this variable via filename change

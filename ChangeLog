@@ -1,4 +1,18 @@
 Originator: Brian Kauffman
+Date: 2021-feb-??
+Tag: ihesp-embedded-master_2102??
+Answer Changes:
+Tests: C_OC.gs03tx01_gs03tx01.nn -- 2021-Feb 
+Dependencies:  ocpl,datm,dice must support gs03tx01 grid
+
+Brief Summary:
+used in C_OC.gs03tx01_gs03tx01.nn -- 2020-Feb composite grid
+
+introduces gs03tx01 composite pop/roms ocean grid
+
+======================================================================
+
+Originator: Brian Kauffman
 Date: 2020-dec-11
 Tag: ihesp-embedded-master_201211
 Answer Changes:

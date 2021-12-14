@@ -67,6 +67,13 @@
       <support>Non-standard grid for ECESM roms embedded in pop</support>
     </model_grid>
 
+    <model_grid alias="gs03t13_gs03t13" compset="DATM.+DROF">
+      <grid name="atm">gs03t13</grid>
+      <grid name="lnd">gs03t13</grid>
+      <grid name="ocnice">gs03t13</grid>
+      <support>Non-standard grid for ECESM roms embedded in pop</support>
+    </model_grid>
+
     <model_grid alias="1D_1D" compset="DATM.+DROF">
       <grid name="atm">01col</grid>
       <grid name="lnd">01col</grid>
@@ -1352,6 +1359,13 @@
       <desc>g09g17 is an ECESM grid with roms gom09 embedded in pop gx1v7:</desc>
     </domain>
 
+    <domain name="gs03t13">
+      <nx>9295640</nx>  <ny>1</ny>
+      <file grid="atm|lnd">$DIN_LOC_ROOT/share/domains/domain.ocn.gst03_tx0.1v3.210514.nc</file>
+      <file grid="ocnice">$DIN_LOC_ROOT/share/domains/domain.ocn.gst03_tx0.1v3.210514.nc</file>
+      <desc>gs03t13 is an ECESM grid with roms gs03v1 embedded in pop tx0.1v3</desc>
+    </domain>
+
     <domain name="gx3v7">
       <nx>100</nx> <ny>116</ny>
       <file grid="ocnice">$DIN_LOC_ROOT/share/domains/domain.ocn.gx3v7.120323.nc</file>
@@ -1995,6 +2009,10 @@
     <gridmap rof_grid="JRA025" ocn_grid="tx0.1v3" >
       <map name="ROF2OCN_LIQ_RMAPNAME">cpl/gridmaps/rJRA025/map_JRA025m_to_tx0.1v3_e333r100_170830.nc</map>
       <map name="ROF2OCN_ICE_RMAPNAME">cpl/gridmaps/rJRA025/map_JRA025m_to_tx0.1v3_e333r100_170830.nc</map>
+    </gridmap>
+    <gridmap rof_grid="JRA025" ocn_grid="gs03t13" >
+      <map name="ROF2OCN_LIQ_RMAPNAME">cpl/gridmaps/rJRA025/map.JRA025m_to_gst03_tx0.1_e333r100_210208.nc</map>
+      <map name="ROF2OCN_ICE_RMAPNAME">cpl/gridmaps/rJRA025/map.JRA025m_to_gst03_tx0.1_e333r100_210208.nc</map>
     </gridmap>
 
     <!-- ======================================================== -->

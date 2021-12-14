@@ -1454,6 +1454,14 @@ contains
     call seq_flds_add(x2i_states,"So_t")
     call seq_flds_add(x2w_states,"So_t")
 
+    ! BK: debug -- additional fields from ocpl, for validation/debuggin
+    call seq_flds_add(o2x_states,"So_rtau")
+    call seq_flds_add(o2x_states,"So_maxlev")
+    call seq_flds_add(o2x_states,"So_frac")
+    call seq_flds_add(o2x_states,"So_wgts")
+    call seq_flds_add(o2x_states,"So_dist")
+    call seq_flds_add(o2x_states,"So_rday")
+
     ! Sea surface  salinity
     call seq_flds_add(o2x_states,"So_s")
     call seq_flds_add(x2i_states,"So_s")
