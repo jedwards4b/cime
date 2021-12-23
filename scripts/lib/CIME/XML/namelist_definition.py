@@ -57,6 +57,7 @@ class NamelistDefinition(EntryID):
         self._group_names = {}
         self._nodes = {}
         self._maxlen = {}
+        self._size = {}
 
     def set_nodes(self, skip_groups=None):
         """
@@ -88,7 +89,7 @@ class NamelistDefinition(EntryID):
                 self._entry_types[name] = self._get_type(node)
                 self._valid_values[name] = self._get_valid_values(node)
                 self._group_names[name] = self._get_group_name(node)
-                _,self._maxlen[name],_ = self.split_type_string(name)
+                _,self._maxlen[name],self._size[name] = self.split_type_string(name)
         return default_nodes
 
     def _get_group_name(self, node=None):

@@ -1144,7 +1144,7 @@ class Namelist(object):
             group_variables[name] = value
         return group_variables
 
-    def write(self, out_file, groups=None, append=False, format_='nml', sorted_groups=True):
+    def write(self, out_file, groups=None, append=False, format_='nml', sorted_groups=True, sizes=None):
 
         """Write a the output data (normally fortran namelist) to the  out_file
 
@@ -1166,12 +1166,12 @@ class Namelist(object):
             logger.debug("Writing namelist to: {}".format(out_file))
             flag = 'a' if append else 'w'
             with open(out_file, flag) as file_obj:
-                self._write(file_obj, groups, format_, sorted_groups=sorted_groups)
+                self._write(file_obj, groups, format_, sorted_groups=sorted_groups, sizes=sizes)
         else:
             logger.debug("Writing namelist to file object")
-            self._write(out_file, groups, format_, sorted_groups=sorted_groups)
+            self._write(out_file, groups, format_, sorted_groups=sorted_groups, sizes=sizes)
 
-    def _write(self, out_file, groups, format_, sorted_groups):
+    def _write(self, out_file, groups, format_, sorted_groups, sizes=None):
         """Unwrapped version of `write` assuming that a file object is input."""
         if groups is None:
             groups = list(self._groups.keys())
@@ -1194,12 +1194,15 @@ class Namelist(object):
             if group_name in self._groups:
                 group = self._groups[group_name]
                 for name in sorted(group.keys()):
+                    equals = default_equals
                     values = group[name]
 
-                    if format_ == 'roms' and len(values) > 1:
-                        equals = " =="
-                    else:
-                        equals = default_equals
+                    if format_ == 'roms':
+                        if sizes[name] > 1:
+                            equals = " =="
+                        values = [value.strip('"') for value in values]
+                            
+
 
                     # @ is used in a namelist to put the same namelist variable in multiple groups
                     # in the write phase, all characters in the namelist variable name after
@@ -1211,6 +1214,7 @@ class Namelist(object):
                     # line-by-line.
                     if values[0] == "True" or values[0] == "False":
                         values[0] = values[0].replace("True",".true.").replace("False",".false.")
+                        
                     lines = ["  {}{} {}".format(name, equals, values[0])]
                     for value in values[1:]:
                         if value == "True" or value == "False":

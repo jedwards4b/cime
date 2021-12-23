@@ -670,7 +670,7 @@ class NamelistGenerator(object):
         self._definition.validate(self._namelist, groups=groups)
 
         # write namelist file
-        self._namelist.write(namelist_file, groups=groups, sorted_groups=sorted_groups,format_=format_)
+        self._namelist.write(namelist_file, groups=groups, sorted_groups=sorted_groups,format_=format_, sizes=self._definition._size)
 
         if data_list_path is not None:
             self._write_input_files(data_list_path)
