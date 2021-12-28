@@ -30,7 +30,7 @@
   <xs:element name="PROXY" type="xs:string"/>
   <xs:element name="SAVE_TIMING_DIR" type="xs:string" />
   <xs:element name="SAVE_TIMING_DIR_PROJECTS" type="xs:string" />
-  <xs:element name="PROJECT" type="xs:NCName" />
+  <xs:element name="PROJECT" type="xs:string" />
   <xs:element name="CHARGE_ACCOUNT" type="xs:NCName" />
   <xs:element name="COMPILERS" type="xs:string"/>
   <xs:element name="MPILIBS" type="AttrElement"/>

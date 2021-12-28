@@ -924,8 +924,8 @@ def get_project(machobj=None):
     if machobj is not None:
         project = machobj.get_value("PROJECT")
         if project is not None:
-            logger.info("Using project from config_machines.xml: " + project)
-            return project
+            logger.info("Using project from config_machines.xml: {}".format(project))
+            return str(project)
 
     logger.info("No project info available")
     return None

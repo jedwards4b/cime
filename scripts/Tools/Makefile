@@ -313,6 +313,11 @@ ifdef LIB_PNETCDF
    SLIBS += -L$(LIB_PNETCDF) -lpnetcdf
 endif
 
+ifeq ($(COMP_NAME),roms)
+  CPPDEFS += -DMY_OS='"Linux"' -D'MY_CPU="x86_64"' -D'MY_FORT="$(SFC)"' -D'ROMS_HEADER="gst03.h"' -D'MY_FC="$(MPIF90)"' \
+         -D'MY_FFLAGS="$(FFLAGS)"' -D'HEADER="gst03.h"' -DMPI -Dgst03 -D$(SFC) 
+  FIXEDFLAGS:=$(FREEFLAGS)
+endif
 ifdef CPRE
   FPPDEFS := $(subst $(comma),\\$(comma),$(CPPDEFS))
   FPPDEFS := $(patsubst -D%,$(CPRE)%,$(FPPDEFS))
@@ -403,7 +408,7 @@ ifdef INC_MOAB
 endif
 
 ifeq ($(MODEL),driver)
-  INCLDIR += -I$(EXEROOT)/atm/obj -I$(EXEROOT)/ice/obj -I$(EXEROOT)/ocn/obj -I$(EXEROOT)/glc/obj -I$(EXEROOT)/rof/obj -I$(EXEROOT)/wav/obj -I$(EXEROOT)/esp/obj
+  INCLDIR += -I$(EXEROOT)/atm/obj -I$(EXEROOT)/ice/obj -I$(EXEROOT)/ocn/obj -I$(EXEROOT)/glc/obj -I$(EXEROOT)/rof/obj -I$(EXEROOT)/wav/obj -I$(EXEROOT)/esp/obj 
 # nagfor and gcc have incompatible LDFLAGS.
 # nagfor requires the weird "-Wl,-Wl,," syntax.
 # If done in config_compilers.xml, we break MCT.
@@ -708,11 +713,12 @@ SOURCES := $(shell cat Srcfiles)
 BASENAMES := $(basename $(basename $(SOURCES)))
 OBJS    := $(addsuffix .o, $(BASENAMES))
 INCS    := $(foreach dir,$(cpp_dirs),-I$(dir))
+MAKEDEPEND := $(CASETOOLS)/mkDepends
 
 CURDIR := $(shell pwd)
 
 Depends: Srcfiles Deppath
-	$(CASETOOLS)/mkDepends $(USER_MKDEPENDS_OPTS) Deppath Srcfiles > $@
+	$(CASETOOLS)/mkDepends $(USER_MKDEPENDS_OPTS) Deppath Srcfiles >> $@
 
 Deppath: Filepath
 	$(CP) -f Filepath $@
@@ -804,6 +810,9 @@ ifeq ($(ULIBDEP),$(null))
      ULIBDEP += $(LIBROOT)/libglc.a
      ULIBDEP += $(LIBROOT)/libwav.a
      ULIBDEP += $(LIBROOT)/libesp.a
+     ifeq ($(COMP_OCN), ocpl)
+       ULIBDEP += $(LIBROOT)/../ocn/obj.roms/libroms.a
+     endif
      ifeq ($(COMP_GLC), cism)
        ULIBDEP += $(CISM_LIBDIR)/libglimmercismfortran.a
        ifeq ($(CISM_USE_TRILINOS), TRUE)
@@ -985,3 +994,4 @@ ifeq (,$(findstring clean,$(MAKECMDGOALS)))
 endif
 endif
 endif
+
