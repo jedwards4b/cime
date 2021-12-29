@@ -149,11 +149,11 @@ class TestScheduler(object):
         self._output_root = output_root
         # Figure out what project to use
         if project is None:
-            self._project = CIME.utils.get_project()
+            self._project = str(CIME.utils.get_project())
             if self._project is None:
-                self._project = self._machobj.get_value("PROJECT")
+                self._project = str(self._machobj.get_value("PROJECT"))
         else:
-            self._project = project
+            self._project = str(project)
 
         # We will not use batch system if user asked for no_batch or if current
         # machine is not a batch machine

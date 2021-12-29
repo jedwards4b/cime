@@ -343,7 +343,7 @@
 
   <batch_system MACH="grace" type="slurm" >
     <batch_submit>sbatch</batch_submit>
-    <jobid_pattern>batch job (\d+)$</jobid_pattern>
+    <jobid_pattern>batch job (\d+)</jobid_pattern>
     <submit_args>
       <arg flag="--time" name="$JOB_WALLCLOCK_TIME"/>
       <arg flag="-p" name="$JOB_QUEUE"/>

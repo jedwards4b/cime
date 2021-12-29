@@ -1080,7 +1080,7 @@ This allows using a different mpirun command to launch unit tests
     <OS>LINUX</OS>
     <COMPILERS>intel</COMPILERS>
     <MPILIBS>impi</MPILIBS>
-    <PROJECT>132757603022</PROJECT> 
+    <PROJECT>"132757603022"</PROJECT> 
     <CIME_OUTPUT_ROOT>$ENV{SCRATCH}</CIME_OUTPUT_ROOT>
     <DIN_LOC_ROOT>/scratch/group/ihesp/software/cesm/inputdata</DIN_LOC_ROOT>
     <DIN_LOC_ROOT_CLMFORC>/scratch/group/ihesp/software/cesm/inputdata/lmwg</DIN_LOC_ROOT_CLMFORC>

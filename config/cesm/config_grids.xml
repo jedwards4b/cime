@@ -1683,6 +1683,15 @@
       <map name="OCN2ATM_SMAPNAME">cpl/gridmaps/tx0.1v3/map_tx0.1v3_TO_TL319_aave.170730.nc</map>
     </gridmap>
 
+    <gridmap atm_grid="TL319" ocn_grid="gs03t13">
+      <map name="ATM2OCN_FMAPNAME">cpl/gridmaps/TL319/map.TL319_to_gst03_tx0.1v3_nn.211228.nc</map>
+      <map name="ATM2OCN_SMAPNAME">cpl/gridmaps/TL319/map.TL319_to_gst03_tx0.1v3_nn.211228.nc</map>
+      <map name="ATM2OCN_VMAPNAME">cpl/gridmaps/TL319/map.TL319_to_gst03_tx0.1v3_nn.211228.nc</map>
+      <!-- these are not used for datm --> 
+      <map name="OCN2ATM_FMAPNAME">cpl/gridmaps/gx3v7/map_gx3v7_TO_T62_aave.130322.nc</map>
+      <map name="OCN2ATM_SMAPNAME">cpl/gridmaps/gx3v7/map_gx3v7_TO_T62_aave.130322.nc</map>
+    </gridmap>
+
     <gridmap atm_grid="T62" ocn_grid="gx3v7">
       <map name="ATM2OCN_FMAPNAME">cpl/gridmaps/T62/map_T62_TO_gx3v7_aave.130322.nc</map>
       <map name="ATM2OCN_SMAPNAME">cpl/gridmaps/T62/map_T62_TO_gx3v7_blin.130322.nc</map>
