@@ -1098,7 +1098,7 @@ This allows using a different mpirun command to launch unit tests
       <arguments>
         <arg name="num_tasks"> -n $TOTALPES</arg>
 	<arg name="hint"> --hint compute_bound </arg>
-	<arg name="bindinfo"> --cpu-bind=verbose </arg>
+	<arg name="label"> --label </arg>
 	<!--	<arg name="bindinfo"> -print-rank-map </arg> -->
       </arguments>
     </mpirun>

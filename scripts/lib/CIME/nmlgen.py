@@ -680,9 +680,9 @@ class NamelistGenerator(object):
         """ Write only contents of nml group """
         self._namelist.write(filename, groups=[group], append=append, format_=format_, sorted_groups=sorted_groups)
 
-    def write_seq_maps(self, filename):
+    def write_seq_maps(self, filename, groups=["seq_maps"]):
         """ Write out seq_maps.rc"""
-        self._namelist.write(filename, groups=["seq_maps"], format_="rc")
+        self._namelist.write(filename, groups=groups, format_="rc")
 
     def write_modelio_file(self, filename):
         """ Write  component modelio files"""

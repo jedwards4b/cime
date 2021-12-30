@@ -122,6 +122,7 @@ class NamelistDefinition(EntryID):
         return valid_values
 
     def get_group(self, name):
+        expect(name in self._group_names,"group for {} not found in {}".format(name, self._group_names))
         return self._group_names[name]
 
     def add_attributes(self, attributes):
