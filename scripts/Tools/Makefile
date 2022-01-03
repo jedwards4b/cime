@@ -34,7 +34,6 @@ complib: $(COMPLIB)  Depends
 CIME_MODEL ?= $(shell $(CASEROOT)/xmlquery --caseroot $(CASEROOT) MODEL --value)
 EXEROOT ?= $(shell $(CASEROOT)/xmlquery --caseroot $(CASEROOT) EXEROOT --value)
 SMP_PRESENT ?= $(shell $(CASEROOT)/xmlquery --caseroot $(CASEROOT) SMP_PRESENT --value)
-SMP ?= $(shell $(CASEROOT)/xmlquery --caseroot $(CASEROOT) SMP --value)
 LIBROOT ?= $(shell $(CASEROOT)/xmlquery --caseroot $(CASEROOT) LIBROOT --value)
 SHAREDLIBROOT ?= $(shell $(CASEROOT)/xmlquery --caseroot $(CASEROOT) SHAREDLIBROOT --value)
 COMPILER ?=  $(shell $(CASEROOT)/xmlquery --caseroot $(CASEROOT) COMPILER --value)
@@ -45,17 +44,12 @@ PIO_VERSION ?= $(shell $(CASEROOT)/xmlquery --caseroot $(CASEROOT) PIO_VERSION -
 # Determine whether to compile threaded or not
 # Set the THREADDIR for the shared build
 # based on the threaded build status
-ifeq ($(strip $(SMP)),TRUE)
-   THREADDIR = threads
-   compile_threaded = true
+ifeq ($(strip $(SMP_PRESENT)),TRUE)
+  THREADDIR = threads
+  compile_threaded = true
 else
-   ifeq ($(strip $(SMP_PRESENT)),TRUE)
-      THREADDIR = threads
-      compile_threaded = true
-   else
-      THREADDIR = nothreads
-      compile_threaded = false
-   endif
+  THREADDIR = nothreads
+  compile_threaded = false
 endif
 
 # set the debug directory based on the debug status
@@ -315,7 +309,7 @@ endif
 
 ifeq ($(COMP_NAME),roms)
   CPPDEFS += -DMY_OS='"Linux"' -D'MY_CPU="x86_64"' -D'MY_FORT="$(SFC)"' -D'ROMS_HEADER="gst03.h"' -D'MY_FC="$(MPIF90)"' \
-         -D'MY_FFLAGS="$(FFLAGS)"' -D'HEADER="gst03.h"' -DMPI -Dgst03 -D$(SFC) 
+	 -D'MY_FFLAGS="$(FFLAGS)"' -D'HEADER="gst03.h"' -DMPI -Dgst03 -D$(SFC)
   FIXEDFLAGS:=$(FREEFLAGS)
 endif
 ifdef CPRE
@@ -408,7 +402,7 @@ ifdef INC_MOAB
 endif
 
 ifeq ($(MODEL),driver)
-  INCLDIR += -I$(EXEROOT)/atm/obj -I$(EXEROOT)/ice/obj -I$(EXEROOT)/ocn/obj -I$(EXEROOT)/glc/obj -I$(EXEROOT)/rof/obj -I$(EXEROOT)/wav/obj -I$(EXEROOT)/esp/obj 
+  INCLDIR += -I$(EXEROOT)/atm/obj -I$(EXEROOT)/ice/obj -I$(EXEROOT)/ocn/obj -I$(EXEROOT)/glc/obj -I$(EXEROOT)/rof/obj -I$(EXEROOT)/wav/obj -I$(EXEROOT)/esp/obj
 # nagfor and gcc have incompatible LDFLAGS.
 # nagfor requires the weird "-Wl,-Wl,," syntax.
 # If done in config_compilers.xml, we break MCT.
@@ -427,8 +421,8 @@ else
        # GCC needs to be able to link to
        # nagfor runtime to get autoconf
        # tests to work.
-         CFLAGS += -Wl,--as-needed,--allow-shlib-undefined
-         SLIBS += -L$(COMPILER_PATH)/lib/NAG_Fortran -lf62rts
+	 CFLAGS += -Wl,--as-needed,--allow-shlib-undefined
+	 SLIBS += -L$(COMPILER_PATH)/lib/NAG_Fortran -lf62rts
        endif
     endif
   endif
@@ -467,9 +461,9 @@ CFLAGS+=$(CPPDEFS)
 CXXFLAGS := $(CFLAGS)
 
 CONFIG_ARGS +=  CC="$(CC)" FC="$(FC)" MPICC="$(MPICC)" \
-                MPIFC="$(MPIFC)" FCFLAGS="$(FFLAGS) $(FREEFLAGS) $(INCLDIR)" \
-                CPPDEFS="$(CPPDEFS)" CFLAGS="$(CFLAGS) -I.. $(INCLDIR)" \
-                LDFLAGS="$(LDFLAGS)"
+		MPIFC="$(MPIFC)" FCFLAGS="$(FFLAGS) $(FREEFLAGS) $(INCLDIR)" \
+		CPPDEFS="$(CPPDEFS)" CFLAGS="$(CFLAGS) -I.. $(INCLDIR)" \
+		LDFLAGS="$(LDFLAGS)"
 
 ifeq ($(NETCDF_SEPARATE), false)
   CONFIG_ARGS += NETCDF_PATH=$(NETCDF_PATH)
@@ -484,8 +478,6 @@ endif
 
 FFLAGS += $(FPPDEFS)
 FFLAGS_NOOPT += $(FPPDEFS)
-
-
 
 ifeq ($(findstring -cosp,$(CAM_CONFIG_OPTS)),-cosp)
   # The following is for the COSP simulator code:
@@ -646,11 +638,11 @@ endif
 # doesn't seem to be able to differentiate between free & fixed
 # fortran flags)
 CMAKE_OPTS += -D CMAKE_Fortran_FLAGS:STRING="$(FFLAGS) $(EXTRA_PIO_FPPDEFS) $(INCLDIR)" \
-              -D CMAKE_C_FLAGS:STRING="$(CFLAGS) $(EXTRA_PIO_CPPDEFS) $(INCLDIR)" \
-              -D CMAKE_CXX_FLAGS:STRING="$(CXXFLAGS) $(EXTRA_PIO_CPPDEFS) $(INCLDIR)" \
-              -D CMAKE_VERBOSE_MAKEFILE:BOOL=ON \
-              -D GPTL_PATH:STRING=$(INSTALL_SHAREDPATH) \
-              -D PIO_ENABLE_TESTS:BOOL=OFF \
+	      -D CMAKE_C_FLAGS:STRING="$(CFLAGS) $(EXTRA_PIO_CPPDEFS) $(INCLDIR)" \
+	      -D CMAKE_CXX_FLAGS:STRING="$(CXXFLAGS) $(EXTRA_PIO_CPPDEFS) $(INCLDIR)" \
+	      -D CMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+	      -D GPTL_PATH:STRING=$(INSTALL_SHAREDPATH) \
+	      -D PIO_ENABLE_TESTS:BOOL=OFF \
 	      -D USER_CMAKE_MODULE_PATH:LIST="$(CIMEROOT)/src/CMake;$(CIMEROOT)/src/externals/pio2/cmake" \
 
 # Allow for separate installations of the NetCDF C and Fortran libraries
@@ -660,13 +652,13 @@ else ifeq ($(NETCDF_SEPARATE), true)
   # NETCDF_Fortran_DIR points to the separate
   # installation of Fortran NetCDF for PIO
   CMAKE_OPTS += -D NetCDF_C_PATH:PATH=$(NETCDF_C_PATH) \
-                -D NetCDF_Fortran_PATH:PATH=$(NETCDF_FORTRAN_PATH)
+		-D NetCDF_Fortran_PATH:PATH=$(NETCDF_FORTRAN_PATH)
 endif
 
 ifdef PNETCDF_PATH
 	CMAKE_OPTS += -D PnetCDF_PATH:STRING="$(PNETCDF_PATH)"
 else
-        CMAKE_OPTS += -D WITH_PNETCDF:LOGICAL=FALSE -D PIO_USE_MPIIO:LOGICAL=FALSE
+	CMAKE_OPTS += -D WITH_PNETCDF:LOGICAL=FALSE -D PIO_USE_MPIIO:LOGICAL=FALSE
 endif
 ifdef PIO_FILESYSTEM_HINTS
 	CMAKE_OPTS += -D PIO_FILESYSTEM_HINTS:STRING="$(PIO_FILESYSTEM_HINTS)"
@@ -682,9 +674,9 @@ ifndef CMAKE_ENV_VARS
   CMAKE_ENV_VARS :=
 endif
 CMAKE_ENV_VARS += CC=$(CC) \
-                  CXX=$(CXX) \
-                  FC=$(FC) \
-                  LDFLAGS="$(LDFLAGS)"
+		  CXX=$(CXX) \
+		  FC=$(FC) \
+		  LDFLAGS="$(LDFLAGS)"
 
 
 # We declare $(GLC_DIR)/Makefile to be a phony target so that cmake is
@@ -805,18 +797,18 @@ ifeq ($(ULIBDEP),$(null))
      ULIBDEP += $(LIBROOT)/libice.a
      ULIBDEP += $(LNDLIBDIR)/$(LNDLIB)
      INCLDIR += -I$(LNDOBJDIR)
+     ifeq ($(COMP_OCN), ocpl)
+       ULIBDEP += $(LIBROOT)/libocpl.a $(LIBROOT)/../ocn/obj.roms/libroms.a
+     endif
      ULIBDEP += $(LIBROOT)/libocn.a
      ULIBDEP += $(LIBROOT)/librof.a
      ULIBDEP += $(LIBROOT)/libglc.a
      ULIBDEP += $(LIBROOT)/libwav.a
      ULIBDEP += $(LIBROOT)/libesp.a
-     ifeq ($(COMP_OCN), ocpl)
-       ULIBDEP += $(LIBROOT)/../ocn/obj.roms/libroms.a
-     endif
      ifeq ($(COMP_GLC), cism)
        ULIBDEP += $(CISM_LIBDIR)/libglimmercismfortran.a
        ifeq ($(CISM_USE_TRILINOS), TRUE)
-         ULIBDEP += $(CISM_LIBDIR)/libglimmercismcpp.a
+	 ULIBDEP += $(CISM_LIBDIR)/libglimmercismcpp.a
        endif
      endif
      ifeq ($(OCN_SUBMODEL),moby)
@@ -891,6 +883,7 @@ $(COMPLIB): $(OBJS)
 .f90.o:
 	$(FC) -c $(INCLDIR) $(INCS) $(FFLAGS) $(FREEFLAGS)  $<
 .F90.o:
+	echo FFLAGS=$(FFLAGS)
 	$(FC) -c $(INCLDIR) $(INCS) $(FFLAGS) $(FREEFLAGS) $(CONTIGUOUS_FLAG) $<
 .cpp.o:
 	$(CXX) -c $(INCLDIR) $(INCS) $(CXXFLAGS)  $<
@@ -994,4 +987,3 @@ ifeq (,$(findstring clean,$(MAKECMDGOALS)))
 endif
 endif
 endif
-
