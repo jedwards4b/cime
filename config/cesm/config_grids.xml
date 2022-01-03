@@ -75,6 +75,13 @@
       <support>Non-standard grid for ECESM roms embedded in pop</support>
     </model_grid>
 
+    <model_grid alias="gs03t13_gs03t13" compset="DATM.+SROF">
+      <grid name="atm">gs03t13</grid>
+      <grid name="lnd">gs03t13</grid>
+      <grid name="ocnice">gs03t13</grid>
+      <support>Non-standard grid for ECESM roms embedded in pop</support>
+    </model_grid>
+
     <model_grid alias="TL319_gs03t13" compset="DATM.+DROF">
       <grid name="atm">TL319</grid>
       <grid name="lnd">TL319</grid>

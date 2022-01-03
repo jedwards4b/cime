@@ -229,6 +229,8 @@ def _archive_history_files(archive, archive_entry,
     for suffix in archive.get_hist_file_extensions(archive_entry):
         if compname.find('mpas') == 0:
             newsuffix =                    compname + r'\d*'
+        elif compname == 'ocpl':
+            newsuffix = casename + r'\.' + 'pop' + r'_?' + r'\d*'            
         else:
             newsuffix = casename + r'\.' + compname + r'_?' + r'\d*'
         newsuffix += r'\.' + suffix
@@ -240,6 +242,10 @@ def _archive_history_files(archive, archive_entry,
         pfile = re.compile(newsuffix)
         histfiles = [f for f in os.listdir(rundir) if pfile.search(f)]
         logger.debug("histfiles = {} ".format(histfiles))
+
+        if compname == 'ocpl':
+            print("histfiles {}".format(histfiles))
+
 
         if histfiles:
             for histfile in histfiles:
@@ -383,9 +389,13 @@ def _archive_restarts_date_comp(case, casename, rundir, archive, archive_entry,
 
     # get file_extension suffixes
     for suffix in archive.get_rest_file_extensions(archive_entry):
-#        logger.debug("suffix is {} ninst {}".format(suffix, ninst))
         restfiles = ""
-        if compname.find("mpas") == 0:
+        if compname == "ocpl":
+            pattern = '^' + casename + '.*pop' + r'_?' + r'\d*' + r'\.' + suffix + r'\.' + datename_str
+            pfile = re.compile(pattern)
+            restfiles = [f for f in os.listdir(rundir) if pfile.search(f)]
+            print("pattern {} restfiles are {} datename_str {}".format(pattern, restfiles, datename_str))
+        elif compname.find("mpas") == 0:
             pattern = compname + r'\.' + suffix + r'\.' + '_'.join(datename_str.rsplit('-', 1))
             pfile = re.compile(pattern)
             restfiles = [f for f in os.listdir(rundir) if pfile.search(f)]
@@ -396,7 +406,7 @@ def _archive_restarts_date_comp(case, casename, rundir, archive, archive_entry,
             pattern =  r'_?' + r'\d*' + r'\.' + suffix + r'\.' + r'[^\.]*' + r'\.?' + datename_str
             pfile = re.compile(pattern)
             restfiles = [f for f in files if pfile.search(f)]
-            logger.debug("pattern is {} restfiles {}".format(pattern, restfiles))
+        logger.debug("pattern is {} restfiles {}".format(pattern, restfiles))
         for restfile in restfiles:
             restfile = os.path.basename(restfile)
 
