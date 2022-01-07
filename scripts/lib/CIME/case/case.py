@@ -852,7 +852,7 @@ class Case(object):
 
             expect(
                 (models is not None) and (None not in models),
-                "Unable to find list of supported components",
+                "Unable to find {} in {}".format(node_name, files.filename)
             )
 
             for model in models:
@@ -1023,7 +1023,7 @@ class Case(object):
             comp_config_file = files.get_value(node_name, compatt, resolved=False)
             expect(
                 comp_config_file is not None,
-                "No component {} found for class {}".format(comp_name, comp_class),
+                "No component {} found for class {} ({} not found in {})".format(comp_name, comp_class, node_name, files.filename),
             )
             self.set_value(node_name, comp_config_file)
             comp_config_file = files.get_value(node_name, compatt)
