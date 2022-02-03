@@ -55,6 +55,7 @@ class GenericXML(object):
         root_name_override=None,
         root_attrib_override=None,
         read_only=True,
+        check_schema=True,
     ):
         """
         Initialize an object
@@ -75,7 +76,7 @@ class GenericXML(object):
             and os.stat(infile).st_size > 0
         ):
             # If file is defined and exists, read it
-            self.read(infile, schema)
+            self.read(infile, schema, check_schema=check_schema)
         else:
             # if file does not exist create a root xml element
             # and set it's id to file
@@ -103,7 +104,7 @@ class GenericXML(object):
 
             self._FILEMAP[infile] = self.CacheEntry(self.tree, self.root, 0.0)
 
-    def read(self, infile, schema=None):
+    def read(self, infile, schema=None, check_schema=True):
         """
         Read and parse an xml file into the object
         """
@@ -127,7 +128,7 @@ class GenericXML(object):
             with open(infile, "r", encoding="utf-8") as fd:
                 self.read_fd(fd)
 
-            if schema is not None and self.get_version() > 1.0:
+            if check_schema and schema is not None and self.get_version() > 1.0:
                 self.validate_xml_file(infile, schema)
 
             logger.debug("File version is {}".format(str(self.get_version())))

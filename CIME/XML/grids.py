@@ -18,7 +18,7 @@ GRID_SEP = ":"
 
 
 class Grids(GenericXML):
-    def __init__(self, infile=None, files=None, comp_interface=None):
+    def __init__(self, infile=None, files=None, comp_interface=None, check_schema=True):
         if files is None:
             files = Files(comp_interface=comp_interface)
         if infile is None:
@@ -26,9 +26,9 @@ class Grids(GenericXML):
         logger.debug(" Grid specification file is {}".format(infile))
         schema = files.get_schema("GRIDS_SPEC_FILE")
         try:
-            GenericXML.__init__(self, infile, schema)
-        except:
-            expect(False, "Could not initialize Grids")
+            GenericXML.__init__(self, infile, schema, check_schema=check_schema)
+        except Exception as e:
+            expect(False, f"Could not initialize Grids with {infile} and comp_interface {comp_interface} with error {e}")
 
         self._version = self.get_version()
         self._comp_gridnames = self._get_grid_names()
