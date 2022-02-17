@@ -12,7 +12,6 @@ from CIME.utils import (
     get_model,
     get_cime_config,
     get_cime_default_driver,
-    get_src_root,
 )
 from CIME.case import Case
 from argparse import RawTextHelpFormatter
@@ -336,6 +335,7 @@ def parse_command_line(args, cimeroot, description):
         args.case_group,
         args.ngpus_per_node,
     )
+
 
 ###############################################################################
 def _main_func(description=None):
