@@ -171,7 +171,12 @@ def parse_command_line(args, cimeroot, description):
     else:
         model = None
 
-    srcroot_default = get_src_root()
+    if cime_config and cime_config.has_option("main", "SRCROOT"):
+        srcroot_default = cime_config.get("main", "srcroot")
+    elif os.path.isdir(os.path.join(cimeroot, "share")) and model == "cesm":
+        srcroot_default = cimeroot
+    else:
+        srcroot_default = os.path.dirname(cimeroot)
 
     parser.add_argument(
         "--srcroot",
@@ -249,7 +254,8 @@ def parse_command_line(args, cimeroot, description):
     parser.add_argument(
         "--extra-machines-dir",
         help="Optional path to a directory containing one or more of:"
-        "\nconfig_machines.xml, config_compilers.xml, config_batch.xml."
+        "\nconfig_machines.xml, config_compilers.xml, config_batch.xml,"
+        "\nand a cmake_macros subdirectory containing CMake macros files."
         "\nIf provided, the contents of these files will be appended to"
         "\nthe standard machine files (and any files in ~/.cime).",
     )
@@ -330,7 +336,6 @@ def parse_command_line(args, cimeroot, description):
         args.case_group,
         args.ngpus_per_node,
     )
-
 
 ###############################################################################
 def _main_func(description=None):
