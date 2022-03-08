@@ -1260,7 +1260,7 @@ directory, NOT in this subdirectory."""
             "queue" : self.get_value("JOB_QUEUE", subgroup=job),
             "unit_testing" : False
             }
-        executable, mpi_arg_list = env_mach_specific.get_mpirun(self, mpi_attribs, job, overrides=overrides)
+        executable, mpi_arg_list, run_exe, _ = env_mach_specific.get_mpirun(self, mpi_attribs, job, overrides=overrides)
         # special case for aprun
         if executable is not None and "aprun" in executable and not "theta" in self.get_value("MACH"):
             aprun_args, num_nodes = get_aprun_cmd_for_case(self, run_exe, overrides=overrides)[0:2]
