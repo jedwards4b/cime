@@ -1,0 +1,20 @@
+# pylint and black format all pushes
+name: Lint
+
+on: push
+
+jobs:
+  black:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: psf/black@stable
+        with:
+          options: -q
+          src: "./scripts"
+  pylint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v3
+        - run: pip install pylint
