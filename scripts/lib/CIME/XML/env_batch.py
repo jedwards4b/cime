@@ -598,7 +598,7 @@ class EnvBatch(EnvBase):
                         rval = val
 
                     if flag != "-P":
-                    # We don't want floating-point data
+                        # We don't want floating-point data
                         try:
                             rval = int(round(float(rval)))
                         except ValueError:
