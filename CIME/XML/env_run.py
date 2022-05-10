@@ -35,6 +35,7 @@ class EnvRun(EnvBase):
         or from the values field if the attribute argument is provided
         and matches.   Special case for pio variables when PIO_ASYNC_INTERFACE is True.
         """
+
         if any(self._pio_async_interface.values()):
             vid, comp, iscompvar = self.check_if_comp_var(vid, attribute)
             if vid.startswith("PIO") and iscompvar:
@@ -56,11 +57,11 @@ class EnvRun(EnvBase):
                 if comp and comp != "CPL":
                     logger.warning("Only CPL settings are used for PIO in async mode")
                 subgroup = "CPL"
-
-        if vid == "PIO_ASYNC_INTERFACE":
-            if type(value) == type(True):
-                self._pio_async_interface = value
-            else:
-                self._pio_async_interface = convert_to_type(value, "logical", vid)
+                
+            if vid == "PIO_ASYNC_INTERFACE":
+                if type(value) == type(True):
+                    self._pio_async_interface[comp] = value
+                else:
+                    self._pio_async_interface[comp] = convert_to_type(value, "logical", vid)
 
         return EnvBase.set_value(self, vid, value, subgroup, ignore_type)
