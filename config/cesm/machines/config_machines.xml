@@ -1666,7 +1666,7 @@ This allows using a different mpirun command to launch unit tests
     <OS>LINUX</OS>
     <COMPILERS>intel</COMPILERS>
     <MPILIBS>impi,mvapich</MPILIBS>
-    <PROJECT>ATM20005</PROJECT>
+    <PROJECT>ATM22007</PROJECT>
     <CIME_OUTPUT_ROOT>$ENV{SCRATCH}</CIME_OUTPUT_ROOT>
     <DIN_LOC_ROOT>/work/02503/edwardsj/CESM/inputdata/</DIN_LOC_ROOT>
     <DIN_LOC_ROOT_CLMFORC>/work/02503/edwardsj/CESM/inputdata/lmwg</DIN_LOC_ROOT_CLMFORC>
@@ -1701,15 +1701,24 @@ This allows using a different mpirun command to launch unit tests
       <cmd_path lang="sh">module</cmd_path>
       <cmd_path lang="csh">module</cmd_path>
       <modules>
-        <command name="purge"></command>
+        <command name="reset"></command>
         <command name="load">TACC</command>
+	<command name="unload">intel</command>
+	<command name="unload">impi</command>
+	<command name="unload">python3</command>
+<!--
         <command name="load">intel/19.1.1</command>
         <command name="load">cmake/3.16.1</command>
+-->
+        <command name="use">/scratch1/projects/compilers/modulefiles</command>
+	<command name="load">intel/22.1.2</command>
+	
       </modules>
       <modules mpilib="impi">
-        <command name="load">impi/19.0.9</command>
-        <command name="load">pnetcdf/1.11.2</command>
-        <command name="load">parallel-netcdf/4.6.2</command>
+	<command name="load">intel22/impi/22.1.2</command>
+<!--        <command name="load">impi/19.0.9</command> -->
+<!--        <command name="load">pnetcdf/1.11.2</command> -->
+<!--        <command name="load">parallel-netcdf/4.7.4</command> -->
       </modules>
       <modules mpilib="mvapich">
         <command name="rm">impi</command>
@@ -1724,7 +1733,9 @@ This allows using a different mpirun command to launch unit tests
     <environment_variables>
       <env name="OMP_STACKSIZE">256M</env>
       <env name="UCX_DC_MLX5_RETRY_COUNT">20</env>
-      <env name="ESMFMKFILE">$ENV{WORK}/esmf/scalable_mesh_from_file/lib/libO/Linux.intel.64.intelmpi.default/esmf.mk</env>
+      <env name="ESMFMKFILE">$ENV{WORK}/esmf/8.3.0/lib/libO/Linux.intel.64.intelmpi.default/esmf.mk</env>
+      <env name="TACC_PNETCDF_DIR">/work/02503/edwardsj/frontera/pnetcdf/1.12.3/intel/19.1.1/impi/19.0.9</env>
+      <env name="TACC_NETCDF_DIR">/opt/apps/intel19/netcdf/4.7.4/x86_64</env>
     </environment_variables>
     <environment_variables mpilib="impi">
       <env name="MY_MPIRUN_OPTIONS">-prepend-rank </env>
@@ -1734,6 +1745,9 @@ This allows using a different mpirun command to launch unit tests
       <env name="I_MPI_ADJUST_SCATTER">3</env>
       <env name="I_MPI_ADJUST_SCATTERV">2</env>
       <env name="I_MPI_EXTRA_FILESYSTEM">enable</env>
+<!-- See https://www.intel.com/content/www/us/en/developer/articles/technical/large-mpi-tags-with-the-intel-mpi.html -->
+<!--      <env name="MPIR_CVAR_CH4_OFI_TAG_BITS">26</env>
+      <env name="MPIR_CVAR_CH4_OFI_RANK_BITS">13</env> -->
      </environment_variables>
   <environment_variables mpilib="mvapich">
     <env name="MV2_HOMOGENEOUS_CLUSTER"/>
