@@ -1156,7 +1156,7 @@ This allows using a different mpirun command to launch unit tests
     <DIN_LOC_ROOT_CLMFORC>/glade/p/cesmdata/inputdata/atm/datm7</DIN_LOC_ROOT_CLMFORC>
     <DOUT_S_ROOT>$CIME_OUTPUT_ROOT/archive/$CASE</DOUT_S_ROOT>
     <BASELINE_ROOT>/glade/p/cesmdata/ccsm_baselines</BASELINE_ROOT>
-    <CCSM_CPRNC>/glade/p/cesmdata/tools/cprnc/cprnc</CCSM_CPRNC>
+    <CCSM_CPRNC>/glade/p/cesmdata/cprnc/cprnc</CCSM_CPRNC>
     <GMAKE_J>16</GMAKE_J>
     <BATCH_SYSTEM>pbs</BATCH_SYSTEM>
     <SUPPORTED_BY>cseg</SUPPORTED_BY>
@@ -1205,6 +1205,10 @@ This allows using a different mpirun command to launch unit tests
         <command name="load">craype/2.7.17</command>
         <command name="load">cray-mpich/8.1.18</command>
         <command name="load">cray-libsci/22.08.1.1</command>
+      </modules>
+      <modules compiler="intel">
+        <command name="rm">cray-libsci/22.08.1.1</command>
+	<command name="load">mkl</command>
       </modules>
       <modules mpilib="mpi-serial">
         <command name="load">netcdf/4.8.1</command>

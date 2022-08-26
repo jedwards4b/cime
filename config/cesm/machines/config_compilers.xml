@@ -982,6 +982,9 @@ using a fortran linker.
   <NETCDF_PATH>$ENV{NETCDF}</NETCDF_PATH>
   <PIO_FILESYSTEM_HINTS>lustre</PIO_FILESYSTEM_HINTS>
   <PNETCDF_PATH>$ENV{PNETCDF}</PNETCDF_PATH>
+  <SLIBS>
+    <append>-L$NETCDF_PATH/lib -lnetcdff -lnetcdf</append>
+  </SLIBS>
 </compiler>
 
 <compiler MACH="hobart">
