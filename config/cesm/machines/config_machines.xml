@@ -1199,13 +1199,13 @@ This allows using a different mpirun command to launch unit tests
       <modules>
         <command name="purge"></command>
         <command name="load">TACC</command>
-        <command name="load">intel/19.0.5</command>
-        <command name="load">cmake/3.16.1</command>
+        <command name="load">intel/19.1.1</command>
+        <command name="load">cmake/3.24.2</command>
       </modules>
       <modules mpilib="impi">
-        <command name="load">impi/19.0.7</command>
-        <command name="load">pnetcdf/1.11.2</command>
-        <command name="load">parallel-netcdf/4.6.2</command>
+        <command name="load">impi/19.0.9</command>
+        <command name="load">pnetcdf/1.12.3</command>
+        <command name="load">parallel-netcdf/4.9.0</command>
       </modules>
       <modules mpilib="mvapich">
 	<command name="rm">impi</command>
@@ -1214,7 +1214,7 @@ This allows using a different mpirun command to launch unit tests
         <command name="load">parallel-netcdf/4.6.2</command>
       </modules>
       <modules mpilib="mpi-serial">
-        <command name="load">netcdf/4.6.2</command>
+        <command name="load">netcdf/4.9.0</command>
       </modules>
     </module_system>
     <environment_variables>
