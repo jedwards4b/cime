@@ -57,6 +57,8 @@ else
    endif
 endif
 
+SLIBS ?= $(patsubst "%,%,$(patsubst %",%,$(USER_SLIBS)))
+
 # set the debug directory based on the debug status
 ifeq ($(strip $(DEBUG)),TRUE)
    DEBUGDIR = debug
@@ -69,8 +71,6 @@ ifeq ($(strip $(USE_ESMF_LIB)), TRUE)
 else
    ESMFDIR = noesmf
 endif
-
-SLIBS ?= $(USER_SLIBS)
 
 ifeq ($(strip $(USE_FMS)), TRUE)
   SLIBS += -lfms
