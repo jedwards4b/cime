@@ -70,7 +70,7 @@ else
    ESMFDIR = noesmf
 endif
 
-SLIBS ?= $(USER_SLIBS)
+SLIBS ?= $(patsubst "%,%,$(patsubst %",%,$(USER_SLIBS)))
 
 ifeq ($(strip $(USE_FMS)), TRUE)
   SLIBS += -lfms
