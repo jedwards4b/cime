@@ -322,7 +322,7 @@ using a fortran linker.
   <SFC> nagfor </SFC>
 </compiler>
 
-<compiler COMPILER="pgi">
+<compiler COMPILER="nvhpc">
   <CFLAGS>
     <base> -gopt  -time </base>
     <append compile_threaded="TRUE"> -mp </append>
