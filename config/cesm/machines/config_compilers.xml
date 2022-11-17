@@ -326,6 +326,7 @@ using a fortran linker.
   <CFLAGS>
     <base> -gopt  -time </base>
     <append compile_threaded="TRUE"> -mp </append>
+    <append DEBUG="FALSE"> -O</append>
   </CFLAGS>
   <CPPDEFS>
     <!-- http://www.pgroup.com/resources/docs.htm                                              -->
@@ -363,6 +364,7 @@ using a fortran linker.
     <base>  -i4 -gopt  -time -Mextend -byteswapio -Mflushz -Kieee  </base>
     <append compile_threaded="TRUE"> -mp </append>
     <append DEBUG="TRUE"> -O0 -g -Ktrap=fp -Mbounds -Kieee </append>
+    <append DEBUG="FALSE"> -O</append>
     <append MODEL="datm"> -Mnovect </append>
     <append MODEL="dlnd"> -Mnovect </append>
     <append MODEL="drof"> -Mnovect </append>
