@@ -14,7 +14,7 @@ chksum_hash = dict()
 local_chksum_file = "inputdata_checksum.dat"
 
 
-def _download_checksum_file(rundir):
+def _download_checksum_file(rundir, local_endpoint_id=None):
     """
     Download the checksum files from each server and merge them into rundir.
     """
@@ -27,15 +27,20 @@ def _download_checksum_file(rundir):
         if protocol not in vars(CIME.Servers):
             logger.info("Client protocol {} not enabled".format(protocol))
             continue
-        logger.info(
-            "Using protocol {} with user {} and passwd {}".format(
-                protocol, user, passwd
-            )
-        )
+        logger.info("Using protocol {}".format(protocol))
+        if user:
+            logger.info("With user: {}".format(user))
+        if passwd:
+            logger.info("With password: {}".format(passwd))
+
         if protocol == "svn":
             server = CIME.Servers.SVN(address, user, passwd)
         elif protocol == "gftp":
             server = CIME.Servers.GridFTP(address, user, passwd)
+        elif protocol == "globus":
+            server = CIME.Servers.Globus(
+                address, user, passwd, local_endpoint_id=local_endpoint_id
+            )
         elif protocol == "ftp":
             server = CIME.Servers.FTP.ftp_login(address, user, passwd)
         elif protocol == "wget":
@@ -184,6 +189,7 @@ def check_all_input_data(
     list confirm that it is available in input_data_root and if not (optionally download it from a
     server at address using protocol.  Perform a chksum of the downloaded file.
     """
+
     success = False
     if protocol is not None and address is not None:
         success = self.check_input_data(
@@ -196,7 +202,10 @@ def check_all_input_data(
         )
     else:
         if chksum:
-            chksum_found = _download_checksum_file(self.get_value("RUNDIR"))
+            chksum_found = _download_checksum_file(
+                self.get_value("RUNDIR"),
+                local_endpoint_id=self.get_value("GLOBUS_ENDPOINT_ID"),
+            )
 
         clm_usrdat_name = self.get_value("CLM_USRDAT_NAME")
         if clm_usrdat_name and clm_usrdat_name == "UNSET":
@@ -220,7 +229,10 @@ def check_all_input_data(
             )
         if download and not success:
             if not chksum:
-                chksum_found = _download_checksum_file(self.get_value("RUNDIR"))
+                chksum_found = _download_checksum_file(
+                    self.get_value("RUNDIR"),
+                    local_endpoint_id=self.get_value("GLOBUS_ENDPOINT_ID"),
+                )
             success = _downloadfromserver(self, input_data_root, data_list_dir)
 
     expect(
@@ -394,13 +406,20 @@ def check_input_data(
         if protocol not in vars(CIME.Servers):
             logger.info("Client protocol {} not enabled".format(protocol))
             return False
-        logger.info(
-            "Using protocol {} with user {} and passwd {}".format(
-                protocol, user, passwd
-            )
-        )
+        logger.info("Using protocol {}".format(protocol))
+        if user:
+            logger.info("With user: {}".format(user))
+        if passwd:
+            logger.info("With password: {}".format(passwd))
         if protocol == "svn":
             server = CIME.Servers.SVN(address, user, passwd)
+        elif protocol == "globus":
+            server = CIME.Servers.Globus(
+                address,
+                user,
+                passwd,
+                local_endpoint_id=case.get_value("GLOBUS_ENDPOINT_ID"),
+            )
         elif protocol == "gftp":
             server = CIME.Servers.GridFTP(address, user, passwd)
         elif protocol == "ftp":

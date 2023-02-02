@@ -58,6 +58,7 @@
   <xs:element name="MAX_MPITASKS_PER_NODE" type="AttrElement"/>
   <xs:element name="COSTPES_PER_NODE" type="xs:integer"/>
   <xs:element name="PROJECT_REQUIRED" type="xs:NCName"/>
+  <xs:element name="GLOBUS_ENDPOINT_ID" type="xs:string"/>
   <xs:element name="executable" type="xs:string"/>
   <xs:element name="default_run_exe" type="xs:string"/>
   <xs:element name="default_run_misc_suffix" type="xs:string"/>
@@ -171,6 +172,9 @@
         <!-- PROJECT_REQUIRED: Does this machine require a project to be specified to
              the batch system?  See PROJECT above -->
         <xs:element ref="PROJECT_REQUIRED" minOccurs="0" maxOccurs="1"/>
+        <!-- GLOBUS_ENDPOINT_ID: The endpoint ID for globus file transfers
+	     see documentation in:  -->
+        <xs:element ref="GLOBUS_ENDPOINT_ID" minOccurs="0" maxOccurs="1"/>
         <!-- mpirun: The mpi exec to start a job on this machine
              see detail below-->
         <xs:element ref="mpirun" minOccurs="1" maxOccurs="unbounded"/>
