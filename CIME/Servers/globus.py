@@ -30,23 +30,32 @@ class Globus(GenericServer):
     def getfile(self, rel_path, full_path):
         endpoint, root = self._root_address.split(":")
         server_path = os.path.normpath(os.path.join(root, rel_path))
-        stat, out, err = run_cmd(
-            "globus transfer -v {}:{} {}:{}".format(
-                endpoint, server_path, self._local_endpoint_id, full_path
-            ),
-            verbose=True,
-        )
-
-        if stat != 0:
-            logging.warning(
-                "FAIL: GLOBUS repo '{}' does not have file '{}' error={}\n".format(
-                    self._root_address, rel_path, err
-                )
+        while True:
+            stat, out, err = run_cmd(
+                "globus transfer -v {}:{} {}:{}".format(
+                    endpoint, server_path, self._local_endpoint_id, full_path
+                ),
+                verbose=True,
             )
-            return False
+            if stat == 0:
+                status = True
+                break
+            elif stat == 4:
+                m = re.search("(globus session consent .)to login", out)
+                cmd = m.group(1)
+                stat, out, err = run_cmd(cmd, verbose=True)
+
+            elif stat != 0:
+                logging.warning(
+                    "FAIL: GLOBUS repo '{}' does not have file '{}' error={}\n".format(
+                        self._root_address, rel_path, err
+                    )
+                )
+                status = False
+                break
 
         self._wait_for_completion(out)
-        return True
+        return status
 
     def getdirectory(self, rel_path, full_path):
         endpoint, root = self._root_address.split(":")
