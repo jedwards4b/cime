@@ -5,86 +5,75 @@ Globus Server class.  Interact with a server using Globus protocol
 from CIME.XML.standard_module_setup import *
 from CIME.Servers.generic_server import GenericServer
 from CIME.utils import run_cmd
+import globus_sdk
 
 logger = logging.getLogger(__name__)
+CLIENT_ID = "e17ab7ed-dc5e-4faf-95c3-bee6e8f7f479"
 
 
 class Globus(GenericServer):
     def __init__(self, address, user="", passwd="", local_endpoint_id=None):
         self._root_address = address
         self._local_endpoint_id = local_endpoint_id
+        self._client = globus_sdk.NativeAppAuthClient(CLIENT_ID)
+        self._client.oauth2_start_flow(refresh_tokens=True)
+        authorize_url = self._client.oauth2_get_authorize_url()
+        print("Please go to this URL and login: {0}".format(authorize_url))
+
+        auth_code = input("Please enter the code you get after login here: ").strip()
+        token_response = self._client.oauth2_exchange_code_for_tokens(auth_code)
+        self._globus_auth_data = token_response.by_resource_server["auth.globus.org"]
+        self._globus_transfer_data = token_response.by_resource_server[
+            "transfer.api.globus.org"
+        ]
+        self._globus_auth_token = self._globus_auth_data["access_token"]
+        self._globus_transfer_token = self._globus_transfer_data["access_token"]
+        self._task_data = None
+        self._transfer_client = None
 
     def fileexists(self, rel_path):
-        stat, out, err = run_cmd(
-            "globus ls {}".format(
-                os.path.join(self._root_address, os.path.dirname(rel_path)) + os.sep
-            )
-        )
-        if stat or os.path.basename(rel_path) not in out:
-            logging.warning(
-                "FAIL: File {} not found.\nstat={} error={}".format(rel_path, stat, err)
-            )
-            return False
-        return True
-
-    def getfile(self, rel_path, full_path):
         endpoint, root = self._root_address.split(":")
         server_path = os.path.normpath(os.path.join(root, rel_path))
-        while True:
-            stat, out, err = run_cmd(
-                "globus transfer -v {}:{} {}:{}".format(
-                    endpoint, server_path, self._local_endpoint_id, full_path
-                ),
-                verbose=True,
-            )
-            if stat == 0:
-                status = True
-                break
-            elif stat == 4:
-                m = re.search("(globus session consent .)to login", out)
-                cmd = m.group(1)
-                stat, out, err = run_cmd(cmd, verbose=True)
+        if not self._transfer_client:
+            self._initialize_server(endpoint)
+        stat = self._transfer_client.operation_ls(endpoint, server_path)
 
-            elif stat != 0:
-                logging.warning(
-                    "FAIL: GLOBUS repo '{}' does not have file '{}' error={}\n".format(
-                        self._root_address, rel_path, err
-                    )
-                )
-                status = False
-                break
+        return stat
 
-        self._wait_for_completion(out)
-        return status
-
-    def getdirectory(self, rel_path, full_path):
+    # pylint: disable=arguments-differ
+    def getfile(self, rel_path, full_path, wait=True):
         endpoint, root = self._root_address.split(":")
         server_path = os.path.normpath(os.path.join(root, rel_path))
-        stat, out, err = run_cmd(
-            "globus transfer --recursive --label {}:{}{} {}:{}{}".format(
-                endpoint,
-                server_path,
-                os.sep,
-                self._local_endpoint_id,
-                full_path,
-                os.sep,
-            )
-        )
+        if not self._task_data:
+            self._initialize_server(endpoint)
 
-        if stat != 0:
-            logging.warning(
-                "FAIL: Globus repo '{}' does not have directory '{}' error={}\n".format(
-                    self._root_address, rel_path, err
-                )
-            )
-            return False
-        self._wait_for_completion(out)
+        self._task_data.add_item(server_path, full_path)
+        if wait:
+            self.complete_transfer()
         return True
 
-    @staticmethod
-    def _wait_for_completion(out):
-        task_id = out.split("Task ID:")[1]
-        stat, _, err = run_cmd("globus task -v wait {}".format(task_id), verbose=True)
-        if stat != 0:
-            logging.warning("FAIL: Globus task failed with error:", err)
-            return False
+    # pylint: disable=arguments-differ
+    def getdirectory(self, rel_path, full_path, wait=True):
+        endpoint, root = self._root_address.split(":")
+        server_path = os.path.normpath(os.path.join(root, rel_path))
+        if not self._task_data:
+            self._initialize_server(endpoint)
+
+        self._task_data.add_item(server_path, full_path, recursive=True)
+
+        if wait:
+            self.complete_transfer()
+
+        return True
+
+    def complete_transfer(self):
+        task_doc = self._transfer_client.submit_transfer(self._task_data)
+        self._transfer_client.task_wait(task_doc["task_id"])
+
+    def _initialize_server(self, endpoint):
+        self._transfer_client = globus_sdk.TransferClient(
+            authorizer=globus_sdk.AccessTokenAuthorizer(self._globus_transfer_token)
+        )
+        self._task_data = globus_sdk.TransferData(
+            self._transfer_client, endpoint, self._local_endpoint_id
+        )

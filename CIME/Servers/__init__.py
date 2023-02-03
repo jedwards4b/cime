@@ -1,7 +1,7 @@
 # pylint: disable=import-error
 from distutils.spawn import find_executable
 
-has_globus = find_executable("globus")
+
 has_gftp = find_executable("globus-url-copy")
 has_svn = find_executable("svn")
 has_wget = find_executable("wget")
@@ -10,6 +10,12 @@ try:
     from ftplib import FTP
 except ImportError:
     has_ftp = False
+has_globus = True
+try:
+    from globus_sdk import *
+except ImportError:
+    has_globus = False
+
 
 if has_ftp:
     from CIME.Servers.ftp import FTP

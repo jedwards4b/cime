@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 # The inputdata_checksum.dat file will be read into this hash if it's available
 chksum_hash = dict()
 local_chksum_file = "inputdata_checksum.dat"
+SERVER = None
 
 
 def _download_checksum_file(rundir, local_endpoint_id=None):
@@ -21,6 +22,7 @@ def _download_checksum_file(rundir, local_endpoint_id=None):
     inputdata = Inputdata()
     protocol = "svn"
     chksum_found = False
+    global SERVER
     # download and merge all available chksum files.
     while protocol is not None:
         protocol, address, user, passwd, chksum_file, _, _ = inputdata.get_next_server()
@@ -32,23 +34,23 @@ def _download_checksum_file(rundir, local_endpoint_id=None):
             logger.info("With user: {}".format(user))
         if passwd:
             logger.info("With password: {}".format(passwd))
-
-        if protocol == "svn":
-            server = CIME.Servers.SVN(address, user, passwd)
-        elif protocol == "gftp":
-            server = CIME.Servers.GridFTP(address, user, passwd)
-        elif protocol == "globus":
-            server = CIME.Servers.Globus(
-                address, user, passwd, local_endpoint_id=local_endpoint_id
-            )
-        elif protocol == "ftp":
-            server = CIME.Servers.FTP.ftp_login(address, user, passwd)
-        elif protocol == "wget":
-            server = CIME.Servers.WGET.wget_login(address, user, passwd)
-        else:
-            expect(False, "Unsupported inputdata protocol: {}".format(protocol))
-        if not server:
-            continue
+        if not SERVER:
+            if protocol == "svn":
+                SERVER = CIME.Servers.SVN(address, user, passwd)
+            elif protocol == "gftp":
+                SERVER = CIME.Servers.GridFTP(address, user, passwd)
+            elif protocol == "globus":
+                SERVER = CIME.Servers.Globus(
+                    address, user, passwd, local_endpoint_id=local_endpoint_id
+                )
+            elif protocol == "ftp":
+                SERVER = CIME.Servers.FTP.ftp_login(address, user, passwd)
+            elif protocol == "wget":
+                SERVER = CIME.Servers.WGET.wget_login(address, user, passwd)
+            else:
+                expect(False, "Unsupported inputdata protocol: {}".format(protocol))
+            if not SERVER:
+                continue
 
         if chksum_file:
             chksum_found = True
@@ -59,7 +61,7 @@ def _download_checksum_file(rundir, local_endpoint_id=None):
         rel_path = chksum_file
         full_path = os.path.join(rundir, local_chksum_file)
         new_file = full_path + ".raw"
-        protocol = type(server).__name__
+        protocol = type(SERVER).__name__
         logger.info(
             "Trying to download file: '{}' to path '{}' using {} protocol.".format(
                 rel_path, new_file, protocol
@@ -72,7 +74,7 @@ def _download_checksum_file(rundir, local_endpoint_id=None):
         # Use umask to make sure files are group read/writable. As long as parent directories
         # have +s, then everything should work.
         with SharedArea():
-            success = server.getfile(rel_path, new_file)
+            success = SERVER.getfile(rel_path, new_file)
             if success:
                 _reformat_chksum_file(full_path, new_file)
                 if tmpfile:
@@ -385,6 +387,7 @@ def check_input_data(
     """
     case.load_env(reset=True)
     rundir = case.get_value("RUNDIR")
+    global SERVER
     # Fill in defaults as needed
     input_data_root = (
         case.get_value("DIN_LOC_ROOT") if input_data_root is None else input_data_root
@@ -411,25 +414,26 @@ def check_input_data(
             logger.info("With user: {}".format(user))
         if passwd:
             logger.info("With password: {}".format(passwd))
-        if protocol == "svn":
-            server = CIME.Servers.SVN(address, user, passwd)
-        elif protocol == "globus":
-            server = CIME.Servers.Globus(
-                address,
-                user,
-                passwd,
-                local_endpoint_id=case.get_value("GLOBUS_ENDPOINT_ID"),
-            )
-        elif protocol == "gftp":
-            server = CIME.Servers.GridFTP(address, user, passwd)
-        elif protocol == "ftp":
-            server = CIME.Servers.FTP.ftp_login(address, user, passwd)
-        elif protocol == "wget":
-            server = CIME.Servers.WGET.wget_login(address, user, passwd)
-        else:
-            expect(False, "Unsupported inputdata protocol: {}".format(protocol))
-        if not server:
-            return None
+        if not SERVER:
+            if protocol == "svn":
+                SERVER = CIME.Servers.SVN(address, user, passwd)
+            elif protocol == "globus":
+                SERVER = CIME.Servers.Globus(
+                    address,
+                    user,
+                    passwd,
+                    local_endpoint_id=case.get_value("GLOBUS_ENDPOINT_ID"),
+                )
+            elif protocol == "gftp":
+                SERVER = CIME.Servers.GridFTP(address, user, passwd)
+            elif protocol == "ftp":
+                SERVER = CIME.Servers.FTP.ftp_login(address, user, passwd)
+            elif protocol == "wget":
+                SERVER = CIME.Servers.WGET.wget_login(address, user, passwd)
+            else:
+                expect(False, "Unsupported inputdata protocol: {}".format(protocol))
+            if not SERVER:
+                return None
 
     for data_list_file in data_list_files:
         logger.info("Loading input file list: '{}'".format(data_list_file))
@@ -506,7 +510,7 @@ def check_input_data(
                                         os.makedirs(filepath)
                                     tmppath = full_path[len(rundir) + 1 :]
                                     success = _download_if_in_repo(
-                                        server,
+                                        SERVER,
                                         os.path.join(rundir, "inputdata"),
                                         tmppath[10:],
                                         isdirectory=isdirectory,
@@ -544,7 +548,7 @@ def check_input_data(
                             if download:
                                 if use_ic_path:
                                     success = _download_if_in_repo(
-                                        server,
+                                        SERVER,
                                         input_ic_root,
                                         rel_path.strip(os.sep),
                                         isdirectory=isdirectory,
@@ -552,7 +556,7 @@ def check_input_data(
                                     )
                                 else:
                                     success = _download_if_in_repo(
-                                        server,
+                                        SERVER,
                                         input_data_root,
                                         rel_path.strip(os.sep),
                                         isdirectory=isdirectory,
