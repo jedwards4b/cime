@@ -7,6 +7,7 @@ from CIME.Servers.generic_server import GenericServer
 from CIME.utils import run_cmd
 import globus_sdk
 from globus_sdk.scopes import TransferScopes
+from globus_sdk.tokenstorage import SimpleJSONFileAdapter
 
 logger = logging.getLogger(__name__)
 CLIENT_ID = "e17ab7ed-dc5e-4faf-95c3-bee6e8f7f479"
@@ -18,22 +19,7 @@ class Globus(GenericServer):
         self._local_endpoint_id = local_endpoint_id
         self._client = globus_sdk.NativeAppAuthClient(CLIENT_ID)
         self._transfer_client = self.login_and_get_transfer_client()
-
-        #        self._client.oauth2_start_flow(refresh_tokens=True,
-        #                                       requested_scopes=[TransferScopes.all])
-        #        authorize_url = self._client.oauth2_get_authorize_url()
-        #        print("Please go to this URL and login: {0}".format(authorize_url))
-        #
-        #        auth_code = input("Please enter the code you get after login here: ").strip()
-        #        token_response = self._client.oauth2_exchange_code_for_tokens(auth_code)
-        #        print(f"token_response {token_response}")
-        #        self._globus_transfer_data = token_response.by_resource_server[
-        #            "transfer.api.globus.org"
-        #        ]
-        #        self._globus_transfer_token = self._globus_transfer_data["access_token"]
         self._task_data = None
-
-    #        self._transfer_client = None
 
     def fileexists(self, rel_path):
         endpoint, root = self._root_address.split(":")
@@ -83,9 +69,6 @@ class Globus(GenericServer):
         self._transfer_client.task_wait(task_doc["task_id"])
 
     def _initialize_server(self, endpoint):
-        #        self._transfer_client = globus_sdk.TransferClient(
-        #            authorizer=globus_sdk.AccessTokenAuthorizer(self._globus_transfer_token)
-        #        )
         self._task_data = globus_sdk.TransferData(
             self._transfer_client,
             source_endpoint=endpoint,
@@ -99,15 +82,29 @@ class Globus(GenericServer):
         # look at the ConsentRequired handler below for how this is used
 
     def login_and_get_transfer_client(self, scopes=TransferScopes.all):
-        self._client.oauth2_start_flow(requested_scopes=scopes)
-        authorize_url = self._client.oauth2_get_authorize_url()
-        print(f"Please go to this URL and login:\n\n{authorize_url}\n")
+        self._client.oauth2_start_flow(requested_scopes=scopes, refresh_tokens=True)
+        my_file_adapter = SimpleJSONFileAdapter(
+            os.path.expanduser("~/.cime/inputdatatokens.json")
+        )
+        if not my_file_adapter.file_exists():
+            authorize_url = self._client.oauth2_get_authorize_url()
+            print(f"Please go to this URL and login:\n\n{authorize_url}\n")
 
-        auth_code = input("Please enter the code here: ").strip()
-        tokens = self._client.oauth2_exchange_code_for_tokens(auth_code)
-        transfer_tokens = tokens.by_resource_server["transfer.api.globus.org"]
+            auth_code = input("Please enter the code here: ").strip()
+            tokens = self._client.oauth2_exchange_code_for_tokens(auth_code)
+            transfer_tokens = tokens.by_resource_server["transfer.api.globus.org"]
+        else:
+            transfer_tokens = my_file_adapter.get_token_data("transfer.api.globus.org")
+
+        authorizer = globus_sdk.RefreshTokenAuthorizer(
+            transfer_tokens["refresh_token"],
+            self._client,
+            access_token=transfer_tokens["access_token"],
+            expires_at=transfer_tokens["expires_at_seconds"],
+            on_refresh=my_file_adapter.on_refresh,
+        )
+        if not my_file_adapter.file_exists():
+            my_file_adapter.store(tokens)
 
         # return the TransferClient object, as the result of doing a login
-        return globus_sdk.TransferClient(
-            authorizer=globus_sdk.AccessTokenAuthorizer(transfer_tokens["access_token"])
-        )
+        return globus_sdk.TransferClient(authorizer=authorizer)
