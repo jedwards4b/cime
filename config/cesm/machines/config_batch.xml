@@ -265,39 +265,6 @@
     </submit_args>
   </batch_system>
 
-  <batch_system MACH="cori-haswell" type="slurm" >
-    <batch_submit>sbatch</batch_submit>
-    <submit_args>
-      <arg flag="--time" name="$JOB_WALLCLOCK_TIME"/>
-      <arg flag="-q" name="$JOB_QUEUE"/>
-      <arg flag="--account" name="$PROJECT"/>
-    </submit_args>
-    <directives>
-      <directive>-C haswell </directive>
-    </directives>
-    <queues>
-      <queue walltimemax="06:00:00" nodemin="1" nodemax="710">regular</queue>
-    <!--  <queue walltimemax="00:30:00" nodemin="1" nodemax="3072" default="true">debug</queue> -->
-    </queues>
-  </batch_system>
-
-  <batch_system MACH="cori-knl" type="slurm" >
-    <batch_submit>sbatch</batch_submit>
-    <submit_args>
-      <arg flag="--time" name="$JOB_WALLCLOCK_TIME"/>
-      <arg flag="-q" name="$JOB_QUEUE"/>
-      <arg flag="--account" name="$PROJECT"/>
-    </submit_args>
-    <directives>
-      <directive>-C knl,quad,cache </directive>
-      <directive>-S 2 </directive>
-    </directives>
-    <queues>
-      <queue walltimemax="02:00:00" nodemin="1" nodemax="177">regular</queue>
-    <!--  <queue walltimemax="00:30:00" nodemin="1" nodemax="3072" default="true">debug</queue> -->
-    </queues>
-  </batch_system>
-
   <batch_system MACH="daint" type="slurm" >
     <batch_submit>sbatch</batch_submit>
     <submit_args>
@@ -310,6 +277,19 @@
     </queues>
   </batch_system>
 
+  <batch_system MACH="derecho" type="pbs" >
+    <batch_submit>qsub</batch_submit>
+<!--    <submit_args>
+    </submit_args> -->
+    <directives>
+      <directive default="/bin/bash" > -S {{ shell }}  </directive>
+      <directive> -l select={{ num_nodes }}:ncpus={{ max_tasks_per_node }}:mpiprocs={{ tasks_per_node }}:ompthreads={{ thread_count }}</directive>
+    </directives>
+    <queues>
+      <queue walltimemax="4:00:00" nodemin="1" nodemax="100" >main</queue>
+    </queues>
+  </batch_system>
+
   <batch_system MACH="eastwind" type="slurm" >
     <batch_submit>sbatch</batch_submit>
     <submit_args>
@@ -319,19 +299,6 @@
     </submit_args>
     <queues>
       <queue nodemin="1" nodemax="833" default="true">batch</queue>
-    </queues>
-  </batch_system>
-
-  <batch_system MACH="edison" type="slurm" >
-    <batch_submit>sbatch</batch_submit>
-    <submit_args>
-      <arg flag="--time" name="$JOB_WALLCLOCK_TIME"/>
-      <arg flag="-q" name="$JOB_QUEUE"/>
-      <arg flag="--account" name="$PROJECT"/>
-    </submit_args>
-    <queues>
-      <queue walltimemax="36:00:00" nodemin="1" nodemax="2712" >regular</queue>
-      <queue walltimemax="00:30:00" nodemin="1" nodemax="256" default="true">debug</queue>
     </queues>
   </batch_system>
 
@@ -377,7 +344,8 @@
     </submit_args>
     <queues>
       <queue walltimemax="02:00:00" nodemin="1" nodemax="40">development</queue>
-      <queue walltimemax="24:00:00" nodemin="1" nodemax="512" default="true">normal</queue>
+      <queue walltimemax="24:00:00" nodemin="1" nodemax="2" default="true">small</queue>
+      <queue walltimemax="24:00:00" nodemin="3" nodemax="512" default="true">normal</queue>
       <queue walltimemax="24:00:00" nodemin="513" nodemax="2048" >large</queue>
     </queues>
   </batch_system>
@@ -399,19 +367,16 @@
     </queues>
   </batch_system>
 
-  <!-- hobart is PBS -->
-  <batch_system type="pbs" MACH="hobart" >
-    <directives>
-      <directive>-l nodes={{ num_nodes }}:ppn={{ tasks_per_node }}</directive>
+  <batch_system MACH="gust" type="pbs" >
+    <batch_submit>qsub</batch_submit>
+<!--    <submit_args>
+    </submit_args> -->
+    <directives queue="main">
       <directive default="/bin/bash" > -S {{ shell }}  </directive>
+      <directive> -l select={{ num_nodes }}:ncpus={{ max_tasks_per_node }}:mpiprocs={{ tasks_per_node }}:ompthreads={{ thread_count }}</directive>
     </directives>
     <queues>
-      <queue walltimemax="02:00:00"   strict="true" nodemin="1"  nodemax="8">short</queue>
-      <queue walltimemax="08:00:00"   strict="true" nodemin="1"  nodemax="6" default="true">medium</queue>
-      <queue walltimemax="40:00:00"   strict="true" nodemin="1"  nodemax="8">long</queue>
-      <queue walltimemax="80:00:00"   strict="true" nodemin="1"  nodemax="8">verylong</queue>
-      <queue walltimemax="32:00:00"   strict="true" nodemax="16" nodemin="1">overnight</queue>
-      <queue walltimemax="3000:00:00" strict="true" nodemax="32" nodemin="1">monster</queue>
+      <queue walltimemax="4:00:00" nodemin="1" nodemax="4" >main</queue>
     </queues>
   </batch_system>
 
