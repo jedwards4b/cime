@@ -328,10 +328,11 @@ using a fortran linker.
   <SFC> nagfor </SFC>
 </compiler>
 
-<compiler COMPILER="pgi">
+<compiler COMPILER="nvhpc">
   <CFLAGS>
     <base> -gopt  -time </base>
     <append compile_threaded="TRUE"> -mp </append>
+    <append DEBUG="FALSE"> -O</append>
   </CFLAGS>
   <CPPDEFS>
     <!-- http://www.pgroup.com/resources/docs.htm                                              -->
@@ -369,6 +370,7 @@ using a fortran linker.
     <base>  -i4 -gopt  -time -Mextend -byteswapio -Mflushz -Kieee  </base>
     <append compile_threaded="TRUE"> -mp </append>
     <append DEBUG="TRUE"> -O0 -g -Ktrap=fp -Mbounds -Kieee </append>
+    <append DEBUG="FALSE"> -O</append>
     <append MODEL="datm"> -Mnovect </append>
     <append MODEL="dlnd"> -Mnovect </append>
     <append MODEL="drof"> -Mnovect </append>
@@ -1225,6 +1227,40 @@ using a fortran linker.
   <PIO_FILESYSTEM_HINTS>lustre</PIO_FILESYSTEM_HINTS>
   <PNETCDF_PATH>$ENV{TACC_PNETCDF_DIR}</PNETCDF_PATH>
 </compiler>
+
+<compiler MACH="grace" COMPILER="intel">
+  <CPPDEFS>
+    <append> -DHAVE_NANOTIME -DNO_R16 </append>
+  </CPPDEFS>
+  <CFLAGS>
+    <append></append>
+  </CFLAGS>
+  <FFLAGS>
+    <append></append>
+  </FFLAGS>
+  <MPIFC>mpiifort</MPIFC>
+  <MPICC>mpiicc</MPICC>
+  <MPICXX>mpiicpc</MPICXX>
+  <SFC>ifort</SFC>
+  <SCC>icc</SCC>
+  <SCXX>icpc</SCXX>
+<!--  <NETCDF_PATH>/scratch/group/ihesp/software/share/netcdf-c-4.7.4/install2019b_2</NETCDF_PATH>
+  <NETCDF_C_PATH>/scratch/group/ihesp/software/share/netcdf-c-4.7.4/install2019b_2</NETCDF_C_PATH>
+  <PNETCDF_PATH>/scratch/group/ihesp/software/share/pnetcdf-1.12.1/install2019b_2</PNETCDF_PATH>
+  <NETCDF_FORTRAN_PATH>/scratch/group/ihesp/software/share/netcdf-fortran-4.5.3/install2019b_2</NETCDF_FORTRAN_PATH> -->
+  <NETCDF_PATH>/scratch/group/ihesp/software/easybuild/eb/x86_64/sw/netCDF/4.7.4-iimpi-2020b</NETCDF_PATH> 
+  <NETCDF_C_PATH>/scratch/group/ihesp/software/easybuild/eb/x86_64/sw/netCDF/4.7.4-iimpi-2020b</NETCDF_C_PATH> 
+  <NETCDF_FORTRAN_PATH>/scratch/group/ihesp/software/easybuild/eb/x86_64/sw/netCDF-Fortran/4.5.3-iimpi-2020b</NETCDF_FORTRAN_PATH>
+  <PNETCDF_PATH>/scratch/group/ihesp/software/easybuild/eb/x86_64/sw/PnetCDF/1.12.1-iimpi-2020b</PNETCDF_PATH>
+  <SLIBS>
+    <append>-L$(NETCDF_C_PATH)/lib -Wl,-rpath,$(NETCDF_PATH)/lib -lnetcdf</append>
+    <append>-L$(NETCDF_FORTRAN_PATH)/lib -Wl,-rpath,$(NETCDF_FORTRAN_PATH)/lib -lnetcdff</append>
+    <append>-L$(PNETCDF_PATH)/lib -Wl,-rpath,$(PNETCDF_PATH)/lib -lpnetcdf</append>
+  </SLIBS>
+  <PIO_FILESYSTEM_HINTS>lustre</PIO_FILESYSTEM_HINTS>
+  <HAS_F2008_CONTIGUOUS>FALSE</HAS_F2008_CONTIGUOUS>
+</compiler>
+
 
 <compiler MACH="stampede2-skx" COMPILER="intel">
   <CFLAGS>
