@@ -1,0 +1,50 @@
+name: cmake ubuntu openmpi latest
+#with AddressSanitizer
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    env:
+      CC: mpicc
+      FC: mpifort
+      FCFLAGS: "-fallow-argument-mismatch"
+#      LDFLAGS: "-static-libasan"
+#      ASAN_OPTIONS: "detect_odr_violation=0"
+    steps:
+    - uses: actions/checkout@v3
+    - name: Installs
+      run: |
+        set -x
+        sudo apt-get update
+        sudo apt-get install netcdf-bin libnetcdf-dev doxygen graphviz wget gfortran \
+        libjpeg-dev libz-dev openmpi-bin libopenmpi-dev cmake pnetcdf-bin libpnetcdf-dev libnetcdff-dev
+        nc-config --all
+
+    - name: cmake build
+      uses: ./.github/actions/parallelio_cmake
+      with:
+        parallelio_version: ${{ env.GITHUB_SHA }}
+        enable_fortran: True
+        enable_logging: True
+        install_prefix: ${GITHUB_WORKSPACE}/parallelio
+        mpiexec_flags: --oversubscribe
+#        extra_cflags: "-g -O0 -fsanitize=address -fno-omit-frame-pointer -static-libasan"
+#        extra_fflags: "-g -O0 -fsanitize=address -fno-omit-frame-pointer -static-libasan"
+    - name: parallelio tests
+      run: |
+        pushd $GITHUB_WORKSPACE/build
+        make tests VERBOSE=1
+        ctest -VV
+        popd
+
+#    - name: Setup tmate session
+#      if: ${{ failure() }}
+#      uses: mxschmitt/action-tmate@v3

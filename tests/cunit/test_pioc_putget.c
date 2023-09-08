@@ -1,4 +1,4 @@
-/*
+ /*
  * Tests for PIO data reading and writing routines.
  *
  * @author Ed Hartnett
@@ -153,15 +153,10 @@ int test_att_conv_byte(int ncid, int flavor, char *name, int *expected, long lon
 {
     signed char byte_array_in[ATT_LEN];
     short short_array_in[ATT_LEN];
-    unsigned char ubyte_array_in[ATT_LEN];
     int int_array_in[ATT_LEN];
     long long_array_in[ATT_LEN];
     float float_array_in[ATT_LEN];
     double double_array_in[ATT_LEN];
-    unsigned short ushort_array_in[ATT_LEN];
-    unsigned int uint_array_in[ATT_LEN];
-    long long int64_array_in[ATT_LEN];
-    unsigned long long uint64_array_in[ATT_LEN];
 
     /* Read the att and check results. */
     if (expected[PIO_BYTE] != PIOc_get_att_schar(ncid, NC_GLOBAL, name, byte_array_in))
@@ -214,6 +209,12 @@ int test_att_conv_byte(int ncid, int flavor, char *name, int *expected, long lon
 
     if (flavor == PIO_IOTYPE_NETCDF4C || flavor == PIO_IOTYPE_NETCDF4P)
     {
+        unsigned char ubyte_array_in[ATT_LEN];
+        unsigned short ushort_array_in[ATT_LEN];
+        unsigned int uint_array_in[ATT_LEN];
+        long long int64_array_in[ATT_LEN];
+        unsigned long long uint64_array_in[ATT_LEN];
+
         if ((expected[PIO_UBYTE] != PIOc_get_att_uchar(ncid, NC_GLOBAL, name, ubyte_array_in)))
             return ERR_WRONG;
 
@@ -271,10 +272,6 @@ int test_att_conv_int64(int ncid, int flavor, char *name, int *expected, long lo
 {
     float float_array_in[ATT_LEN];
     double double_array_in[ATT_LEN];
-    unsigned char ubyte_array_in[ATT_LEN];
-    unsigned short ushort_array_in[ATT_LEN];
-    unsigned int uint_array_in[ATT_LEN];
-    long long int64_array_in[ATT_LEN];
 
     /* Read the att and check results. */
     if (expected[PIO_FLOAT] != PIOc_get_att_float(ncid, NC_GLOBAL, name, float_array_in))
@@ -285,6 +282,11 @@ int test_att_conv_int64(int ncid, int flavor, char *name, int *expected, long lo
 
     if (flavor == PIO_IOTYPE_NETCDF4C || flavor == PIO_IOTYPE_NETCDF4P)
     {
+        unsigned char ubyte_array_in[ATT_LEN];
+        unsigned short ushort_array_in[ATT_LEN];
+        unsigned int uint_array_in[ATT_LEN];
+        long long int64_array_in[ATT_LEN];
+
         if ((expected[PIO_UBYTE] != PIOc_get_att_uchar(ncid, NC_GLOBAL, name, ubyte_array_in)))
             return ERR_WRONG;
         if ((expected[PIO_USHORT] != PIOc_get_att_ushort(ncid, NC_GLOBAL, name, ushort_array_in)))
@@ -319,7 +321,7 @@ int test_atts_byte(int iosysid, int num_flavors, int *flavor, int my_rank,
     for (int fmt = 0; fmt < num_flavors; fmt++)
     {
         char iotype_name[PIO_MAX_NAME + 1];
-        char filename[PIO_MAX_NAME + 1]; /* Test filename. */
+        char filename[PIO_MAX_NAME * 2 + 1]; /* Test filename. */
         int ncid;
         int ret;    /* Return code. */
 
@@ -431,7 +433,7 @@ int test_atts_int64(int iosysid, int num_flavors, int *flavor, int my_rank,
     for (int fmt = 0; fmt < num_flavors; fmt++)
     {
         char iotype_name[PIO_MAX_NAME + 1];
-        char filename[PIO_MAX_NAME + 1]; /* Test filename. */
+        char filename[PIO_MAX_NAME * 2 + 1]; /* Test filename. */
         int ncid;
         int ret;    /* Return code. */
 
@@ -775,15 +777,10 @@ int test_read_att(int ncid, int *varid, int flavor)
     char text_in[ATT_LEN];
     signed char byte_array_in[ATT_LEN];
     short short_array_in[ATT_LEN];
-    unsigned char ubyte_array_in[ATT_LEN];
     int int_array_in[ATT_LEN];
     long int long_array_in[ATT_LEN];
     float float_array_in[ATT_LEN];
     double double_array_in[ATT_LEN];
-    unsigned short ushort_array_in[ATT_LEN];
-    unsigned int uint_array_in[ATT_LEN];
-    long long int64_array_in[ATT_LEN];
-    unsigned long long uint64_array_in[ATT_LEN];
     int x;
     int ret;
 
@@ -821,6 +818,12 @@ int test_read_att(int ncid, int *varid, int flavor)
 
     if (flavor == PIO_IOTYPE_NETCDF4C || flavor == PIO_IOTYPE_NETCDF4P)
     {
+      unsigned char ubyte_array_in[ATT_LEN];
+      unsigned short ushort_array_in[ATT_LEN];
+      unsigned int uint_array_in[ATT_LEN];
+      long long int64_array_in[ATT_LEN];
+      unsigned long long uint64_array_in[ATT_LEN];
+
         if ((ret = PIOc_get_att_uchar(ncid, varid[7], UCHAR_ATT_NAME, ubyte_array_in)))
             return ret;
         if ((ret = PIOc_get_att_ushort(ncid, varid[8], USHORT_ATT_NAME, ushort_array_in)))
@@ -1914,7 +1917,7 @@ int test_putget(int iosysid, int num_flavors, int *flavor, int my_rank,
              * available ways. */
             for (int fmt = 0; fmt < num_flavors; fmt++)
             {
-                char filename[PIO_MAX_NAME + 1]; /* Test filename. */
+                char filename[PIO_MAX_NAME * 2 + 1]; /* Test filename. */
                 char iotype_name[PIO_MAX_NAME + 1];
                 int ncid;
                 int varid[NUM_NETCDF4_TYPES + 1];
@@ -1923,7 +1926,7 @@ int test_putget(int iosysid, int num_flavors, int *flavor, int my_rank,
                 /* Create a filename. */
                 if ((ret = get_iotype_name(flavor[fmt], iotype_name)))
                     return ret;
-                snprintf(filename, PIO_MAX_NAME, "%s_putget_access_%d_unlim_%d_%s.nc", TEST_NAME,
+                snprintf(filename, PIO_MAX_NAME * 2, "%s_putget_access_%d_unlim_%d_%s.nc", TEST_NAME,
                          access, unlim, iotype_name);
 
                 /* Create test file with dims and vars defined. */
@@ -2056,5 +2059,4 @@ int main(int argc, char **argv)
     return run_test_main(argc, argv, MIN_NTASKS, TARGET_NTASKS, -1,
                          TEST_NAME, dim_len, COMPONENT_COUNT, NUM_IO_PROCS);
 
-    return 0;
 }

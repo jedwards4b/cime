@@ -31,13 +31,24 @@ set (PIO_Fortran_MODS ${CMAKE_CURRENT_BINARY_DIR}/pio.mod
   ${CMAKE_CURRENT_BINARY_DIR}/pionfatt_mod.mod
   ${CMAKE_CURRENT_BINARY_DIR}/pionfput_mod.mod)
 
+if (NETCDF_INTEGRATION)
+  set (PIO_Fortran_SRCS ${PIO_Fortran_SRCS} ncint_mod.F90)
+  set (PIO_Fortran_MODS ${PIO_Fortran_MODS} ${CMAKE_CURRENT_BINARY_DIR}/ncint_mod.mod)
+endif ()
+
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 add_library (piof ${PIO_Fortran_SRCS} ${PIO_GenF90_SRCS})
+# Always use -fPIC
+set_property(TARGET piof PROPERTY POSITION_INDEPENDENT_CODE ON)
+
 if (NOT PIO_ENABLE_FORTRAN)
   set_target_properties(piof PROPERTIES EXCLUDE_FROM_ALL TRUE)
 endif ()
 
 # Include flib source and binary directories (for Fortran modules)
 target_include_directories (piof
+  PUBLIC ${CMAKE_BINARY_DIR}
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
   PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 
@@ -52,9 +63,16 @@ if ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
   target_compile_options (piof
     PRIVATE -ffree-line-length-none)
 elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "NAG")
-  set ( CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -mismatch_all" )
+  set ( CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -mismatch_all " )
   #    target_compile_options (piof
   #        PRIVATE -mismatch_all)
+elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Cray")
+  set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -ef")
+elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
+  set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -debug minimal")
+endif()
+if (CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+     set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -g")
 endif()
 
 # Look for c_sizeof capability
@@ -108,7 +126,7 @@ else ()
   ExternalProject_Add (genf90
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/genf90
     GIT_REPOSITORY https://github.com/PARALLELIO/genf90
-    GIT_TAG genf90_140121
+    GIT_TAG genf90_200608
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
@@ -129,7 +147,6 @@ endforeach ()
 
 #===== MPI =====
 if (PIO_USE_MPISERIAL)
-  find_package (MPISERIAL COMPONENTS Fortran REQUIRED)
   if (MPISERIAL_Fortran_FOUND)
     target_compile_definitions (piof
       PRIVATE _MPISERIAL)
@@ -141,8 +158,6 @@ if (PIO_USE_MPISERIAL)
     set (WITH_PNETCDF FALSE)
     set (MPI_Fortran_INCLUDE_PATH ${MPISERIAL_Fortran_INCLUDE_DIRS})
   endif ()
-else ()
-  find_package (MPI REQUIRED)
 endif ()
 
 # Check MPI I/O capabilities
@@ -154,7 +169,7 @@ if (MPIF_H_PATH)
   check_macro (MPI_HAS_MPIIO
     NAME TryMPIIO.f90
     HINTS ${CMAKE_MODULE_PATH}
-    DEFINITIONS -I{MPIF_H_PATH}
+    DEFINITIONS -I${MPIF_H_PATH}
     COMMENT "whether MPIIO is supported")
   if (${MPI_HAS_MPIIO})
     message (STATUS "MPIIO verified and enabled.")
@@ -171,9 +186,6 @@ endif ()
 find_path(MPIMOD_PATH
   NAMES mpi.mod MPI.mod
   HINTS ${MPI_Fortran_INCLUDE_PATH})
-if (PIO_ENABLE_TIMING)
-  find_package (GPTL COMPONENTS Fortran_Perf QUIET)
-endif ()
 
 check_macro (MPI_HAS_Fortran_MOD
   NAME TryMPIMod.f90
@@ -188,6 +200,7 @@ else ()
     target_compile_definitions (gptl
       PUBLIC NO_MPIMOD)
   endif()
+  target_compile_definitions (piof PUBLIC NO_MPIMOD)
 endif ()
 
 #===== GPTL =====
@@ -206,46 +219,22 @@ if (PIO_ENABLE_TIMING)
 endif ()
 
 #===== NetCDF-Fortran =====
-find_package (NetCDF "4.3.3" COMPONENTS Fortran)
 if (NetCDF_Fortran_FOUND)
   target_include_directories (piof
     PUBLIC ${NetCDF_Fortran_INCLUDE_DIRS})
-  target_compile_definitions (piof
-    PUBLIC _NETCDF)
   target_link_libraries (piof
     PUBLIC ${NetCDF_Fortran_LIBRARIES})
-  if (EXISTS ${NetCDF_Fortran_INCLUDE_DIR}/netcdf_par.h)
-    target_compile_definitions (piof
-      PUBLIC _NETCDF4)
-  endif ()
-else ()
-  target_compile_definitions (piof
-    PUBLIC _NONETCDF)
 endif ()
 
 #===== PnetCDF =====
-if (WITH_PNETCDF)
-  find_package (PnetCDF "1.6" COMPONENTS Fortran REQUIRED)
-endif ()
 if (PnetCDF_Fortran_FOUND)
   target_include_directories (piof
     PUBLIC ${PnetCDF_Fortran_INCLUDE_DIRS})
-  target_compile_definitions (piof
-    PUBLIC _PNETCDF)
   target_link_libraries (piof
     PUBLIC ${PnetCDF_Fortran_LIBRARIES})
 
   # Check library for varn functions
   set (CMAKE_REQUIRED_LIBRARIES ${PnetCDF_Fortran_LIBRARY})
-  check_function_exists (ncmpi_get_varn PnetCDF_Fortran_HAS_VARN)
-  if (PnetCDF_Fortran_HAS_VARN)
-    target_compile_definitions(piof
-      PUBLIC USE_PNETCDF_VARN
-      PUBLIC USE_PNETCDF_VARN_ON_READ)
-  endif()
-else ()
-  target_compile_definitions (piof
-    PUBLIC _NOPNETCDF)
 endif ()
 
 #===== Add EXTRAs =====
@@ -266,3 +255,15 @@ endif ()
 if (NOT PnetCDF_Fortran_FOUND AND NOT NetCDF_Fortran_FOUND)
   message (FATAL_ERROR "Must have PnetCDF and/or NetCDF Fortran libraries")
 endif ()
+set(FFLAGS ${CMAKE_Fortran_FLAGS} PARENT_SCOPE)
+get_target_property(fppdefs piof COMPILE_DEFINITIONS)
+get_target_property(fincludes piof INCLUDE_DIRECTORIES)
+foreach(x IN LISTS fppdefs)
+  string(APPEND FPPFLAGS " -D${x}")
+endforeach()
+foreach(x IN LISTS fincludes)
+  if (x)
+    string(APPEND FPPFLAGS " -I${x}")
+  endif()
+endforeach()
+set(FPPFLAGS ${FPPFLAGS} PARENT_SCOPE)

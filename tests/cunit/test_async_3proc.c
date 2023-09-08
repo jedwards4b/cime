@@ -71,12 +71,12 @@ int main(int argc, char **argv)
             {
                 for (int flv = 0; flv < num_flavors; flv++)
                 {
-                    char filename[NC_MAX_NAME + 1]; /* Test filename. */
+                    char filename[PIO_MAX_NAME * 2 + 1]; /* Test filename. */
                     int my_comp_idx = 0; /* Index in iosysid array. */
 
                     for (int sample = 0; sample < NUM_SAMPLES; sample++)
                     {
-                        char iotype_name[NC_MAX_NAME + 1];
+                        char iotype_name[PIO_MAX_NAME + 1];
 
                         /* Create a filename. */
                         if ((ret = get_iotype_name(flavor[flv], iotype_name)))
@@ -85,18 +85,18 @@ int main(int argc, char **argv)
 
                         /* Create sample file. */
                         if ((ret = create_nc_sample(sample, iosysid[my_comp_idx], flavor[flv], filename, my_rank, NULL)))
-                            ERR(ret);
+                            AERR2(ret, iosysid[my_comp_idx]);
 
                         /* Check the file for correctness. */
                         if ((ret = check_nc_sample(sample, iosysid[my_comp_idx], flavor[flv], filename, my_rank, NULL)))
-                            ERR(ret);
+                            AERR2(ret, iosysid[my_comp_idx]);
                     }
                 } /* next netcdf flavor */
 
                 /* Finalize the IO system. Only call this from the computation tasks. */
                 for (int c = 0; c < COMPONENT_COUNT; c++)
                 {
-                    if ((ret = PIOc_finalize(iosysid[c])))
+                    if ((ret = PIOc_free_iosystem(iosysid[c])))
                         ERR(ret);
                 }
             } /* endif comp_task */

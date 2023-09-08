@@ -144,9 +144,9 @@ int test_darray_fill(int iosysid, int ioid, int pio_type, int num_flavors, int *
     for (int fmt = 0; fmt < num_flavors; fmt++)
     {
         /* BYTE and CHAR don't work with pnetcdf. Don't know why yet. */
-        if (flavor[fmt] == PIO_IOTYPE_PNETCDF && (pio_type == PIO_BYTE || pio_type == PIO_CHAR))
+/*        if (flavor[fmt] == PIO_IOTYPE_PNETCDF && (pio_type == PIO_BYTE || pio_type == PIO_CHAR))
             continue;
-
+*/
         /* NetCDF-4 types only work with netCDF-4 formats. */
         if (pio_type > PIO_DOUBLE && flavor[fmt] != PIO_IOTYPE_NETCDF4C &&
             flavor[fmt] != PIO_IOTYPE_NETCDF4P)
@@ -430,9 +430,9 @@ int test_darray_fill_unlim(int iosysid, int ioid, int pio_type, int num_flavors,
     for (int fmt = 0; fmt < num_flavors; fmt++)
     {
         /* BYTE and CHAR don't work with pnetcdf. Don't know why yet. */
-        if (flavor[fmt] == PIO_IOTYPE_PNETCDF && (pio_type == PIO_BYTE || pio_type == PIO_CHAR))
+/*        if (flavor[fmt] == PIO_IOTYPE_PNETCDF && (pio_type == PIO_BYTE || pio_type == PIO_CHAR))
             continue;
-
+*/
         /* NetCDF-4 types only work with netCDF-4 formats. */
         if (pio_type > PIO_DOUBLE && flavor[fmt] != PIO_IOTYPE_NETCDF4C &&
             flavor[fmt] != PIO_IOTYPE_NETCDF4P)
@@ -579,11 +579,9 @@ int test_darray_fill_unlim(int iosysid, int ioid, int pio_type, int num_flavors,
         if (!(test_data_in = malloc(type_size * arraylen)))
             ERR(PIO_ENOMEM);
 
-        /* Set the record number for the unlimited dimension. */
-        if ((ret = PIOc_setframe(ncid, varid, 0)))
-            ERR(ret);
-
-        /* Read the data. */
+        /* Read the data. We don't have to set the record number for
+         * the unlimited dimension. If we don't set it, PIO will
+         * assume a value of 0. */
         if ((ret = PIOc_read_darray(ncid, varid, ioid, arraylen, test_data_in)))
             ERR(ret);
 
@@ -718,7 +716,7 @@ int test_decomp_read_write(int iosysid, int ioid, int num_flavors, int *flavor, 
             switch (pio_type)
             {
             case PIO_BYTE:
-                expected_basetype = MPI_BYTE;
+                expected_basetype = MPI_SIGNED_CHAR;
                 break;
             case PIO_CHAR:
                 expected_basetype = MPI_CHAR;
@@ -867,7 +865,7 @@ int main(int argc, char **argv)
             }
 
             /* Finalize PIO system. */
-            if ((ret = PIOc_finalize(iosysid)))
+            if ((ret = PIOc_free_iosystem(iosysid)))
                 return ret;
         } /* next rearranger */
 

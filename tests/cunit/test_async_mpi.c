@@ -1,4 +1,4 @@
-/*
+ /*
  * This program tests some MPI functionality that is used in PIO. This
  * runs on three processors, and does the same MPI commands that are
  * done when async mode is used, with 1 IO task, and two computation
@@ -63,7 +63,7 @@ int resultlen;
 int get_test_comm(int my_rank, int ntasks, int min_ntasks, int max_ntasks, MPI_Comm *comm)
 {
     int ret;
-    
+
     /* Check that a valid number of processors was specified. */
     if (ntasks < min_ntasks)
     {
@@ -102,7 +102,7 @@ int get_test_comm(int my_rank, int ntasks, int min_ntasks, int max_ntasks, MPI_C
  * This function is called by the IO task.  This function will not
  * return, unless there is an error.
  *
- * @param verbose non-zero to turn on printf statements. 
+ * @param verbose non-zero to turn on printf statements.
  * @param my_rank rank of this task.
  * @param io_rank rank of the IO processor in union_comm.
  * @param component_count number of computation components
@@ -116,8 +116,9 @@ int get_test_comm(int my_rank, int ntasks, int min_ntasks, int max_ntasks, MPI_C
  * @returns 0 for success, error code otherwise.
  * @author Ed Hartnett
  */
-int msg_handler(int verbose, int my_rank, int io_rank, int component_count, MPI_Comm *union_comm,
-                MPI_Comm *comp_comm, int *comproot, MPI_Comm io_comm)
+int msg_handler(int verbose, int my_rank, int io_rank, int component_count,
+                MPI_Comm *union_comm, MPI_Comm *comp_comm, int *comproot,
+                MPI_Comm io_comm)
 {
     int msg = 0;
     MPI_Request req[component_count];
@@ -133,13 +134,15 @@ int msg_handler(int verbose, int my_rank, int io_rank, int component_count, MPI_
         for (int cmp = 0; cmp < component_count; cmp++)
         {
             if (verbose)
-                printf("my_rank %d cmp %d about to call MPI_Irecv comproot[cmp] %d union_comm[cmp] %d\n",
-                       my_rank, cmp, comproot[cmp], union_comm[cmp]);
+                printf("my_rank %d cmp %d about to call MPI_Irecv comproot[cmp] %d "
+                       "union_comm[cmp] %lld\n", my_rank, cmp, comproot[cmp],
+                       (long long int)(union_comm[cmp]));
             if ((mpierr = MPI_Irecv(&msg, 1, MPI_INT, comproot[cmp], MPI_ANY_TAG,
                                     union_comm[cmp], &req[cmp])))
                 MPIERR(mpierr);
             if (verbose)
-                printf("my_rank %d MPI_Irecv req[%d] = %d\n", my_rank, cmp, req[cmp]);
+                printf("my_rank %d MPI_Irecv req[%d] = %lld\n", my_rank, cmp,
+                       (long long int)(req[cmp]));
         }
     }
 
@@ -156,28 +159,30 @@ int msg_handler(int verbose, int my_rank, int io_rank, int component_count, MPI_
         {
             if (verbose)
             {
-                printf("my_rank %d about to call MPI_Waitany req[0] = %d MPI_REQUEST_NULL = %d\n",
-                       my_rank, req[0], MPI_REQUEST_NULL);
+                printf("my_rank %d about to call MPI_Waitany req[0] = %lld\n",
+                       my_rank, (long long int)(req[0]));
                 for (int c = 0; c < component_count; c++)
-                    printf("my_rank %d req[%d] = %d\n", my_rank, c, req[c]);
+                    printf("my_rank %d req[%d] = %lld\n", my_rank, c,
+                           (long long int)(req[c]));
             }
             if ((mpierr = MPI_Waitany(component_count, req, &index, &status)))
                 MPIERR(mpierr);
             if (verbose)
-                printf("my_rank %d Waitany returned index = %d req[%d] = %d\n", my_rank, index, index, req[index]);
+                printf("my_rank %d Waitany returned index = %d req[%d] = %lld\n",
+                       my_rank, index, index, (long long int)req[index]);
         }
 
         /* Broadcast the index and msg value to the rest of the IO tasks. */
         if (verbose)
-            printf("my_rank %d about to MPI_Bcast io_comm %d index %d msg %d\n", my_rank, io_comm,
-                   index, msg);
+            printf("my_rank %d about to MPI_Bcast io_comm %lld index %d msg %d\n",
+                   my_rank, (long long int)io_comm, index, msg);
         if ((mpierr = MPI_Bcast(&index, 1, MPI_INT, 0, io_comm)))
             MPIERR(mpierr);
         if ((mpierr = MPI_Bcast(&msg, 1, MPI_INT, 0, io_comm)))
             MPIERR(mpierr);
         if (verbose)
-            printf("my_rank %d MPI_Bcast io_comm %d index %d msg %d\n", my_rank, io_comm,
-                   index, msg);
+            printf("my_rank %d MPI_Bcast io_comm %lld index %d msg %d\n",
+                   my_rank, (long long int)io_comm, index, msg);
 
         /* Handle the message. This code is run on all IO tasks. */
         switch (msg)
@@ -196,17 +201,19 @@ int msg_handler(int verbose, int my_rank, int io_rank, int component_count, MPI_
         if (!io_rank && msg != -1)
         {
             if (verbose)
-                printf("my_rank %d msg_handler about to Irecv index = %d comproot = %d union_comm = %d\n",
-                       my_rank, index, comproot[index], union_comm[index]);
+                printf("my_rank %d msg_handler about to Irecv index = %d comproot = %d union_comm = %lld\n",
+                       my_rank, index, comproot[index], (long long int)union_comm[index]);
             if ((mpierr = MPI_Irecv(&msg, 1, MPI_INT, comproot[index], MPI_ANY_TAG, union_comm[index],
                                     &req[index])))
                 MPIERR(mpierr);
             if (verbose)
-                printf("my_rank %d msg_handler called MPI_Irecv req[%d] = %d\n", my_rank, index, req[index]);
+                printf("my_rank %d msg_handler called MPI_Irecv req[%d] = %lld\n",
+                       my_rank, index, (long long int)req[index]);
         }
 
         if (verbose)
-            printf("my_rank %d msg_handler done msg = %d open_components = %d\n", my_rank, msg, open_components);
+            printf("my_rank %d msg_handler done msg = %d open_components = %d\n",
+                   my_rank, msg, open_components);
 
         /* If there are no more open components, exit. */
         if (msg == -1)
@@ -231,7 +238,6 @@ int main(int argc, char **argv)
     int ntasks;         /* Number of processors involved in current execution. */
     MPI_Comm test_comm; /* Communicator for tasks running tests. */
     int mpierr;         /* Return code from MPI functions. */
-    int verbose = 0;    /* Non-zero to turn on printf statements. */
     int ret;            /* Return code from function calls. */
 
     /* Initialize MPI. */
@@ -239,10 +245,10 @@ int main(int argc, char **argv)
         MPIERR(ret);
 
     /* Learn my rank and the total number of processors. */
-    if ((ret = MPI_Comm_rank(MPI_COMM_WORLD, &my_rank)))
-        MPIERR(ret);
-    if ((ret = MPI_Comm_size(MPI_COMM_WORLD, &ntasks)))
-        MPIERR(ret);
+    if ((mpierr = MPI_Comm_rank(MPI_COMM_WORLD, &my_rank)))
+        MPIERR(mpierr);
+    if ((mpierr = MPI_Comm_size(MPI_COMM_WORLD, &ntasks)))
+        MPIERR(mpierr);
 
     /* Get test_comm. */
     if ((ret = get_test_comm(my_rank, ntasks, TARGET_NTASKS, TARGET_NTASKS, &test_comm)))
@@ -254,27 +260,25 @@ int main(int argc, char **argv)
         MPI_Group world_group;
         MPI_Comm io_comm;
         MPI_Group io_group;
-        int my_io_proc_list[1] = {0}; /* List of processors in IO component. */        
+        int my_io_proc_list[1] = {0}; /* List of processors in IO component. */
         int num_io_procs = 1;
         int num_procs_per_comp[COMPONENT_COUNT] = {1, 1};
         int in_io = my_rank ? 0 : 1; /* Non-zero if this task is in IO. */
         int io_rank = -1;            /* Rank of current process in IO comm. */
         int comp_rank = -1;
-        int iomaster;  /* MPI_ROOT on master IO task, MPI_PROC_NULL otherwise. */
+        int iomain;  /* MPI_ROOT on main IO task, MPI_PROC_NULL otherwise. */
         MPI_Group group[COMPONENT_COUNT];       /* Group with comp tasks. */
         MPI_Group union_group[COMPONENT_COUNT]; /* Group with IO and comp tasks. */
         int my_proc_list[COMPONENT_COUNT][1] = {{1}, {2}};   /* Tasks for computation components. */
-        MPI_Comm comp_comm[COMPONENT_COUNT];    
+        MPI_Comm comp_comm[COMPONENT_COUNT];
         MPI_Comm union_comm[COMPONENT_COUNT];
         MPI_Comm intercomm[COMPONENT_COUNT];
         int in_cmp[COMPONENT_COUNT] = {0, 0};    /* Is this process in this computation component? */
-        
+	int verbose = 0;    /* Non-zero to turn on printf statements. */
+
         /* Create group for world. */
         if ((ret = MPI_Comm_group(test_comm, &world_group)))
             MPIERR(ret);
-
-        if (verbose)
-            printf("MPI_GROUP_NULL %d MPI_COMM_NULL %d\n", MPI_GROUP_NULL, MPI_COMM_NULL);
 
         /* There is one shared IO comm. Create it. */
         if ((ret = MPI_Group_incl(world_group, num_io_procs, my_io_proc_list, &io_group)))
@@ -283,7 +287,8 @@ int main(int argc, char **argv)
             MPIERR(ret);
         MPI_Group_free(&io_group);
         if (verbose)
-            printf("my_rank %d created io comm io_comm = %d\n", my_rank, io_comm);
+            printf("my_rank %d created io comm io_comm = %lld\n", my_rank,
+                   (long long int)io_comm);
 
         /* For processes in the IO component, get their rank within the IO
          * communicator. */
@@ -291,12 +296,12 @@ int main(int argc, char **argv)
         {
             if ((ret = MPI_Comm_rank(io_comm, &io_rank)))
                 MPIERR(ret);
-            iomaster = !io_rank ? MPI_ROOT : MPI_PROC_NULL;
+            iomain = !io_rank ? MPI_ROOT : MPI_PROC_NULL;
         }
         if (verbose)
             printf("my_rank %d in_io %d io_rank %d IO %s\n", my_rank, in_io,
-                   io_rank, iomaster == MPI_ROOT ? "MASTER" : "SERVANT");
-        
+                   io_rank, iomain == MPI_ROOT ? "main" : "SERVANT");
+
         /* For each computation component. */
         for (int cmp = 0; cmp < COMPONENT_COUNT; cmp++)
         {
@@ -312,12 +317,13 @@ int main(int argc, char **argv)
             int union_rank = -1;
             int pidx;
             MPI_Comm io_comm2;
-            
+
             /* Create a group for this component. */
             if ((ret = MPI_Group_incl(world_group, 1, my_proc_list[cmp], &group[cmp])))
                 MPIERR(ret);
             if (verbose)
-                printf("my_rank %d created component MPI group - group[%d] = %d\n", my_rank, cmp, group[cmp]);
+                printf("my_rank %d created component MPI group - group[%d] = %lld\n",
+                       my_rank, cmp, (long long int)group[cmp]);
 
             /* Add proc numbers from IO. */
             proc_list_union[0] = 0;
@@ -339,7 +345,7 @@ int main(int argc, char **argv)
             if ((ret = MPI_Comm_create(test_comm, group[cmp], &comp_comm[cmp])))
                 MPIERR(ret);
             MPI_Group_free(&group[cmp]);
-            
+
             if (in_cmp[cmp])
             {
                 /* Get the rank in this comp comm. */
@@ -347,9 +353,9 @@ int main(int argc, char **argv)
                     MPIERR(ret);
             }
             if (verbose)
-                printf("my_rank %d intracomm created for cmp = %d comp_comm[cmp] = %d comp_rank = %d\n",
-                       my_rank, cmp, comp_comm[cmp], comp_rank);
-            
+                printf("my_rank %d intracomm created for cmp = %d comp_comm[cmp] = %lld comp_rank = %d\n",
+                       my_rank, cmp, (long long int)comp_comm[cmp], comp_rank);
+
             /* If this is the IO component, make a copy of the IO comm for
              * each computational component. */
             if (in_io)
@@ -357,7 +363,8 @@ int main(int argc, char **argv)
                 if ((ret = MPI_Comm_dup(io_comm, &io_comm2)))
                     MPIERR(ret);
                 if (verbose)
-                    printf("my_rank %d dup of io_comm = %d io_rank = %d\n", my_rank, io_comm, io_rank);
+                    printf("my_rank %d dup of io_comm = %lld io_rank = %d\n", my_rank,
+                           (long long int)io_comm, io_rank);
             }
 
             /* Create a group for the union of the IO component
@@ -368,8 +375,9 @@ int main(int argc, char **argv)
                 MPIERR(ret);
             MPI_Group_free(&union_group[cmp]);
             if (verbose)
-                printf("my_rank %d created union - union_group[%d] %d with %d procs union_comm[%d] %d\n",
-                       my_rank, cmp, union_group[cmp], nprocs_union, cmp, union_comm[cmp]);
+                printf("my_rank %d created union - union_group[%d] %lld with %d procs union_comm[%d] %lld\n",
+                       my_rank, cmp, (long long int)union_group[cmp], nprocs_union, cmp,
+                       (long long int)union_comm[cmp]);
 
 
             if (in_io || in_cmp[cmp])
@@ -378,7 +386,7 @@ int main(int argc, char **argv)
                     MPIERR(ret);
                 if (verbose)
                     printf("my_rank %d union_rank %d\n", my_rank, union_rank);
-                
+
                 if (in_io)
                 {
                     /* Create the intercomm from IO to computation component. */
@@ -403,25 +411,27 @@ int main(int argc, char **argv)
         } /* next computation component. */
 
         /* Now launch IO message processing on the IO task. */
-        int comproot[COMPONENT_COUNT] = {1, 1};
         if (in_io)
+	{
+	    int comproot[COMPONENT_COUNT] = {1, 1};
+
             if ((ret = msg_handler(verbose, my_rank, 0, COMPONENT_COUNT, union_comm, comp_comm,
                                    comproot, io_comm)))
                 ERR(ret);
+	}
 
         /* Send exit messages. */
         if (!in_io)
         {
             for (int cmp = 0; cmp < COMPONENT_COUNT; cmp++)
             {
-            
-                int msg = MSG_EXIT;
-                int ioroot = 0;
-
                 if (in_cmp[cmp])
                 {
-                    if (verbose)
-                        printf("my_rank %d sending exit message on union_comm %d\n", my_rank, union_comm[cmp]);
+		    int ioroot = 0;
+		    int msg = MSG_EXIT;
+
+                    /* if (verbose) */
+                    /*     printf("my_rank %d sending exit message on union_comm %d\n", my_rank, union_comm[cmp]); */
                     if ((mpierr = MPI_Send(&msg, 1, MPI_INT, ioroot, 1, union_comm[cmp])))
                         MPIERR(mpierr);
                 }
@@ -433,7 +443,7 @@ int main(int argc, char **argv)
             printf("my_rank %d freeing resources\n", my_rank);
         for (int cmp = 0; cmp < COMPONENT_COUNT; cmp++)
         {
-            if (comp_comm[cmp] != MPI_COMM_NULL)            
+            if (comp_comm[cmp] != MPI_COMM_NULL)
                 MPI_Comm_free(&comp_comm[cmp]);
             if (union_comm[cmp] != MPI_COMM_NULL)
                 MPI_Comm_free(&union_comm[cmp]);
@@ -441,12 +451,12 @@ int main(int argc, char **argv)
                 MPI_Comm_free(&intercomm[cmp]);
         }
         MPI_Group_free(&world_group);
-        if (io_comm != MPI_COMM_NULL)            
-            MPI_Comm_free(&io_comm);            
+        if (io_comm != MPI_COMM_NULL)
+            MPI_Comm_free(&io_comm);
     }
 
     /* Free the MPI communicator for this test. */
-    MPI_Comm_free(&test_comm);    
+    MPI_Comm_free(&test_comm);
 
     /* Finalize MPI. */
     MPI_Finalize();
