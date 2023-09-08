@@ -1,10 +1,11 @@
-/*
+ /*
  * Common test code for PIO C tests.
  *
  * Ed Hartnett
  */
 #include <config.h>
 #include <pio.h>
+#include <pio_error.h>
 #include <pio_internal.h>
 #include <pio_tests.h>
 
@@ -79,7 +80,7 @@ int pio_type[NUM_PIO_TYPES_TO_TEST] = {PIO_BYTE, PIO_CHAR, PIO_SHORT, PIO_INT, P
 
 /* Attribute test data. */
 signed char byte_att_data[ATT_LEN] = {NC_MAX_BYTE, NC_MIN_BYTE, NC_MAX_BYTE};
-char char_att_data[ATT_LEN] = {NC_MAX_CHAR, 0, NC_MAX_CHAR};
+char char_att_data[ATT_LEN] = {(char) NC_MAX_CHAR, (char) 0, (char) NC_MAX_CHAR};
 short short_att_data[ATT_LEN] = {NC_MAX_SHORT, NC_MIN_SHORT, NC_MAX_SHORT};
 int int_att_data[ATT_LEN] = {NC_MAX_INT, NC_MIN_INT, NC_MAX_INT};
 float float_att_data[ATT_LEN] = {NC_MAX_FLOAT, NC_MIN_FLOAT, NC_MAX_FLOAT};
@@ -94,7 +95,7 @@ unsigned long long uint64_att_data[ATT_LEN] = {NC_MAX_UINT64, 0, NC_MAX_UINT64};
 
 /* Scalar variable test data. */
 signed char byte_scalar_data = NC_MAX_BYTE;
-char char_scalar_data = NC_MAX_CHAR;
+char char_scalar_data = (char) NC_MAX_CHAR;
 short short_scalar_data = NC_MAX_SHORT;
 int int_scalar_data = NC_MAX_INT;
 float float_scalar_data = NC_MAX_FLOAT;
@@ -136,10 +137,9 @@ get_iotypes(int *num_flavors, int *flavors)
     num++;
     format[fmtidx++] = PIO_IOTYPE_PNETCDF;
 #endif
-#ifdef _NETCDF
+    /* NetCDF is always present. */
     num++;
     format[fmtidx++] = PIO_IOTYPE_NETCDF;
-#endif
 #ifdef _NETCDF4
     num += 2;
     format[fmtidx++] = PIO_IOTYPE_NETCDF4C;
@@ -160,13 +160,13 @@ get_iotypes(int *num_flavors, int *flavors)
  *
  * @param iotype the IO type
  * @param name pointer that will get name of IO type. Must have enough
- * memory allocated (NC_MAX_NAME + 1 works.)
+ * memory allocated (PIO_MAX_NAME + 1 works.)
  * @returns 0 for success, error code otherwise.
  * @internal
  */
 int get_iotype_name(int iotype, char *name)
 {
-    char flavor_name[NUM_FLAVORS][NC_MAX_NAME + 1] = {"pnetcdf", "classic",
+    char flavor_name[NUM_FLAVORS][PIO_MAX_NAME + 1] = {"pnetcdf", "classic",
                                                       "serial4", "parallel4"};
 
     /* Check inputs. */
@@ -186,7 +186,9 @@ int get_iotype_name(int iotype, char *name)
  * @param my_rank pointer that gets this tasks rank.
  * @param ntasks pointer that gets the number of tasks in WORLD
  * communicator.
- * @param target_ntasks the number of tasks this test needs to run.
+ * @param min_ntasks the min number of tasks this test needs to run.
+ * @param max_ntasks the max number of tasks this test needs to run. 0
+ * means no max.
  * @param log_level PIOc_set_log_level() will be called with this value.
  * @param comm a pointer to an MPI communicator that will be created
  * for this test and contain target_ntasks tasks from WORLD.
@@ -220,7 +222,7 @@ int pio_test_init2(int argc, char **argv, int *my_rank, int *ntasks,
                 min_ntasks);
         return ERR_AWFUL;
     }
-    else if (*ntasks > max_ntasks)
+    else if (max_ntasks && *ntasks > max_ntasks)
     {
         /* If more tasks are available than we need for this test,
          * create a communicator with exactly the number of tasks we
@@ -249,12 +251,112 @@ int pio_test_init2(int argc, char **argv, int *my_rank, int *ntasks,
     if ((ret = PIOc_set_log_level(log_level)))
         return ret;
 
+#ifdef USE_MPE
+    /* If MPE logging is being used, then initialize it. */
+    if ((ret = MPE_Init_log()))
+        return ret;
+#endif /* USE_MPE */
+
     /* Change error handling so we can test inval parameters. */
     if ((ret = PIOc_set_iosystem_error_handling(PIO_DEFAULT, PIO_RETURN_ERROR, NULL)))
         return ret;
 
     return PIO_NOERR;
 }
+
+/* Finalize a PIO C test. This version of the finalize function takes
+ * a test name, which is used if MPE logging is in use.
+ *
+ * @param test_comm pointer to the test communicator.
+ * @param test_name name of the test
+ * @returns 0 for success, error code otherwise.
+ * @author Ed Hartnett
+ */
+int pio_test_finalize2(MPI_Comm *test_comm, const char *test_name)
+{
+#ifdef USE_MPE
+    int ret;
+    if ((ret = MPE_Finish_log(test_name)))
+        MPIERR(ret);
+#endif /* USE_MPE */
+
+    return pio_test_finalize(test_comm);
+}
+
+#ifdef USE_MPE
+/* This array holds even numbers for MPE. */
+int test_event[2][TEST_NUM_EVENTS];
+
+/* This will set up the MPE logging event numbers. */
+int
+init_mpe_test_logging(int my_rank, int test_event[][TEST_NUM_EVENTS])
+{
+   /* Get a bunch of event numbers. */
+   test_event[START][TEST_INIT] = MPE_Log_get_event_number();
+   test_event[END][TEST_INIT] = MPE_Log_get_event_number();
+   test_event[START][TEST_DECOMP] = MPE_Log_get_event_number();
+   test_event[END][TEST_DECOMP] = MPE_Log_get_event_number();
+   test_event[START][TEST_CREATE] = MPE_Log_get_event_number();
+   test_event[END][TEST_CREATE] = MPE_Log_get_event_number();
+   test_event[START][TEST_DARRAY_WRITE] = MPE_Log_get_event_number();
+   test_event[END][TEST_DARRAY_WRITE] = MPE_Log_get_event_number();
+   test_event[START][TEST_CLOSE] = MPE_Log_get_event_number();
+   test_event[END][TEST_CLOSE] = MPE_Log_get_event_number();
+   test_event[START][TEST_CALCULATE] = MPE_Log_get_event_number();
+   test_event[END][TEST_CALCULATE] = MPE_Log_get_event_number();
+
+   /* Set up MPE states. This only happens on rank 0. */
+   if (!my_rank)
+   {
+        MPE_Describe_info_state(test_event[START][TEST_INIT], test_event[END][TEST_INIT],
+                                "test init", "forestgreen", "%s");
+        MPE_Describe_info_state(test_event[START][TEST_DECOMP],
+                                test_event[END][TEST_DECOMP], "test decomposition",
+                                "blue", "%s");
+        MPE_Describe_info_state(test_event[START][TEST_CREATE], test_event[END][TEST_CREATE],
+                                "test create file", "marroon", "%s");
+        /* MPE_Describe_info_state(test_event[START][TEST_OPEN], test_event[END][TEST_OPEN], */
+        /*                         "test open file", "orange", "%s"); */
+        MPE_Describe_info_state(test_event[START][TEST_DARRAY_WRITE],
+                                test_event[END][TEST_DARRAY_WRITE], "test darray write",
+                                "coral", "%s");
+        MPE_Describe_info_state(test_event[START][TEST_CLOSE],
+                                test_event[END][TEST_CLOSE], "test close",
+                                "gray", "%s");
+        MPE_Describe_info_state(test_event[START][TEST_CALCULATE],
+                                test_event[END][TEST_CALCULATE], "test calculate",
+                                "aquamarine", "%s");
+   }
+   return 0;
+}
+
+/**
+ * Start MPE logging.
+ *
+ * @param state_num the MPE event state number to START (ex. INIT).
+ * @author Ed Hartnett
+ */
+void
+test_start_mpe_log(int state)
+{
+    MPE_Log_event(test_event[START][state], 0, NULL);
+}
+
+/**
+ * End MPE logging.
+ *
+ * @author Ed Hartnett
+ */
+void
+test_stop_mpe_log(int state, const char *msg)
+{
+    MPE_LOG_BYTES bytebuf;
+    int pos = 0;
+
+    MPE_Log_pack(bytebuf, &pos, 's', strlen(msg), msg);
+    MPE_Log_event(test_event[END][state], 0, bytebuf);
+}
+#endif /* USE_MPE */
 
 /* Finalize a PIO C test.
  *
@@ -311,7 +413,7 @@ int
 test_inq_type(int ncid, int format)
 {
 #define NUM_TYPES 11
-    char type_name[NC_MAX_NAME + 1];
+    char type_name[PIO_MAX_NAME + 1];
     PIO_Offset type_size;
     nc_type xtype[NUM_TYPES] = {NC_CHAR, NC_BYTE, NC_SHORT, NC_INT, NC_FLOAT, NC_DOUBLE,
                                 NC_UBYTE, NC_USHORT, NC_UINT, NC_INT64, NC_UINT64};
@@ -339,13 +441,10 @@ create_nc_sample(int sample, int iosysid, int format, char *filename, int my_ran
     {
     case 0:
         return create_nc_sample_0(iosysid, format, filename, my_rank, ncid);
-        break;
     case 1:
         return create_nc_sample_1(iosysid, format, filename, my_rank, ncid);
-        break;
     case 2:
         return create_nc_sample_2(iosysid, format, filename, my_rank, ncid);
-        break;
     }
     return PIO_EINVAL;
 }
@@ -358,13 +457,10 @@ check_nc_sample(int sample, int iosysid, int format, char *filename, int my_rank
     {
     case 0:
         return check_nc_sample_0(iosysid, format, filename, my_rank, ncid);
-        break;
     case 1:
         return check_nc_sample_1(iosysid, format, filename, my_rank, ncid);
-        break;
     case 2:
         return check_nc_sample_2(iosysid, format, filename, my_rank, ncid);
-        break;
     }
     return PIO_EINVAL;
 }
@@ -500,8 +596,8 @@ create_nc_sample_1(int iosysid, int format, char *filename, int my_rank, int *nc
         return ret;
 
     /* Write some data. For the PIOc_put/get functions, all data must
-     * be on compmaster before the function is called. Only
-     * compmaster's arguments are passed to the async msg handler. All
+     * be on compmain before the function is called. Only
+     * compmain's arguments are passed to the async msg handler. All
      * other computation tasks are ignored. */
     for (int i = 0; i < DIM_LEN_S1; i++)
         data[i] = i;
@@ -538,9 +634,9 @@ check_nc_sample_1(int iosysid, int format, char *filename, int my_rank, int *nci
     int ret;
     int ndims, nvars, ngatts, unlimdimid;
     int ndims2, nvars2, ngatts2, unlimdimid2;
-    char dimname[NC_MAX_NAME + 1];
+    char dimname[PIO_MAX_NAME + 1];
     PIO_Offset dimlen;
-    char varname[NC_MAX_NAME + 1];
+    char varname[PIO_MAX_NAME + 1];
     nc_type vartype;
     int varndims, vardimids, varnatts;
 
@@ -634,7 +730,7 @@ create_nc_sample_2(int iosysid, int format, char *filename, int my_rank, int *nc
         return ret;
 
     /* Define a dimension. */
-    char dimname2[NC_MAX_NAME + 1];
+    char dimname2[PIO_MAX_NAME + 1];
     if ((ret = PIOc_def_dim(ncid, FIRST_DIM_NAME_S2, DIM_LEN_S2, &dimid)))
         return ret;
     if ((ret = PIOc_inq_dimname(ncid, 0, dimname2)))
@@ -645,7 +741,7 @@ create_nc_sample_2(int iosysid, int format, char *filename, int my_rank, int *nc
         return ret;
 
     /* Define a 1-D variable. */
-    char varname2[NC_MAX_NAME + 1];
+    char varname2[PIO_MAX_NAME + 1];
     if ((ret = PIOc_def_var(ncid, FIRST_VAR_NAME_S2, NC_INT, NDIM_S2, &dimid, &varid)))
         return ret;
     if ((ret = PIOc_inq_varname(ncid, 0, varname2)))
@@ -660,7 +756,7 @@ create_nc_sample_2(int iosysid, int format, char *filename, int my_rank, int *nc
     short short_att_data = ATT_VALUE_S2;
     float float_att_data = ATT_VALUE_S2;
     double double_att_data = ATT_VALUE_S2;
-    char attname2[NC_MAX_NAME + 1];
+    char attname2[PIO_MAX_NAME + 1];
     /* Write an att and rename it. */
     if ((ret = PIOc_put_att_int(ncid, NC_GLOBAL, FIRST_ATT_NAME_S2, NC_INT, 1, &att_data)))
         return ret;
@@ -695,8 +791,8 @@ create_nc_sample_2(int iosysid, int format, char *filename, int my_rank, int *nc
         return ret;
 
     /* Write some data. For the PIOc_put/get functions, all data must
-     * be on compmaster before the function is called. Only
-     * compmaster's arguments are passed to the async msg handler. All
+     * be on compmain before the function is called. Only
+     * compmain's arguments are passed to the async msg handler. All
      * other computation tasks are ignored. */
     for (int i = 0; i < DIM_LEN_S2; i++)
         data[i] = i;
@@ -726,18 +822,18 @@ int
 check_nc_sample_2(int iosysid, int format, char *filename, int my_rank, int *ncidp)
 {
     int ncid;
-    int ret;
+    int ret=PIO_NOERR;
     int ndims, nvars, ngatts, unlimdimid;
     int ndims2, nvars2, ngatts2, unlimdimid2;
     int dimid2;
-    char dimname[NC_MAX_NAME + 1];
+    char dimname[PIO_MAX_NAME + 1];
     PIO_Offset dimlen;
-    char dimname2[NC_MAX_NAME + 1];
+    char dimname2[PIO_MAX_NAME + 1];
     PIO_Offset dimlen2;
-    char varname[NC_MAX_NAME + 1];
+    char varname[PIO_MAX_NAME + 1];
     nc_type vartype;
     int varndims, vardimids, varnatts;
-    char varname2[NC_MAX_NAME + 1];
+    char varname2[PIO_MAX_NAME + 1];
     nc_type vartype2;
     int varndims2, vardimids2, varnatts2;
     int varid2;
@@ -747,7 +843,7 @@ check_nc_sample_2(int iosysid, int format, char *filename, int my_rank, int *nci
     double double_att_data;
     nc_type atttype;
     PIO_Offset attlen;
-    char myattname[NC_MAX_NAME + 1];
+    char myattname[PIO_MAX_NAME + 1];
     int myid;
     PIO_Offset start[NDIM_S2] = {0}, count[NDIM_S2] = {DIM_LEN_S2};
     int data_in[DIM_LEN_S2];
@@ -896,7 +992,7 @@ check_nc_sample_2(int iosysid, int format, char *filename, int my_rank, int *nci
             return ERR_CHECK;
     }
 
-    return 0;
+    return ret;
 }
 
 /* Create the decomposition to divide the 3-dimensional sample data
@@ -967,7 +1063,7 @@ int create_nc_sample_3(int iosysid, int iotype, int my_rank, int my_comp_idx,
                        char *filename, char *test_name, int verbose, int use_darray,
                        int ioid)
 {
-    char iotype_name[NC_MAX_NAME + 1];
+    char iotype_name[PIO_MAX_NAME + 1];
     int ncid;
     signed char my_char_comp_idx = my_comp_idx;
     int varid[NVAR];
@@ -1020,7 +1116,7 @@ int create_nc_sample_3(int iosysid, int iotype, int my_rank, int my_comp_idx,
     sprintf(var_name, "%s_%d", THREED_VAR_NAME, my_comp_idx);
     if ((ret = PIOc_def_var(ncid, var_name, PIO_SHORT, NDIM3, dimid, &varid[2])))
         ERR(ret);
-    
+
     /* End define mode. */
     if ((ret = PIOc_enddef(ncid)))
         ERR(ret);
@@ -1036,7 +1132,7 @@ int create_nc_sample_3(int iosysid, int iotype, int my_rank, int my_comp_idx,
     /* Write the 2-D variable with put_var(). */
     if ((ret = PIOc_put_var_short(ncid, 1, data_2d)))
         ERR(ret);
-    
+
     /* Write the 3D data. */
     if (use_darray)
     {
@@ -1054,11 +1150,11 @@ int create_nc_sample_3(int iosysid, int iotype, int my_rank, int my_comp_idx,
     {
         PIO_Offset start[NDIM3] = {0, 0, 0};
         PIO_Offset count[NDIM3] = {1, DIM_X_LEN, DIM_Y_LEN};
-        
+
         /* Write a record of the 3-D variable with put_vara(). */
         if ((ret = PIOc_put_vara_short(ncid, varid[2], start, count, data_2d)))
             ERR(ret);
-        
+
         /* Write another record of the 3-D variable with put_vara(). */
         start[0] = 1;
         if ((ret = PIOc_put_vara_short(ncid, varid[2], start, count, data_2d)))
@@ -1179,14 +1275,14 @@ int check_nc_sample_3(int iosysid, int iotype, int my_rank, int my_comp_idx,
     {
         PIO_Offset start[NDIM3] = {0, 0, 0};
         PIO_Offset count[NDIM3] = {1, DIM_X_LEN, DIM_Y_LEN};
-        
+
         /* Read a record of the 3-D variable with get_vara(). */
         if ((ret = PIOc_get_vara_short(ncid, 2, start, count, data_2d)))
             ERR(ret);
         for (int i = 0; i < DIM_X_LEN * DIM_Y_LEN; i++)
             if (data_2d[i] != my_comp_idx + i)
                 ERR(ERR_WRONG);
-        
+
         /* Read another record of the 3-D variable with get_vara(). */
         start[0] = 1;
         if ((ret = PIOc_get_vara_short(ncid, 2, start, count, data_2d)))
@@ -1223,7 +1319,7 @@ int check_nc_sample_3(int iosysid, int iotype, int my_rank, int my_comp_idx,
 int create_nc_sample_4(int iosysid, int iotype, int my_rank, int my_comp_idx,
                        char *filename, char *test_name, int verbose, int num_types)
 {
-    char iotype_name[NC_MAX_NAME + 1];
+    char iotype_name[PIO_MAX_NAME + 1];
     int ncid;
     int scalar_varid[num_types];
     int varid[num_types];

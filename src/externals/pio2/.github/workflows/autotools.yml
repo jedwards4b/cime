@@ -1,0 +1,57 @@
+name: autotools ubuntu openmpi latest with Wall
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    env:
+      CC: mpicc
+      FC: mpifort
+      CFLAGS: "-std=c99 -Wall -Werror"
+      CPPFLAGS: "-I/usr/include -I/usr/lib/x86_64-linux-gnu/netcdf/mpi/include/ "
+      LDFLAGS: "-L/usr/lib/x86_64-linux-gnu -lnetcdf_mpi -lpnetcdf"
+      FCFLAGS: "-Wall -Werror -fallow-argument-mismatch -Wno-conversion"
+    steps:
+    - uses: actions/checkout@v3
+    - name: Installs
+      run: |
+        set -x
+        sudo apt-get update
+        sudo apt-get install netcdf-bin
+        sudo apt-get install libnetcdf-mpi-19
+        sudo apt-get install libnetcdf-mpi-dev
+        sudo apt-get install pnetcdf-bin
+        sudo apt-get install libpnetcdf-dev
+        sudo apt-get install doxygen
+        sudo apt-get install graphviz
+        sudo apt-get install wget
+        sudo apt-get install gfortran
+        sudo apt-get install libjpeg-dev
+        sudo apt-get install libz-dev
+        sudo apt-get install openmpi-bin
+        sudo apt-get install libopenmpi-dev
+        cd /usr/lib/x86_64-linux-gnu
+        sudo ln -fs libnetcdf_mpi.so libnetcdf.so
+    - name: Build ParallelIO with autotools
+      uses: ./.github/actions/parallelio_autotools
+      with:
+        enable_fortran: True
+        with_pnetcdf: /usr
+        with_mpiexec: 'mpiexec --oversubscribe'
+        parallelio_version: ${{ env.GITHUB_SHA }}
+        src_path: ${GITHUB_WORKSPACE}
+    - name: make check
+      run: |
+        cd $GITHUB_WORKSPACE
+        make check
+
+#    - name: Setup tmate session
+#      if: ${{ failure() }}
+#      uses: mxschmitt/action-tmate@v3

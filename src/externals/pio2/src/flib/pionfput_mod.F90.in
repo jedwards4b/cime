@@ -1,28 +1,26 @@
 #define __PIO_FILE__ "pionfput_mod.F90"
+#include "config.h"
 !>
 !! @file
 !! @brief Write routines for non-decomposed NetCDF data.
+!<
+!>
+!! @defgroup PIO_put_var Write Variable
+!! Writes data to a variable.
+!! @warning Although this is a collective call the variable is written from the
+!! root IO task, no consistancy check is made with data passed on other tasks.
 !<
 module pionfput_mod
 #ifdef TIMING
   use perf_mod, only : t_startf, t_stopf      ! _EXTERNAL
 #endif
   use iso_c_binding
-  use pio_kinds, only: i4,r4,r8
+  use pio_kinds, only: i2,i4,r4,r8
   use pio_types, only : file_desc_t, var_desc_t, pio_noerr
 
   implicit none
   private
 
-!>
-!! @defgroup PIO_put_var PIO_put_var
-!! @brief Writes data to a netCDF file.
-!! @details The put_var interface is provided as a simplified interface to
-!!  write variables to a netcdf format file.
-!! @warning Although this is a collective call the variable is written from the
-!!  root IO task, no consistancy check is made with data passed on other tasks.
-!!
-!<
   public :: put_var
   interface put_var
      !  DIMS 0,1,2,3,4,5
@@ -34,35 +32,26 @@ module pionfput_mod
      module procedure put_var1_{TYPE}, put_var1_vdesc_{TYPE}
   end interface
   interface
-     integer(C_INT) function PIOc_put_var_text(ncid, varid, op) &
-          bind(C,name="PIOc_put_var_text")
+     !TYPE text,int,double,short
+     integer(C_INT) function PIOc_put_var_{TYPE}(ncid, varid, op) &
+          bind(C,name="PIOc_put_var_{TYPE}")
        use iso_c_binding
        integer(C_INT), intent(in), value :: ncid
        integer(C_INT), intent(in), value :: varid
-       character(C_CHAR) :: op(*)
-     end function PIOc_put_var_text
+       {CTYPE}, intent(in) :: op(*)
+     end function PIOc_put_var_{TYPE}
   end interface
   interface
-     integer(C_INT) function PIOc_put_vara_text(ncid, varid, start, count, op) &
-          bind(C,name="PIOc_put_vara_text")
+     ! TYPE text,int,double,short
+     integer(C_INT) function PIOc_put_vara_{TYPE}(ncid, varid, start, count, op) &
+          bind(C,name="PIOc_put_vara_{TYPE}")
        use iso_c_binding
        integer(C_INT), intent(in), value :: ncid
        integer(C_INT), intent(in), value :: varid
        integer(C_SIZE_T), intent(in) :: start(*)
        integer(C_SIZE_T), intent(in) :: count(*)
-       character(C_CHAR), intent(in) :: op(*)
-     end function PIOc_put_vara_text
-  end interface
-  interface
-     integer(C_INT) function PIOc_put_vara_int(ncid, varid, start, count, op) &
-          bind(C,name="PIOc_put_vara_int")
-       use iso_c_binding
-       integer(C_INT), intent(in), value :: ncid
-       integer(C_INT), intent(in), value :: varid
-       integer(C_SIZE_T), intent(in) :: start(*)
-       integer(C_SIZE_T), intent(in) :: count(*)
-       integer(C_INT)   , intent(in) :: op(*)
-     end function PIOc_put_vara_int
+       {CTYPE}, intent(in) :: op(*)
+     end function PIOc_put_vara_{TYPE}
   end interface
   interface
      integer(C_INT) function PIOc_put_vara_float(ncid, varid, start, count, op) &
@@ -75,20 +64,6 @@ module pionfput_mod
        real(C_FLOAT)   , intent(in) :: op(*)
      end function PIOc_put_vara_float
   end interface
-  interface
-     integer(C_INT) function PIOc_put_vara_double(ncid, varid, start, count, op) &
-          bind(C,name="PIOc_put_vara_double")
-       use iso_c_binding
-       integer(C_INT), intent(in), value :: ncid
-       integer(C_INT), intent(in), value :: varid
-       integer(C_SIZE_T), intent(in) :: start(*)
-       integer(C_SIZE_T), intent(in) :: count(*)
-       real(C_DOUBLE)   , intent(in) :: op(*)
-     end function PIOc_put_vara_double
-  end interface
-
-
-
 
 contains
 
@@ -107,8 +82,6 @@ contains
     type (File_desc_t), intent(inout) :: File
     integer, intent(in) :: varid, index(:)
     character(len=*), intent(in) :: ival
-    character, allocatable :: cval(:)
-    integer :: i
     integer, allocatable :: count(:)
     integer :: ndims
 
@@ -116,17 +89,12 @@ contains
     allocate(count(ndims))
     count = 1
     count(1) = len(ival)
-    allocate(cval(count(1)+1))
-    cval = C_NULL_CHAR
-    do i=1,len_trim(ival)
-       cval(i) = ival(i:i)
-    end do
 
-!print *,__FILE__,__LINE__,index,count,ival
-     ierr = put_vara_1d_text(File,varid, index, count, cval)
+    ierr = put_vara_internal_text(File%fh, varid, index, count, ival//C_NULL_CHAR)
+
     deallocate(count)
   end function put_var1_text
-! TYPE int,real,double
+! TYPE int,real,double,short
 !>
 !! @public
 !! @ingroup PIO_put_var
@@ -178,7 +146,7 @@ contains
 !! @details
 !! @param File @copydoc file_desc_t
 !! @param vardesc @copydoc var_desc_t
-!! @param start :
+!! @param index :
 !! @param ival : The value for the netcdf metadata
 !! @retval ierr @copydoc error_return
 !<
@@ -197,7 +165,6 @@ contains
 !! @brief Writes a netCDF scalar variable.
 !! @details
 !! @param File @copydoc file_desc_t
-!! @param File : A file handle returne from \ref PIO_openfile or \ref PIO_createfile.
 !! @param varid : The netcdf variable identifier
 !! @param ival : The value for the netcdf variable
 !! @retval ierr @copydoc error_return
@@ -233,7 +200,6 @@ contains
 !! @brief Writes text data to netcdf variable.
 !! @details
 !! @param File @copydoc file_desc_t
-!! @param File : A file handle returne from \ref PIO_openfile or \ref PIO_createfile.
 !! @param varid : The netcdf variable identifier
 !! @param ival : The value for the netcdf metadata
 !! @retval ierr @copydoc error_return
@@ -260,14 +226,13 @@ contains
   end function put_var_{DIMS}d_text
 
 ! DIMS 1,2,3,4,5
-! TYPE int,real,double
+! TYPE int,real,double,short
 !>
 !! @public
 !! @ingroup PIO_put_var
 !! @brief Writes {TYPE} data to a netCDF variable.
 !! @details
-!! @param File @copydoc file_desc_t
-!! @param File : A file handle returne from \ref PIO_openfile or \ref PIO_createfile.
+!! @param ncid : The netcdf file id.
 !! @param varid : The netcdf variable identifier
 !! @param ival : The data to write.
 !! @retval ierr @copydoc error_return
@@ -293,14 +258,13 @@ contains
   end function put_var_internal_{TYPE}
 
 ! DIMS 1,2,3,4,5
-! TYPE int,real,double
+! TYPE int,real,double,short
 !>
 !! @public
 !! @ingroup PIO_put_var
 !! @brief Write {TYPE} data to a netCDF varaible of {DIMS} dimension(s).
 !! @details
 !! @param File @copydoc file_desc_t
-!! @param File : A file handle returne from \ref PIO_openfile or \ref PIO_createfile.
 !! @param varid : The netcdf variable identifier
 !! @param ival : The value for the netcdf metadata
 !! @retval ierr @copydoc error_return
@@ -319,14 +283,13 @@ contains
 
   end function put_var_{DIMS}d_{TYPE}
 
-! TYPE int,real,double
+! TYPE int,real,double,short
 !>
 !! @public
 !! @ingroup PIO_put_var
 !! @brief Writes {TYPE} data to a netCDF scalar variable.
 !! @details
 !! @param File @copydoc file_desc_t
-!! @param File : A file handle returne from \ref PIO_openfile or \ref PIO_createfile.
 !! @param varid : The netcdf variable identifier
 !! @param ival : The value for the netcdf metadata
 !! @retval ierr @copydoc error_return
@@ -348,6 +311,7 @@ contains
   end function put_var_0d_{TYPE}
 
 
+!! TYPE int,real,double,short
   integer function put_vara_internal_{TYPE} (ncid,varid,start,count, ival) result(ierr)
     integer, intent(in) :: ncid
     integer, intent(in) :: varid
@@ -455,7 +419,19 @@ contains
     character(C_CHAR), intent(out) :: cstr(:)
     integer :: clen, sd({DIMS})
     integer :: cinc
-    integer :: i, j, k, m, n, q
+    integer :: i, j
+#if {DIMS} >= 2
+    integer :: k
+#endif
+#if {DIMS} >= 3
+    integer :: m
+#endif
+#if {DIMS} >= 4
+    integer :: n
+#endif
+#if {DIMS} == 5
+    integer :: q
+#endif
 
     cstr = C_NULL_CHAR
     do i=1,{DIMS}
@@ -531,9 +507,7 @@ contains
 
   end subroutine Fstring2Cstring_{DIMS}d
 
-
-
-! TYPE int,real,double
+! TYPE int,real,double,short
 ! DIMS 1,2,3,4,5
 !>
 !! @public

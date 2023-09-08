@@ -1,8 +1,14 @@
 !>
-!! @file 
-!! @brief User interface Module for PIO, this is the only file a user program should 'use'
-!! 
+!! @file
+!! User interface Module for PIO, this is the only file a user program should 'use'.
+!! @author Jim Edwards
 !<
+
+!>
+!! @defgroup PIO_set_blocksize Box Rearranger Settings
+!! Set the box rearranger blocksize in Fortran.
+#include <netcdf_meta.h>
+#include "config.h"
 
 module pio
 ! Package all exposed variables and functions under one roof
@@ -11,31 +17,45 @@ module pio
 
   use pio_kinds, only :  pio_offset_kind
 
+  use pionfatt_mod, only : PIO_put_att   => put_att,        &
+       PIO_get_att   => get_att, &
+       PIO_inq_var_fill => inq_var_fill
+  use pionfput_mod, only : PIO_put_var   => put_var
+  use pionfget_mod, only : PIO_get_var   => get_var
+  use pio_support, only: pio_writedof, pio_readdof, pio_write_nc_dof, pio_read_nc_dof
+  use iso_c_binding
+
   use piolib_mod, only : pio_initdecomp, &
        pio_openfile, pio_closefile, pio_createfile, pio_setdebuglevel, &
        pio_seterrorhandling, pio_setframe, pio_init, pio_get_local_array_size, &
        pio_freedecomp, pio_syncfile, &
        pio_finalize, pio_set_hint, pio_getnumiotasks, pio_file_is_open, &
        PIO_deletefile, PIO_get_numiotasks, PIO_iotype_available, &
-       pio_set_rearr_opts
+       pio_set_rearr_opts, pio_initdecomp_readonly
+
+#ifdef NETCDF_INTEGRATION
+  use ncint_mod, only: nf_def_iosystem, nf_free_iosystem, &
+       nf_def_decomp, nf_free_decomp, nf_put_vard_int, NF_PIO
+#endif
 
   use pio_types, only : io_desc_t, file_desc_t, var_desc_t, iosystem_desc_t, &
        pio_rearr_opt_t, pio_rearr_comm_fc_opt_t, pio_rearr_comm_fc_2d_enable,&
        pio_rearr_comm_fc_1d_comp2io, pio_rearr_comm_fc_1d_io2comp,&
        pio_rearr_comm_fc_2d_disable, pio_rearr_comm_unlimited_pend_req,&
-       pio_rearr_comm_p2p, pio_rearr_comm_coll,&
+       pio_rearr_comm_p2p, pio_rearr_comm_coll, pio_short, &
        pio_int, pio_real, pio_double, pio_noerr, iotype_netcdf, &
        iotype_pnetcdf,  pio_iotype_netcdf4p, pio_iotype_netcdf4c, &
        pio_iotype_pnetcdf,pio_iotype_netcdf, &
        pio_global, pio_char, pio_write, pio_nowrite, pio_clobber, pio_noclobber, &
        pio_max_name, pio_max_var_dims, pio_rearr_subset, pio_rearr_box, &
-#if defined(_NETCDF) || defined(_PNETCDF)
        pio_nofill, pio_unlimited, pio_fill_int, pio_fill_double, pio_fill_float, &
+       pio_64bit_offset, pio_64bit_data, pio_fill, &
+#ifdef NC_HAS_QUANTIZE
+       PIO_NOQUANTIZE, PIO_QUANTIZE_BITGROOM, PIO_QUANTIZE_GRANULARBR, PIO_QUANTIZE_BITROUND, &
 #endif
-       pio_64bit_offset, pio_64bit_data, &
+  ! last line of use clause needs to be outside of macro
        pio_internal_error, pio_bcast_error, pio_return_error, pio_default
-
-  use piodarray, only : pio_read_darray, pio_write_darray, pio_set_buffer_size_limit  
+  use piodarray, only : pio_read_darray, pio_write_darray, pio_set_buffer_size_limit
 
   use pio_nf, only:        &
        PIO_enddef,            &
@@ -56,7 +76,25 @@ module pio
        PIO_inq_unlimdim, &
        PIO_def_dim   ,        &
        PIO_def_var   ,        &
-       PIO_def_var_deflate   ,        &
+#ifdef PIO_HAS_PAR_FILTERS
+#ifdef NC_HAS_BZ
+       PIO_def_var_bzip2,     &
+#endif
+#ifdef NC_HAS_ZSTD
+       PIO_def_var_zstandard, &
+#endif
+#ifdef NC_HAS_QUANTIZE
+       PIO_def_var_quantize     , &
+       PIO_inq_var_quantize     , &
+#endif
+       PIO_inq_var_filter_ids   , &
+       PIO_inq_var_filter_info  , &
+       PIO_inq_filter_avail     , &
+       PIO_def_var_szip, &
+#endif
+       PIO_def_var_deflate   ,&
+       PIO_def_var_chunking, &
+       PIO_inq_var_chunking, &
        PIO_redef     ,          &
        PIO_set_log_level,          &
        PIO_inquire_variable , &
@@ -65,27 +103,18 @@ module pio
        PIO_get_chunk_cache, &
        PIO_set_var_chunk_cache, &
        PIO_get_var_chunk_cache, &
+       PIO_set_fill, &
        PIO_strerror
 
-  use pionfatt_mod, only : PIO_put_att   => put_att,        &
-       PIO_get_att   => get_att
-  use pionfput_mod, only : PIO_put_var   => put_var
-  use pionfget_mod, only : PIO_get_var   => get_var
-  use pio_support, only: pio_writedof
-  use iso_c_binding
 
   implicit none
   public
 contains
-!>
-!! @public
-!! @defgroup PIO_set_blocksize
-!<
-!>
-!! @public
-!! @ingroup PIO_set_blocksize
-!! @brief Set the target blocksize for the box rearranger
-!<
+  !>
+  !! @ingroup PIO_set_blocksize
+  !! @brief Set the target blocksize for the box rearranger
+  !! @author Jim Edwards
+  !<
   subroutine pio_set_blocksize(blocksize)
     integer :: blocksize
     integer :: ierr
@@ -100,10 +129,10 @@ contains
   end subroutine pio_set_blocksize
 
 
-!>
-!! @public
-!! @brief Logical function returns true if the task is an IO task.
-!<
+  !>
+  !! Logical function returns true if the task is an IO task.
+  !! @author Jim Edwards
+  !<
   function pio_iam_iotask(iosystem) result(task)
     use iso_c_binding
     type(iosystem_desc_t), intent(in) :: iosystem
@@ -118,15 +147,15 @@ contains
          logical(C_BOOL), intent(out) :: iotask
        end function PIOc_iam_iotask
     end interface
-    
+
     ierr = PIOc_iam_iotask(iosystem%iosysid, ctask)
     task = ctask
   end function pio_iam_iotask
-  
-!>
-!! @public
-!! @brief Integer function returns rank of IO task.
-!<
+
+  !>
+  !! Integer function returns rank of IO task.
+  !! @author Jim Edwards
+  !<
   function pio_iotask_rank(iosystem) result(rank)
     type(iosystem_desc_t), intent(in) :: iosystem
     integer :: rank, ierr
@@ -138,14 +167,14 @@ contains
          integer(C_INT), intent(out) :: rank
        end function PIOc_iotask_rank
     end interface
-    
+
     ierr = PIOc_iotask_rank(iosystem%iosysid, rank)
   end function pio_iotask_rank
 
-!>
-!! @public
-!! @brief Sets active to true if IO system is active.
-!<
+  !>
+  !! Sets active to true if IO system is active.
+  !! @author Jim Edwards
+  !<
   subroutine pio_iosystem_is_active(iosystem, active)
     use iso_c_binding
     type(iosystem_desc_t), intent(in) :: iosystem
@@ -165,6 +194,4 @@ contains
     active = lactive
   end subroutine pio_iosystem_is_active
 
-
 end module pio
-

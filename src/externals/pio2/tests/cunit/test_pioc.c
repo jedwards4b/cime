@@ -1,4 +1,4 @@
-/*
+ /*
  * Tests for PIO Functions.
  *
  * @author Ed Hartnett
@@ -7,6 +7,7 @@
 #include <pio.h>
 #include <pio_internal.h>
 #include <pio_tests.h>
+#include <pio_meta.h>
 
 /* The number of tasks this test should run on. */
 #define TARGET_NTASKS 4
@@ -539,11 +540,10 @@ int test_iotypes(int my_rank)
  */
 int check_strerror_netcdf(int my_rank)
 {
-#define NUM_NETCDF_TRIES 4
-    int errcode[NUM_NETCDF_TRIES] = {PIO_EBADID, NC4_LAST_ERROR - 1, 0, 1};
+#define NUM_NETCDF_TRIES 3
+    int errcode[NUM_NETCDF_TRIES] = {PIO_EBADID, 0, 1};
     const char *expected[NUM_NETCDF_TRIES] = {"NetCDF: Not a valid ID",
-                                              "Unknown Error: Unrecognized error code", "No error",
-                                              nc_strerror(1)};
+                                              "No error", nc_strerror(1)};
     int ret;
 
     if ((ret = check_error_strings(my_rank, NUM_NETCDF_TRIES, errcode, expected)))
@@ -551,9 +551,7 @@ int check_strerror_netcdf(int my_rank)
 
     /* When called with a code of 0, these functions should do nothing
      * and return 0. */
-    if (check_mpi(NULL, 0, __FILE__, __LINE__))
-        ERR(ERR_WRONG);
-    if (check_mpi2(NULL, NULL, 0, __FILE__, __LINE__))
+    if (check_mpi(NULL, NULL, 0, __FILE__, __LINE__))
         ERR(ERR_WRONG);
     if (pio_err(NULL, NULL, 0, __FILE__, __LINE__))
         ERR(ERR_WRONG);
@@ -561,15 +559,6 @@ int check_strerror_netcdf(int my_rank)
         ERR(ERR_WRONG);
     if (check_netcdf2(NULL, NULL, 0, __FILE__, __LINE__))
         ERR(ERR_WRONG);
-
-    /* When called with other error messages, these functions should
-     * return PIO_EIO. */
-    /* if (check_mpi(NULL, MPI_ERR_OTHER, __FILE__, __LINE__) != PIO_EIO) */
-    /*     ERR(ERR_WRONG); */
-    /* This returns the correct result, but prints a confusing error
-     * message during the test run, so I'll leave it commented out. */
-    /* if (check_mpi(NULL, MPI_ERR_UNKNOWN, __FILE__, __LINE__) != PIO_EIO) */
-    /*     ERR(ERR_WRONG); */
 
     return PIO_NOERR;
 }
@@ -627,14 +616,13 @@ int check_strerror_pnetcdf(int my_rank)
  */
 int check_strerror_pio(int my_rank)
 {
-#define NUM_PIO_TRIES 6
+#define NUM_PIO_TRIES 5
     int errcode[NUM_PIO_TRIES] = {PIO_EBADID,
-                                  NC_ENOTNC3, NC4_LAST_ERROR - 1, 0, 1,
+                                  NC_ENOTNC3, 0, 1,
                                   PIO_EBADIOTYPE};
     const char *expected[NUM_PIO_TRIES] = {"NetCDF: Not a valid ID",
                                            "NetCDF: Attempting netcdf-3 operation on netcdf-4 file",
-                                           "Unknown Error: Unrecognized error code", "No error",
-                                           nc_strerror(1), "Bad IO type"};
+                                           "No error", nc_strerror(1), "Bad IO type"};
     int ret;
 
     if ((ret = check_error_strings(my_rank, NUM_PIO_TRIES, errcode, expected)))
@@ -851,7 +839,7 @@ int test_names(int iosysid, int num_flavors, int *flavor, int my_rank,
     {
         int ncid;
         int varid;
-        char filename[PIO_MAX_NAME + 1]; /* Test filename. */
+        char filename[PIO_MAX_NAME * 2 + 1]; /* Test filename. */
         char iotype_name[PIO_MAX_NAME + 1];
         int dimids[NDIM];        /* The dimension IDs. */
         int att_val = ATT_VAL;
@@ -955,7 +943,7 @@ int test_files(int iosysid, int num_flavors, int *flavor, int my_rank)
      * available ways. */
     for (int fmt = 0; fmt < num_flavors; fmt++)
     {
-        char filename[PIO_MAX_NAME + 1]; /* Test filename. */
+        char filename[PIO_MAX_NAME * 2 + 1]; /* Test filename. */
         char iotype_name[PIO_MAX_NAME + 1];
 
         /* Overwrite existing test file. */
@@ -1054,14 +1042,14 @@ int test_empty_files(int iosysid, int num_flavors, int *flavor, int my_rank)
      * available ways. */
     for (int fmt = 0; fmt < num_flavors; fmt++)
     {
-        char filename[PIO_MAX_NAME + 1]; /* Test filename. */
+        char filename[PIO_MAX_NAME * 2 + 1]; /* Test filename. */
         char iotype_name[PIO_MAX_NAME + 1];
 
         /* Create a filename. */
         if ((ret = get_iotype_name(flavor[fmt], iotype_name)))
             ERR(ret);
         sprintf(filename, "%s_empty_%s.nc", TEST_NAME, iotype_name);
-        
+
         if ((ret = PIOc_createfile(iosysid, &ncid, &flavor[fmt], filename, PIO_CLOBBER)))
             ERR(ret);
 
@@ -1089,10 +1077,10 @@ int test_empty_files(int iosysid, int num_flavors, int *flavor, int my_rank)
 /* Check that the fill values are correctly reported by find_var_fill().
  *
  * @param ncid the ID of the open test file.
- * @param ntypes the number ot types we are testing. 
+ * @param ntypes the number ot types we are testing.
  * @param use_custom_fill true if custom fill values were used.
  * @param my_rank rank of this task.
- * @return 0 on success. 
+ * @return 0 on success.
  */
 int check_fillvalues(int ncid, int num_types, int use_custom_fill, int my_rank)
 {
@@ -1141,7 +1129,7 @@ int check_fillvalues(int ncid, int num_types, int use_custom_fill, int my_rank)
 
     if ((ret = pio_get_file(ncid, &file)))
         ERR(ret);
-            
+
     for (int v = 0; v < num_types; v++)
     {
         var_desc_t *vdesc;
@@ -1149,7 +1137,7 @@ int check_fillvalues(int ncid, int num_types, int use_custom_fill, int my_rank)
         /* Get the var info. */
         if ((ret = get_var_desc(v, &file->varlist, &vdesc)))
             ERR(ret);
-                
+
         /* Check the fill value with this internal function. */
         if ((ret = find_var_fillvalue(file, v, vdesc)))
             ERR(ret);
@@ -1207,7 +1195,7 @@ int check_fillvalues(int ncid, int num_types, int use_custom_fill, int my_rank)
 
     return PIO_NOERR;
 }
-        
+
 /* Test the internal function that determins a var's fillvalue.
  *
  * @param iosysid the iosystem ID that will be used for the test.
@@ -1231,7 +1219,7 @@ int test_find_var_fillvalue(int iosysid, int num_flavors, int *flavor,
      * available ways. */
     for (int fmt = 0; fmt < num_flavors; fmt++)
     {
-        char filename[PIO_MAX_NAME + 1]; /* Test filename. */
+        char filename[PIO_MAX_NAME * 2 + 1]; /* Test filename. */
         char iotype_name[PIO_MAX_NAME + 1];
         int num_types = NUM_CLASSIC_TYPES;
 
@@ -1383,7 +1371,7 @@ int test_deletefile(int iosysid, int num_flavors, int *flavor, int my_rank)
      * available ways. */
     for (int fmt = 0; fmt < num_flavors; fmt++)
     {
-        char filename[PIO_MAX_NAME + 1]; /* Test filename. */
+        char filename[PIO_MAX_NAME * 2 + 1]; /* Test filename. */
         char iotype_name[PIO_MAX_NAME + 1];
         int old_method;
 
@@ -1469,7 +1457,7 @@ int test_nc4(int iosysid, int num_flavors, int *flavor, int my_rank)
      * available ways. */
     for (int fmt = 0; fmt < num_flavors; fmt++)
     {
-        char filename[PIO_MAX_NAME + 1]; /* Test filename. */
+        char filename[PIO_MAX_NAME * 2 + 1]; /* Test filename. */
         char iotype_name[PIO_MAX_NAME + 1];
 
         /* Create a filename. */
@@ -1583,18 +1571,19 @@ int test_nc4(int iosysid, int num_flavors, int *flavor, int my_rank)
             if ((ret = PIOc_def_var_chunking(ncid, 0, NC_CHUNKED, chunksize)))
                 ERR(ret);
 
-            /* Setting deflate should not work with parallel iotype. */
-            ret = PIOc_def_var_deflate(ncid, 0, 0, 1, 1);
-            if (flavor[fmt] == PIO_IOTYPE_NETCDF4P)
-            {
-                if (ret == PIO_NOERR)
-                    ERR(ERR_WRONG);
-            }
-            else
-            {
-                if (ret != PIO_NOERR)
-                    ERR(ERR_WRONG);
-            }
+            /* Setting deflate works with parallel iotype starting
+	     * with netcdf-c-4.7.4. If present, PIO_HAS_PAR_FILTERS will
+	     * be defined. */
+	    ret = PIOc_def_var_deflate(ncid, 0, 0, 1, 1);
+#ifdef PIO_HAS_PAR_FILTERS
+	    if (ret)
+		ERR(ret);
+#else
+	    if (flavor[fmt] == PIO_IOTYPE_NETCDF4C && ret)
+		ERR(ret);
+	    if (flavor[fmt] == PIO_IOTYPE_NETCDF4P && !ret)
+		ERR(ERR_WRONG);
+#endif
 
             /* Check that the inq_varname function works. */
             if ((ret = PIOc_inq_varname(ncid, 0, NULL)))
@@ -1624,10 +1613,18 @@ int test_nc4(int iosysid, int num_flavors, int *flavor, int my_rank)
                 if (shuffle || !deflate || deflate_level != 1)
                     ERR(ERR_AWFUL);
 
-            /* For parallel netCDF-4, no compression available. :-( */
+            /* For parallel netCDF-4, we turned on deflate above, if
+	     * PIO_HAS_PAR_FILTERS is defined. */
             if (flavor[fmt] == PIO_IOTYPE_NETCDF4P)
-                if (shuffle || deflate)
+	    {
+#ifdef PIO_HAS_PAR_FILTERS
+		if (shuffle || !deflate || deflate_level != 1)
                     ERR(ERR_AWFUL);
+#else
+		if (shuffle || deflate)
+                    ERR(ERR_AWFUL);
+#endif /* PIO_HAS_PAR_FILTERS */
+	    }
 
             /* Check setting the chunk cache for the variable. */
             if ((ret = PIOc_set_var_chunk_cache(ncid, 0, VAR_CACHE_SIZE, VAR_CACHE_NELEMS,
@@ -1806,7 +1803,7 @@ int test_scalar(int iosysid, int num_flavors, int *flavor, int my_rank, int asyn
      * available ways. */
     for (int fmt = 0; fmt < num_flavors; fmt++)
     {
-        char filename[PIO_MAX_NAME + 1]; /* Test filename. */
+        char filename[PIO_MAX_NAME * 2 + 1]; /* Test filename. */
         char iotype_name[PIO_MAX_NAME + 1];
 
         /* Create a filename. */
@@ -1829,6 +1826,9 @@ int test_scalar(int iosysid, int num_flavors, int *flavor, int my_rank, int asyn
         /* Write a scalar value. */
         int test_val = TEST_VAL_42;
         if ((ret = PIOc_put_var_int(ncid, varid, &test_val)))
+            ERR(ret);
+        /* flush the write buffer */
+        if ((ret = PIOc_sync(ncid)))
             ERR(ret);
 
         /* Check the scalar var. */
@@ -1871,7 +1871,7 @@ int test_malloc_iodesc2(int iosysid, int my_rank)
     int test_type[NUM_NETCDF_TYPES] = {PIO_BYTE, PIO_CHAR, PIO_SHORT, PIO_INT,
                                        PIO_FLOAT, PIO_DOUBLE, PIO_UBYTE, PIO_USHORT,
                                        PIO_UINT, PIO_INT64, PIO_UINT64};
-    MPI_Datatype mpi_type[NUM_NETCDF_TYPES] = {MPI_BYTE, MPI_CHAR, MPI_SHORT, MPI_INT,
+    MPI_Datatype mpi_type[NUM_NETCDF_TYPES] = {MPI_SIGNED_CHAR, MPI_CHAR, MPI_SHORT, MPI_INT,
                                                MPI_FLOAT, MPI_DOUBLE, MPI_UNSIGNED_CHAR,
                                                MPI_UNSIGNED_SHORT, MPI_UNSIGNED, MPI_LONG_LONG,
                                                MPI_UNSIGNED_LONG_LONG, MPI_CHAR};
@@ -1905,8 +1905,8 @@ int test_decomp_internal(int my_test_size, int my_rank, int iosysid, int dim_len
                          MPI_Comm test_comm, int async)
 {
     int ioid;
-    char filename[NC_MAX_NAME + 1];    /* Test decomp filename. */
-    char nc_filename[NC_MAX_NAME + 1]; /* Test decomp filename (netcdf version). */
+    char filename[PIO_MAX_NAME + 1];    /* Test decomp filename. */
+    char nc_filename[PIO_MAX_NAME + 1]; /* Test decomp filename (netcdf version). */
     iosystem_desc_t *ios; /* IO system info. */
     int ret;
 
@@ -2094,7 +2094,7 @@ int test_decomp_public(int my_test_size, int my_rank, int iosysid, int dim_len,
                        MPI_Comm test_comm, int async)
 {
     int ioid;
-    char nc_filename[NC_MAX_NAME + 1]; /* Test decomp filename (netcdf version). */
+    char nc_filename[PIO_MAX_NAME + 1]; /* Test decomp filename (netcdf version). */
     int ret;
 
     /* This will be our file name for writing out decompositions. */
@@ -2239,7 +2239,7 @@ int test_decomp_public_2(int my_test_size, int my_rank, int iosysid, int dim_len
                          MPI_Comm test_comm, int async)
 {
     int ioid;
-    char nc_filename[NC_MAX_NAME + 1]; /* Test decomp filename (netcdf version). */
+    char nc_filename[PIO_MAX_NAME + 1]; /* Test decomp filename (netcdf version). */
     int ret;
 
     /* This will be our file name for writing out decompositions. */
@@ -2265,7 +2265,7 @@ int test_decomp_2(int my_test_size, int my_rank, int iosysid, int dim_len,
                   MPI_Comm test_comm, int async)
 {
     int ioid;
-    char nc_filename[NC_MAX_NAME + 1]; /* Test decomp filename (netcdf version). */
+    char nc_filename[PIO_MAX_NAME + 1]; /* Test decomp filename (netcdf version). */
     int ret;
 
     /* This will be our file name for writing out decompositions. */
@@ -2319,8 +2319,8 @@ int test_all(int iosysid, int num_flavors, int *flavor, int my_rank, MPI_Comm te
 {
     int ioid;
     int my_test_size;
-    char filename[NC_MAX_NAME + 1];
-    char nc_filename[NC_MAX_NAME + 1];
+    char filename[PIO_MAX_NAME + 1];
+    char nc_filename[PIO_MAX_NAME + 1];
     int ret; /* Return code. */
 
     if ((ret = MPI_Comm_size(test_comm, &my_test_size)))
@@ -2329,7 +2329,6 @@ int test_all(int iosysid, int num_flavors, int *flavor, int my_rank, MPI_Comm te
     /* This will be our file name for writing out decompositions. */
     sprintf(filename, "decomp_%d.txt", my_rank);
     sprintf(nc_filename, "decomp_%d.nc", my_rank);
-
     /* This is a simple test that just creates the decomp with
      * async. */
     if (async)

@@ -18,10 +18,13 @@ SET(GENERATED_SRCS pio_file_simple_tests.F90
   pio_decomp_tests.F90
   pio_decomp_tests_1d.F90
   pio_decomp_tests_2d.F90
+  pio_decomphalo_tests_2d.F90
   pio_decomp_tests_3d.F90
   pio_decomp_frame_tests.F90
   pio_decomp_fillval.F90
   pio_iosystem_tests.F90
+  pio_iosystem_async_tests.F90
+  pio_filter_tests.F90
   pio_iosystem_tests2.F90
   pio_iosystem_tests3.F90)
 
@@ -36,7 +39,7 @@ foreach (SRC_FILE IN LISTS GENERATED_SRCS)
 endforeach ()
 
 if ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
-  add_definitions(-ffree-line-length-none)
+  add_definitions(-ffree-line-length-none -Wno-conversion)
 endif()
 
 if (CMAKE_Fortran_COMPILER_ID STREQUAL "NAG")
@@ -54,13 +57,15 @@ endif()
 #==============================================================================
 
 # Test Timeout (4 min = 240 sec)
-set (DEFAULT_TEST_TIMEOUT 480)
+set (DEFAULT_TEST_TIMEOUT 600)
+
+add_library(pio_tutil util/pio_tutil.F90)
+target_link_libraries(pio_tutil piof pioc)
 
 #===== pio_init_finalize =====
 add_executable (pio_init_finalize EXCLUDE_FROM_ALL
-  pio_init_finalize.F90
-  ${CMAKE_CURRENT_SOURCE_DIR}/util/pio_tutil.F90)
-target_link_libraries (pio_init_finalize piof)
+  pio_init_finalize.F90)
+target_link_libraries (pio_init_finalize pio_tutil)
 add_dependencies (tests pio_init_finalize)
 
 if (PIO_USE_MPISERIAL)
@@ -96,30 +101,10 @@ else ()
     TIMEOUT ${DEFAULT_TEST_TIMEOUT})
 endif ()
 
-#===== pio_file_simple_tests =====
-add_executable (pio_file_simple_tests EXCLUDE_FROM_ALL
-  pio_file_simple_tests.F90
-  ${CMAKE_CURRENT_SOURCE_DIR}/util/pio_tutil.F90)
-target_link_libraries (pio_file_simple_tests piof)
-add_dependencies (tests pio_file_simple_tests)
-
-if (PIO_USE_MPISERIAL)
-  add_test(NAME pio_file_simple_tests
-    COMMAND pio_file_simple_tests)
-  set_tests_properties(pio_file_simple_tests
-    PROPERTIES TIMEOUT ${DEFAULT_TEST_TIMEOUT})
-else ()
-  add_mpi_test(pio_file_simple_tests
-    EXECUTABLE ${CMAKE_CURRENT_BINARY_DIR}/pio_file_simple_tests
-    NUMPROCS 2
-    TIMEOUT ${DEFAULT_TEST_TIMEOUT})
-endif ()
-
 #===== pio_file_fail =====
 add_executable (pio_file_fail EXCLUDE_FROM_ALL
-  pio_file_fail.F90
-  ${CMAKE_CURRENT_SOURCE_DIR}/util/pio_tutil.F90)
-target_link_libraries (pio_file_fail piof)
+  pio_file_fail.F90)
+target_link_libraries (pio_file_fail pio_tutil)
 if ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
   target_compile_options (pio_init_finalize
     PRIVATE -ffree-line-length-none)
@@ -138,11 +123,28 @@ else ()
     TIMEOUT ${DEFAULT_TEST_TIMEOUT})
 endif ()
 
+#===== pio_file_simple_tests =====
+add_executable (pio_file_simple_tests EXCLUDE_FROM_ALL
+  pio_file_simple_tests.F90)
+target_link_libraries (pio_file_simple_tests pio_tutil)
+add_dependencies (tests pio_file_simple_tests)
+
+if (PIO_USE_MPISERIAL)
+  add_test(NAME pio_file_simple_tests
+    COMMAND pio_file_simple_tests)
+  set_tests_properties(pio_file_simple_tests
+    PROPERTIES TIMEOUT ${DEFAULT_TEST_TIMEOUT})
+else ()
+  add_mpi_test(pio_file_simple_tests
+    EXECUTABLE ${CMAKE_CURRENT_BINARY_DIR}/pio_file_simple_tests
+    NUMPROCS 2
+    TIMEOUT ${DEFAULT_TEST_TIMEOUT})
+endif ()
+
 #===== ncdf_simple_tests =====
 add_executable (ncdf_simple_tests EXCLUDE_FROM_ALL
-  ncdf_simple_tests.F90
-  ${CMAKE_CURRENT_SOURCE_DIR}/util/pio_tutil.F90)
-target_link_libraries (ncdf_simple_tests piof)
+  ncdf_simple_tests.F90)
+target_link_libraries (ncdf_simple_tests pio_tutil)
 add_dependencies (tests ncdf_simple_tests)
 
 if (PIO_USE_MPISERIAL)
@@ -159,9 +161,8 @@ endif ()
 
 #===== ncdf_get_put =====
 add_executable (ncdf_get_put EXCLUDE_FROM_ALL
-  ncdf_get_put.F90
-  ${CMAKE_CURRENT_SOURCE_DIR}/util/pio_tutil.F90)
-target_link_libraries (ncdf_get_put piof)
+  ncdf_get_put.F90)
+target_link_libraries (ncdf_get_put pio_tutil)
 add_dependencies (tests ncdf_get_put)
 
 if (PIO_USE_MPISERIAL)
@@ -186,9 +187,8 @@ endif ()
 
 #===== ncdf_fail =====
 add_executable (ncdf_fail EXCLUDE_FROM_ALL
-  ncdf_fail.F90
-  ${CMAKE_CURRENT_SOURCE_DIR}/util/pio_tutil.F90)
-target_link_libraries (ncdf_fail piof)
+  ncdf_fail.F90)
+target_link_libraries (ncdf_fail pio_tutil)
 add_dependencies (tests ncdf_fail)
 
 if (PIO_USE_MPISERIAL)
@@ -205,9 +205,8 @@ endif ()
 
 #===== ncdf_inq =====
 add_executable (ncdf_inq EXCLUDE_FROM_ALL
-  ncdf_inq.F90
-  ${CMAKE_CURRENT_SOURCE_DIR}/util/pio_tutil.F90)
-target_link_libraries (ncdf_inq piof)
+  ncdf_inq.F90)
+target_link_libraries (ncdf_inq pio_tutil)
 add_dependencies (tests ncdf_inq)
 
 if (PIO_USE_MPISERIAL)
@@ -224,74 +223,72 @@ endif ()
 
 #===== pio_rearr =====
 add_executable (pio_rearr EXCLUDE_FROM_ALL
-    pio_rearr.F90
-    ${CMAKE_CURRENT_SOURCE_DIR}/util/pio_tutil.F90)
-target_link_libraries (pio_rearr piof)
+    pio_rearr.F90)
+target_link_libraries (pio_rearr pio_tutil)
 add_dependencies (tests pio_rearr)
 
 if (PIO_USE_MPISERIAL)
     add_test(NAME pio_rearr
-        COMMAND pio_rearr)
+	COMMAND pio_rearr)
     set_tests_properties(pio_rearr
-        PROPERTIES TIMEOUT ${DEFAULT_TEST_TIMEOUT})
+	PROPERTIES TIMEOUT ${DEFAULT_TEST_TIMEOUT})
 else ()
     add_mpi_test(pio_rearr
-        EXECUTABLE ${CMAKE_CURRENT_BINARY_DIR}/pio_rearr
-        NUMPROCS 4
-        TIMEOUT ${DEFAULT_TEST_TIMEOUT})
+	EXECUTABLE ${CMAKE_CURRENT_BINARY_DIR}/pio_rearr
+	NUMPROCS 4
+	TIMEOUT ${DEFAULT_TEST_TIMEOUT})
 endif ()
 
 #===== pio_rearr_opts =====
 add_executable (pio_rearr_opts EXCLUDE_FROM_ALL
-    pio_rearr_opts.F90
-    ${CMAKE_CURRENT_SOURCE_DIR}/util/pio_tutil.F90)
-target_link_libraries (pio_rearr_opts piof)
+    pio_rearr_opts.F90)
+target_link_libraries (pio_rearr_opts pio_tutil)
 add_dependencies (tests pio_rearr_opts)
 
 if (PIO_USE_MPISERIAL)
     add_test(NAME pio_rearr_opts
-        COMMAND pio_rearr_opts)
+	COMMAND pio_rearr_opts)
     set_tests_properties(pio_rearr_opts
-        PROPERTIES TIMEOUT ${DEFAULT_TEST_TIMEOUT})
+	PROPERTIES TIMEOUT ${DEFAULT_TEST_TIMEOUT})
 else ()
     add_mpi_test(pio_rearr_opts
-        EXECUTABLE ${CMAKE_CURRENT_BINARY_DIR}/pio_rearr_opts
-        NUMPROCS 4
-        TIMEOUT ${DEFAULT_TEST_TIMEOUT})
+	EXECUTABLE ${CMAKE_CURRENT_BINARY_DIR}/pio_rearr_opts
+	NUMPROCS 4
+	TIMEOUT ${DEFAULT_TEST_TIMEOUT})
 endif ()
+# Test times out in github action.
+set_tests_properties(pio_rearr_opts PROPERTIES LABELS "skipforspack")
 
 #===== pio_rearr_opts2 =====
 add_executable (pio_rearr_opts2 EXCLUDE_FROM_ALL
-    pio_rearr_opts2.F90
-    ${CMAKE_CURRENT_SOURCE_DIR}/util/pio_tutil.F90)
-target_link_libraries (pio_rearr_opts2 piof)
+    pio_rearr_opts2.F90)
+target_link_libraries (pio_rearr_opts2 pio_tutil)
 add_dependencies (tests pio_rearr_opts2)
 
 if (PIO_USE_MPISERIAL)
     add_test(NAME pio_rearr_opts2
-        COMMAND pio_rearr_opts2)
+	COMMAND pio_rearr_opts2)
     set_tests_properties(pio_rearr_opts2
-        PROPERTIES TIMEOUT ${DEFAULT_TEST_TIMEOUT})
+	PROPERTIES TIMEOUT ${DEFAULT_TEST_TIMEOUT})
 else ()
     add_mpi_test(pio_rearr_opts2_1p
-        EXECUTABLE ${CMAKE_CURRENT_BINARY_DIR}/pio_rearr_opts2
-        NUMPROCS 1
-        TIMEOUT ${DEFAULT_TEST_TIMEOUT})
+	EXECUTABLE ${CMAKE_CURRENT_BINARY_DIR}/pio_rearr_opts2
+	NUMPROCS 1
+	TIMEOUT ${DEFAULT_TEST_TIMEOUT})
     add_mpi_test(pio_rearr_opts2_3p
-        EXECUTABLE ${CMAKE_CURRENT_BINARY_DIR}/pio_rearr_opts2
-        NUMPROCS 3
-        TIMEOUT ${DEFAULT_TEST_TIMEOUT})
+	EXECUTABLE ${CMAKE_CURRENT_BINARY_DIR}/pio_rearr_opts2
+	NUMPROCS 3
+	TIMEOUT ${DEFAULT_TEST_TIMEOUT})
     add_mpi_test(pio_rearr_opts2_4p
-        EXECUTABLE ${CMAKE_CURRENT_BINARY_DIR}/pio_rearr_opts2
-        NUMPROCS 4
-        TIMEOUT ${DEFAULT_TEST_TIMEOUT})
+	EXECUTABLE ${CMAKE_CURRENT_BINARY_DIR}/pio_rearr_opts2
+	NUMPROCS 4
+	TIMEOUT ${DEFAULT_TEST_TIMEOUT})
 endif ()
 
 #===== pio_decomp_tests =====
 add_executable (pio_decomp_tests EXCLUDE_FROM_ALL
-  pio_decomp_tests.F90
-  ${CMAKE_CURRENT_SOURCE_DIR}/util/pio_tutil.F90)
-target_link_libraries (pio_decomp_tests piof)
+  pio_decomp_tests.F90)
+target_link_libraries (pio_decomp_tests pio_tutil)
 add_dependencies (tests pio_decomp_tests)
 
 if (PIO_USE_MPISERIAL)
@@ -402,9 +399,8 @@ endif ()
 
 #===== pio_decomp_tests_1d =====
 add_executable (pio_decomp_tests_1d EXCLUDE_FROM_ALL
-  pio_decomp_tests_1d.F90
-  ${CMAKE_CURRENT_SOURCE_DIR}/util/pio_tutil.F90)
-target_link_libraries (pio_decomp_tests_1d piof)
+  pio_decomp_tests_1d.F90)
+target_link_libraries (pio_decomp_tests_1d pio_tutil)
 add_dependencies (tests pio_decomp_tests_1d)
 
 if (PIO_USE_MPISERIAL)
@@ -515,10 +511,15 @@ endif ()
 
 #===== pio_decomp_tests_2d =====
 add_executable (pio_decomp_tests_2d EXCLUDE_FROM_ALL
-  pio_decomp_tests_2d.F90
-  ${CMAKE_CURRENT_SOURCE_DIR}/util/pio_tutil.F90)
-target_link_libraries (pio_decomp_tests_2d piof)
+  pio_decomp_tests_2d.F90)
+target_link_libraries (pio_decomp_tests_2d pio_tutil)
 add_dependencies (tests pio_decomp_tests_2d)
+
+#===== pio_decomphalo_tests_2d =====
+add_executable (pio_decomphalo_tests_2d EXCLUDE_FROM_ALL
+  pio_decomphalo_tests_2d.F90)
+target_link_libraries (pio_decomphalo_tests_2d pio_tutil)
+add_dependencies (tests pio_decomphalo_tests_2d)
 
 if (PIO_USE_MPISERIAL)
   add_test(NAME pio_decomp_tests_2d_1p
@@ -624,13 +625,24 @@ else ()
     ARGUMENTS --pio-tf-num-io-tasks=2 --pio-tf-num-aggregators=1
     NUMPROCS 4
     TIMEOUT ${DEFAULT_TEST_TIMEOUT})
+
+  add_mpi_test(pio_decomphalo_tests_2d1
+    EXECUTABLE ${CMAKE_CURRENT_BINARY_DIR}/pio_decomphalo_tests_2d
+    ARGUMENTS --pio-tf-num-io-tasks=1
+    NUMPROCS 4
+    TIMEOUT ${DEFAULT_TEST_TIMEOUT})
+
+  add_mpi_test(pio_decomphalo_tests_2d2
+    EXECUTABLE ${CMAKE_CURRENT_BINARY_DIR}/pio_decomphalo_tests_2d
+    ARGUMENTS --pio-tf-num-io-tasks=2
+    NUMPROCS 4
+    TIMEOUT ${DEFAULT_TEST_TIMEOUT})
 endif ()
 
 #===== pio_decomp_tests_3d =====
 add_executable (pio_decomp_tests_3d EXCLUDE_FROM_ALL
-  pio_decomp_tests_3d.F90
-  ${CMAKE_CURRENT_SOURCE_DIR}/util/pio_tutil.F90)
-target_link_libraries (pio_decomp_tests_3d piof)
+  pio_decomp_tests_3d.F90)
+target_link_libraries (pio_decomp_tests_3d pio_tutil)
 add_dependencies (tests pio_decomp_tests_3d)
 
 if (PIO_USE_MPISERIAL)
@@ -741,9 +753,8 @@ endif ()
 
 #===== pio_decomp_frame_tests =====
 add_executable (pio_decomp_frame_tests EXCLUDE_FROM_ALL
-  pio_decomp_frame_tests.F90
-  ${CMAKE_CURRENT_SOURCE_DIR}/util/pio_tutil.F90)
-target_link_libraries (pio_decomp_frame_tests piof)
+  pio_decomp_frame_tests.F90)
+target_link_libraries (pio_decomp_frame_tests pio_tutil)
 add_dependencies (tests pio_decomp_frame_tests)
 
 if (PIO_USE_MPISERIAL)
@@ -760,9 +771,8 @@ endif ()
 
 #===== pio_decomp_fillval =====
 add_executable (pio_decomp_fillval EXCLUDE_FROM_ALL
-  pio_decomp_fillval.F90
-  ${CMAKE_CURRENT_SOURCE_DIR}/util/pio_tutil.F90)
-target_link_libraries (pio_decomp_fillval piof)
+  pio_decomp_fillval.F90)
+target_link_libraries (pio_decomp_fillval pio_tutil)
 add_dependencies (tests pio_decomp_fillval)
 
 if (PIO_USE_MPISERIAL)
@@ -779,9 +789,8 @@ endif ()
 
 #===== pio_iosystems_test =====
 add_executable (pio_iosystem_tests EXCLUDE_FROM_ALL
-  pio_iosystem_tests.F90
-  ${CMAKE_CURRENT_SOURCE_DIR}/util/pio_tutil.F90)
-target_link_libraries (pio_iosystem_tests piof)
+  pio_iosystem_tests.F90)
+target_link_libraries (pio_iosystem_tests pio_tutil)
 add_dependencies (tests pio_iosystem_tests)
 
 if (PIO_USE_MPISERIAL)
@@ -796,12 +805,36 @@ else ()
     TIMEOUT ${DEFAULT_TEST_TIMEOUT})
 endif ()
 
+add_executable (pio_iosystem_async_tests EXCLUDE_FROM_ALL
+  pio_iosystem_async_tests.F90)
+target_link_libraries (pio_iosystem_async_tests pio_tutil)
+add_dependencies (tests pio_iosystem_async_tests)
+
+if (NOT PIO_USE_MPISERIAL)
+  add_mpi_test(pio_iosystem_async_tests
+    EXECUTABLE ${CMAKE_CURRENT_BINARY_DIR}/pio_iosystem_async_tests
+    NUMPROCS 5
+    TIMEOUT ${DEFAULT_TEST_TIMEOUT})
+endif ()
+
+add_executable (pio_filter_tests EXCLUDE_FROM_ALL
+  pio_filter_tests.F90)
+target_link_libraries (pio_filter_tests pio_tutil)
+add_dependencies (tests pio_filter_tests)
+
+if (NOT PIO_USE_MPISERIAL AND PIO_USE_PARALLEL_FILTERS)
+  add_mpi_test(pio_filter_tests
+    EXECUTABLE ${CMAKE_CURRENT_BINARY_DIR}/pio_filter_tests
+    NUMPROCS 5
+    TIMEOUT ${DEFAULT_TEST_TIMEOUT})
+endif ()
+
+
 
 #===== pio_iosystems_test2 =====
 add_executable (pio_iosystem_tests2 EXCLUDE_FROM_ALL
-  pio_iosystem_tests2.F90
-  ${CMAKE_CURRENT_SOURCE_DIR}/util/pio_tutil.F90)
-target_link_libraries (pio_iosystem_tests2 piof)
+  pio_iosystem_tests2.F90)
+target_link_libraries (pio_iosystem_tests2 pio_tutil)
 add_dependencies (tests pio_iosystem_tests2)
 
 if (PIO_USE_MPISERIAL)
@@ -818,9 +851,8 @@ endif ()
 
 #===== pio_iosystems_test3 =====
 add_executable (pio_iosystem_tests3 EXCLUDE_FROM_ALL
-  pio_iosystem_tests3.F90
-  ${CMAKE_CURRENT_SOURCE_DIR}/util/pio_tutil.F90)
-target_link_libraries (pio_iosystem_tests3 piof)
+  pio_iosystem_tests3.F90)
+target_link_libraries (pio_iosystem_tests3 pio_tutil)
 add_dependencies (tests pio_iosystem_tests3)
 
 if (PIO_USE_MPISERIAL)

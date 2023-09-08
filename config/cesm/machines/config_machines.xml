@@ -763,7 +763,7 @@ This allows using a different mpirun command to launch unit tests
     </environment_variables>
     <environment_variables mpilib="mpich">
       <env name="MPICH_MPIIO_HINTS">*:romio_cb_read=enable:romio_cb_write=enable:striping_factor=24</env>
-      <env name="MPICH_COLL_SYNC">MPI_Scatter</env>
+      <env name="MPICH_COLL_SYNC">MPI_Scatter,MPI_Scatterv</env>
       <env name="MPICH_ENV_DISPLAY">1</env>
     </environment_variables>
     

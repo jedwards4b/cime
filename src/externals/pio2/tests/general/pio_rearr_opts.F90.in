@@ -1,3 +1,4 @@
+#include "config.h"
 MODULE pio_rearr_opts_tgv
   use pio_tutil
   character(len=PIO_TF_MAX_STR_LEN), parameter ::tgv_fname ="pio_rearr_opts_test.nc"
@@ -11,7 +12,6 @@ PIO_TF_AUTO_TEST_SUB_BEGIN init_fin_with_rearr_opts
 
   integer, parameter :: NUM_REARRANGERS = 2
   integer :: rearrs(NUM_REARRANGERS) = (/pio_rearr_subset,pio_rearr_box/)
-  character(len=PIO_TF_MAX_STR_LEN) :: rearrs_info(NUM_REARRANGERS) = (/"PIO_REARR_SUBSET","PIO_REARR_BOX   "/)
   type(pio_rearr_opt_t) :: pio_rearr_opts
   ! Dummy val for max pend req
   integer, parameter :: MAX_PEND_REQ = 10
@@ -187,7 +187,6 @@ SUBROUTINE create_decomp_and_init_buf(iosys, iocomm, iodesc, wbuf, dims, ret)
   integer, dimension(1), intent(out) :: dims
   integer, intent(out) :: ret
 
-  integer :: pio_dim
   integer, dimension(:), allocatable :: compdof
   integer, dimension(1) :: start, count
   integer :: i
@@ -203,7 +202,7 @@ SUBROUTINE create_decomp_and_init_buf(iosys, iocomm, iodesc, wbuf, dims, ret)
   allocate(compdof(count(1)))
   do i=1,count(1)
     wbuf(i) = start(1) + i - 1
-    compdof(i) = wbuf(i)
+    compdof(i) = int(wbuf(i))
   end do
 
   call PIO_initdecomp(iosys, PIO_real, dims, compdof, iodesc)
@@ -248,7 +247,7 @@ END SUBROUTINE
 ! Open file and inq var
 ! All details are picked from pio_rearr_opts_tgv module
 ! Note: The file is kept open so the called needs to close it
-SUBROUTINE open_file_and_get_var(iosys, pio_file, iotype, pio_var, dims, ret)
+SUBROUTINE open_file_and_get_var(iosys, pio_file, iotype, pio_var, ret)
   use pio_tutil
   use pio_rearr_opts_tgv
   implicit none
@@ -257,10 +256,7 @@ SUBROUTINE open_file_and_get_var(iosys, pio_file, iotype, pio_var, dims, ret)
   type(file_desc_t), intent(out) :: pio_file
   integer, intent(in) :: iotype
   type(var_desc_t), intent(out) :: pio_var
-  integer, dimension(1), intent(in) :: dims
   integer, intent(out) :: ret
-
-  integer :: pio_dim
 
   ret = PIO_openfile(iosys, pio_file, iotype, tgv_fname, pio_write)
   PIO_TF_CHECK_ERR(ret, "Could not create file " // trim(tgv_fname))
@@ -285,7 +281,7 @@ PIO_TF_AUTO_TEST_SUB_BEGIN write_with_rearr_opts
       integer, dimension(1), intent(out) :: dims
       integer, intent(out) :: ret
     end subroutine create_decomp_and_init_buf
-  end interface 
+  end interface
 
   integer, parameter :: NUM_REARRANGERS = 2
   integer :: rearrs(NUM_REARRANGERS) = (/pio_rearr_subset,pio_rearr_box/)
@@ -331,13 +327,13 @@ PIO_TF_AUTO_TEST_SUB_BEGIN write_with_rearr_opts
   integer, dimension(:), allocatable :: iotypes
   character(len=PIO_TF_MAX_STR_LEN), dimension(:), allocatable :: iotype_descs
   integer :: num_iotypes
-  integer :: ret, ierr, i
+  integer :: ret, i
 
   num_iotypes = 0
   call PIO_TF_Get_nc_iotypes(iotypes, iotype_descs, num_iotypes)
   do i=1,num_iotypes
     PIO_TF_LOG(0,*) "Testing : ", iotype_descs(i)
-    ! Create the file and decomp 
+    ! Create the file and decomp
     call create_file_and_var(iotypes(i), ret)
     PIO_TF_CHECK_ERR(ret, "Creating file/decomp/var reqd for test failed :" // trim(tgv_fname))
 
@@ -408,7 +404,7 @@ PIO_TF_AUTO_TEST_SUB_BEGIN write_with_rearr_opts
                 do cur_enable_hs_i2c=1,num_enable_hs_opts_io2comp
                   pio_rearr_opts%comm_fc_opts_io2comp%enable_hs =&
                     enable_hs_opts(cur_enable_hs_i2c)
-                
+
                   do cur_enable_isend_i2c=1,num_enable_isend_opts_io2comp
                     pio_rearr_opts%comm_fc_opts_io2comp%enable_isend =&
                       enable_isend_opts(cur_enable_isend_i2c)
@@ -436,7 +432,7 @@ PIO_TF_AUTO_TEST_SUB_BEGIN write_with_rearr_opts
                       rbuf = 0
 
                       call open_file_and_get_var(dup_iosys, pio_file, iotypes(i),&
-                              pio_var, dims, ret)
+                              pio_var, ret)
                       PIO_TF_CHECK_ERR(ret, dup_comm, "Creating file/decomp/var reqd for test failed :" // trim(tgv_fname))
 
                       call PIO_write_darray(pio_file, pio_var, iodesc, wbuf, ret)
@@ -463,7 +459,7 @@ PIO_TF_AUTO_TEST_SUB_BEGIN write_with_rearr_opts
                     end do ! cur_max_pend_req_i2c
                   end do ! cur_enable_isend_i2c
                 end do ! cur_enable_hs_i2c
-              end do ! cur_max_pend_req_c2i    
+              end do ! cur_max_pend_req_c2i
             end do ! cur_enable_isend_c2i
           end do ! cur_enable_hs_c2i
         end do ! cur_fcd_opt

@@ -34,15 +34,9 @@ int main(int argc, char **argv)
 #define NUM_COMP_PROCS 1
     int my_rank; /* Zero-based rank of processor. */
     int ntasks; /* Number of processors involved in current execution. */
-    int iosysid[COMPONENT_COUNT]; /* The ID for the parallel I/O system. */
     int num_flavors; /* Number of PIO netCDF flavors in this build. */
-    int flavor[NUM_FLAVORS]; /* iotypes for the supported netCDF IO flavors. */
-    int ret; /* Return code. */
-    int num_procs[COMPONENT_COUNT] = {1}; /* Num procs for IO and computation. */
-    int io_proc_list[NUM_IO_PROCS] = {0};
-    int comp_proc_list[NUM_COMP_PROCS] = {1};
-    int *proc_list[COMPONENT_COUNT] = {comp_proc_list};
     MPI_Comm test_comm;
+    int ret; /* Return code. */
 
     /* Initialize test. */
     if ((ret = pio_test_init2(argc, argv, &my_rank, &ntasks, TARGET_NTASKS, TARGET_NTASKS,
@@ -52,6 +46,13 @@ int main(int argc, char **argv)
     /* Only do something on TARGET_NTASKS tasks. */
     if (my_rank < TARGET_NTASKS)
     {
+        int iosysid[COMPONENT_COUNT]; /* The ID for the parallel I/O system. */
+        int flavor[NUM_FLAVORS]; /* iotypes for the supported netCDF IO flavors. */
+        int num_procs[COMPONENT_COUNT] = {1}; /* Num procs for IO and computation. */
+        int io_proc_list[NUM_IO_PROCS] = {0};
+        int comp_proc_list[NUM_COMP_PROCS] = {1};
+        int *proc_list[COMPONENT_COUNT] = {comp_proc_list};
+
         /* Figure out iotypes. */
         if ((ret = get_iotypes(&num_flavors, flavor)))
             ERR(ret);
@@ -89,8 +90,8 @@ int main(int argc, char **argv)
 
                 for (int sample = 0; sample < NUM_SAMPLES; sample++)
                 {
-                    char filename[NC_MAX_NAME + 1]; /* Test filename. */
-                    char iotype_name[NC_MAX_NAME + 1];
+                    char filename[PIO_MAX_NAME * 2 + 1]; /* Test filename. */
+                    char iotype_name[PIO_MAX_NAME + 1];
 
                     /* Create a filename. */
                     if ((ret = get_iotype_name(flavor[flv], iotype_name)))
@@ -99,17 +100,17 @@ int main(int argc, char **argv)
 
                     /* Create sample file. */
                     if ((ret = create_nc_sample(sample, iosysid[my_comp_idx], flavor[flv], filename, my_rank, NULL)))
-                        ERR(ret);
+                        AERR2(ret, iosysid[my_comp_idx]);
 
                     /* Check the file for correctness. */
                     if ((ret = check_nc_sample(sample, iosysid[my_comp_idx], flavor[flv], filename, my_rank, NULL)))
-                        ERR(ret);
+                        AERR2(ret, iosysid[my_comp_idx]);
                 }
             } /* next netcdf flavor */
 
             /* Finalize the IO system. Only call this from the computation tasks. */
             for (int c = 0; c < COMPONENT_COUNT; c++)
-                if ((ret = PIOc_finalize(iosysid[c])))
+                if ((ret = PIOc_free_iosystem(iosysid[c])))
                     ERR(ret);
         } /* endif comp_task */
     } /* endif my_rank < TARGET_NTASKS */
