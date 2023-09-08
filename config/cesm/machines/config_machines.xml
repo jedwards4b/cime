@@ -664,6 +664,8 @@ This allows using a different mpirun command to launch unit tests
   <machine MACH="derecho">
     <DESC>NCAR AMD EPYC test system 16 CPU nodes 2 GPU nodes</DESC>
     <NODENAME_REGEX>der.*.hpc.ucar.edu</NODENAME_REGEX>
+    <MPIRUN_RETRY_REGEX>Resource temporarily unavailable</MPIRUN_RETRY_REGEX>
+    <MPIRUN_RETRY_COUNT>4</MPIRUN_RETRY_COUNT>
     <OS>CNL</OS>
     <COMPILERS>intel,gnu,cray,nvhpc,intel-oneapi,intel-classic</COMPILERS>
     <MPILIBS>mpich</MPILIBS>
@@ -682,6 +684,7 @@ This allows using a different mpirun command to launch unit tests
     <mpirun mpilib="default">
       <executable>mpiexec</executable>
       <arguments>
+        <arg name="buffer"> --line-buffer</arg>
         <arg name="label"> --label</arg>
         <arg name="num_tasks" > -n {{ total_tasks }}</arg>
       </arguments>
@@ -704,7 +707,8 @@ This allows using a different mpirun command to launch unit tests
       </modules>
       <modules compiler="intel">
         <command name="load">intel/2023.0.0</command>
-	<command name="load">mkl</command>
+<!--        <command name="load">cray-libsci/23.02.1.1</command> -->
+	<command name="load">mkl</command> 
       </modules>
       <modules compiler="intel-oneapi">
         <command name="load">intel-oneapi/2023.0.0</command>
@@ -753,12 +757,14 @@ This allows using a different mpirun command to launch unit tests
     <environment_variables>
       <env name="OMP_STACKSIZE">64M</env>
       <env name="FI_CXI_RX_MATCH_MODE">hybrid</env>  
+      <env name="FI_MR_CACHE_MONITOR">memhooks</env> 
       <!--      <env name="MPICH_MPIIO_STATS">1</env>
            <env name="MPICH_MPIIO_HINTS_DISPLAY">1</env> -->
-      <env name="MPICH_COLL_SYNC">1</env>
     </environment_variables>
     <environment_variables mpilib="mpich">
       <env name="MPICH_MPIIO_HINTS">*:romio_cb_read=enable:romio_cb_write=enable:striping_factor=24</env>
+      <env name="MPICH_COLL_SYNC">MPI_Scatter</env>
+      <env name="MPICH_ENV_DISPLAY">1</env>
     </environment_variables>
     
   </machine>

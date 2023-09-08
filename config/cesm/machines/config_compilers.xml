@@ -707,6 +707,13 @@ using a fortran linker.
     <!-- these flags enable nano timers -->
     <append MODEL="gptl"> -DHAVE_NANOTIME -DBIT64 -DHAVE_VPRINTF -DHAVE_BACKTRACE -DHAVE_SLASHPROC -DHAVE_COMM_F2C -DHAVE_TIMES -DHAVE_GETTIMEOFDAY </append>
   </CPPDEFS>
+  <CFLAGS>
+    <append> -march=core-avx2 </append>
+  </CFLAGS>
+  <FFLAGS>
+    <append> -march=core-avx2 </append>
+  </FFLAGS>
+ 
   <NETCDF_PATH>$ENV{NETCDF}</NETCDF_PATH>
 <!--  <PIO_FILESYSTEM_HINTS>lustre</PIO_FILESYSTEM_HINTS> -->
   <PNETCDF_PATH>$ENV{PNETCDF}</PNETCDF_PATH>
