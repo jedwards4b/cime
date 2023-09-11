@@ -131,7 +131,7 @@ CONTAINS
        rofice_present = .false.
        flood_present = .true.
     end if
-
+    flood_present = .false.
     call seq_infodata_PutData( infodata, dead_comps=.true., &
          rof_present=rof_present, &
          rof_prognostic=rof_prognostic, &
