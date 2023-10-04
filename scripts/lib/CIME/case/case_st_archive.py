@@ -535,14 +535,22 @@ def restore_from_archive(self, rest_dir=None, dout_s_root=None, rundir=None):
     """
     if dout_s_root is None:
         dout_s_root = self.get_value("DOUT_S_ROOT")
+
     if rundir is None:
         rundir = self.get_value("RUNDIR")
     if rest_dir is not None:
         if not os.path.isabs(rest_dir):
             rest_dir = os.path.join(dout_s_root, "rest", rest_dir)
     else:
-        rest_dir = os.path.join(dout_s_root, "rest", ls_sorted_by_mtime(os.path.join(dout_s_root, "rest"))[-1])
+        rest_dir = os.path.isdir(os.path.join(dout_s_root,"rest"))
+        rest_date = ls_sorted_by_mtime(os.path.join(dout_s_root, "rest"))
+        if rest_date:
+            rest_dir = os.path.join(dout_s_root, "rest", rest_date[-1])
 
+    if not os.path.isdir(rest_dir):
+        logger.info(f"No restart files in {rest_dir} to restore")
+        return
+        
     logger.info("Restoring restart from {}".format(rest_dir))
 
     for item in glob.glob("{}/*".format(rest_dir)):
