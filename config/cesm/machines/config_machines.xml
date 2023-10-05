@@ -1847,7 +1847,7 @@ This allows using a different mpirun command to launch unit tests
     <DESC>NERSC EX AMD EPYC, os is CNL, 64 pes/node, batch system is Slurm</DESC>
     <NODENAME_REGEX>$ENV{NERSC_HOST}:perlmutter</NODENAME_REGEX>
     <OS>CNL</OS>
-    <COMPILERS>nvhpc,gnu,cray,aocc</COMPILERS>
+    <COMPILERS>intel,nvhpc,gnu,cray,aocc</COMPILERS>
     <MPILIBS>mpich</MPILIBS>
     <PROJECT>mp9</PROJECT>
     <CIME_OUTPUT_ROOT>$ENV{SCRATCH}</CIME_OUTPUT_ROOT>
@@ -1901,41 +1901,45 @@ This allows using a different mpirun command to launch unit tests
         <command name="rm">craype</command>
       </modules>
 
+      <modules compiler="intel">
+        <command name="load">PrgEnv-intel</command>
+        <command name="switch">intel intel/2023.1.0</command>
+      </modules>
       <modules compiler="cray">
         <command name="load">PrgEnv-cray</command>
-        <command name="switch">cce cce/13.0.2</command>
+        <command name="switch">cce cce/16.0.1</command>
       </modules>
       <modules compiler="gnu">
         <command name="load">PrgEnv-gnu</command>
-        <command name="switch">gcc gcc/11.2.0</command>
+        <command name="switch">gcc gcc/12.2.0</command>
       </modules>
       <modules compiler="nvhpc">
         <command name="load">PrgEnv-nvhpc</command>
-        <command name="switch">nvhpc nvhpc/22.7</command>
+        <command name="switch">nvhpc nvhpc/23.1</command>
       </modules>
       <modules>
-        <command name="swap">craype craype/2.7.16</command>
+        <command name="swap">craype craype/2.7.23</command>
       </modules>
       <modules>
-        <command name="switch">cray-libsci/21.08.1.2</command>
+        <command name="switch">cray-libsci/23.09.1.1</command>
       </modules>
       <modules>
-        <command name="load">cray-mpich/8.1.17</command>
+        <command name="load">cray-mpich/8.1.25</command>
       </modules>
       <modules mpilib="mpi-serial">
         <command name="rm">cray-netcdf-hdf5parallel</command>
         <command name="rm">cray-hdf5-parallel</command>
         <command name="rm">cray-parallel-netcdf</command>
-        <command name="load">cray-hdf5/1.12.1.1</command>
-        <command name="load">cray-netcdf/4.7.4.7</command>
+        <command name="load">cray-hdf5/1.12.2.7</command>
+        <command name="load">cray-netcdf/4.9.0.7</command>
       </modules>
       <modules mpilib="!mpi-serial">
-        <command name="load">cray-hdf5-parallel/1.12.1.5</command>
-        <command name="load">cray-netcdf-hdf5parallel/4.8.1.5</command>
-        <command name="load">cray-parallel-netcdf/1.12.2.5</command>
+        <command name="load">cray-hdf5-parallel/1.12.2.7</command>
+        <command name="load">cray-netcdf-hdf5parallel/4.9.0.7</command>
+        <command name="load">cray-parallel-netcdf/1.12.3.7</command>
       </modules>
       <modules>
-        <command name="load">cmake/3.22.0</command>
+        <command name="load">cmake/3.24.3</command>
       </modules>
     </module_system>
     <environment_variables>
