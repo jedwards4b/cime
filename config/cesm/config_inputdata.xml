@@ -12,7 +12,15 @@
     <address>https://svn-ccsm-inputdata.cgd.ucar.edu/trunk/inputdata</address>
   </server>
 
+  <server>
+    <protocol>wget</protocol>
+    <address>ftp://ftp.cgd.ucar.edu/cesm/inputdata</address>
+    <user>anonymous</user>
+    <password>user@example.edu</password>
+    <checksum>../inputdata_checksum.dat</checksum>
+  </server>
 
+<!--
   <server>
     <comment>grid ftp requires the globus-url-copy tool on the client side </comment>
     <protocol>gftp</protocol>
@@ -28,14 +36,7 @@
     <password>user@example.edu</password>
     <checksum>../inputdata_checksum.dat</checksum>
   </server>
-
-  <server>
-    <protocol>wget</protocol>
-    <address>ftp://ftp.cgd.ucar.edu/cesm/inputdata</address>
-    <user>anonymous</user>
-    <password>user@example.edu</password>
-    <checksum>../inputdata_checksum.dat</checksum>
-  </server>
+-->
 
 
 </inputdata>

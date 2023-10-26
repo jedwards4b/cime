@@ -656,7 +656,11 @@ using a fortran linker.
   </SLIBS>
 </compiler>
 
-<compiler MACH="cori-haswell" COMPILER="intel">
+<compiler MACH="perlmutter" COMPILER="intel">
+  <NETCDF_C_PATH>$ENV{NETCDF_C_ROOT}</NETCDF_C_PATH>
+  <NETCDF_FORTRAN_PATH>$ENV{NETCDF_FORTRAN_ROOT}</NETCDF_FORTRAN_PATH>
+  <PNETCDF_PATH>$ENV{PARALLEL_NETCDF_ROOT}</PNETCDF_PATH>
+  
   <CONFIG_ARGS>
     <base> --host=Linux </base>
   </CONFIG_ARGS>
@@ -667,39 +671,11 @@ using a fortran linker.
     <append> -xCORE-AVX2 </append>
   </FFLAGS>
   <SLIBS>
-    <append> -L$(NETCDF_DIR) -lnetcdff -Wl,--as-needed,-L$(NETCDF_DIR)/lib -lnetcdff -lnetcdf </append>
+    <append> -L$(NETCDF_FORTRAN_ROOT)/lib -lnetcdff -Wl,--as-needed,-L$(NETCDF_C_ROOT)/lib -lnetcdf -L$(PARALLEL_NETCDF_ROOT)/lib -lpnetcdf </append>
   </SLIBS>
-    <CPPDEFS>
-    <append MODEL="gptl"> -DHAVE_PAPI -DHAVE_SLASHPROC </append>
+  <CPPDEFS>
+    <append MODEL="gptl"> -DHAVE_NANOTIME -DBIT64 -DHAVE_VPRINTF -DHAVE_BACKTRACE -DHAVE_SLASHPROC -DHAVE_COMM_F2C -DHAVE_TIMES -DHAVE_GETTIMEOFDAY </append>
   </CPPDEFS>
-  <LDFLAGS>
-    <append>-mkl </append>
-  </LDFLAGS>
-  <!-- Bug in the intel/17.0.1 compiler requires this, remove this line when compiler is updated -->
-  <HAS_F2008_CONTIGUOUS>FALSE</HAS_F2008_CONTIGUOUS>
-</compiler>
-
-<compiler MACH="cori-knl" COMPILER="intel">
-  <CONFIG_ARGS>
-    <base> --host=Linux </base>
-  </CONFIG_ARGS>
-  <CFLAGS>
-    <append> -xMIC-AVX512 </append>
-  </CFLAGS>
-  <FFLAGS>
-    <append> -xMIC-AVX512 </append>
-  </FFLAGS>
-  <SLIBS>
-    <append> -L$(NETCDF_DIR) -lnetcdff -Wl,--as-needed,-L$(NETCDF_DIR)/lib -lnetcdff -lnetcdf </append>
-  </SLIBS>
-    <CPPDEFS>
-    <append MODEL="gptl"> -DHAVE_SLASHPROC</append>
-  </CPPDEFS>
-  <LDFLAGS>
-    <append>-mkl -lmemkind -zmuldefs</append>
-  </LDFLAGS>
-  <!-- Bug in the intel/17.0.1 compiler requires this, remove this line when compiler is updated -->
-  <HAS_F2008_CONTIGUOUS>FALSE</HAS_F2008_CONTIGUOUS>
 </compiler>
 
 <compiler MACH="derecho">

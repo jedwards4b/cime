@@ -1904,8 +1904,10 @@ This allows using a different mpirun command to launch unit tests
       <modules compiler="intel">
         <command name="load">PrgEnv-intel</command>
         <command name="switch">intel intel/2023.1.0</command>
+	<command name="use">/global/cfs/cdirs/ccsm1/sw/perlmutter/modules/intel/2023.1.0/</command>
+	
       </modules>
-      <modules compiler="cray">
+<!--      <modules compiler="cray">
         <command name="load">PrgEnv-cray</command>
         <command name="switch">cce cce/16.0.1</command>
       </modules>
@@ -1917,14 +1919,12 @@ This allows using a different mpirun command to launch unit tests
         <command name="load">PrgEnv-nvhpc</command>
         <command name="switch">nvhpc nvhpc/23.1</command>
       </modules>
-      <modules>
+-->  
+    <modules>
         <command name="swap">craype craype/2.7.23</command>
       </modules>
       <modules>
         <command name="switch">cray-libsci/23.09.1.1</command>
-      </modules>
-      <modules>
-        <command name="load">cray-mpich/8.1.25</command>
       </modules>
       <modules mpilib="mpi-serial">
         <command name="rm">cray-netcdf-hdf5parallel</command>
@@ -1933,10 +1933,12 @@ This allows using a different mpirun command to launch unit tests
         <command name="load">cray-hdf5/1.12.2.7</command>
         <command name="load">cray-netcdf/4.9.0.7</command>
       </modules>
-      <modules mpilib="!mpi-serial">
-        <command name="load">cray-hdf5-parallel/1.12.2.7</command>
-        <command name="load">cray-netcdf-hdf5parallel/4.9.0.7</command>
-        <command name="load">cray-parallel-netcdf/1.12.3.7</command>
+      <modules mpilib="mpich">
+        <command name="load">cray-mpich/8.1.25</command>
+	<command name="use">/global/cfs/cdirs/ccsm1/sw/perlmutter/modules/cray-mpich/8.1.25-dr5sgoi/intel/2023.1.0/</command>
+        <command name="load">netcdf-c/4.9.2</command>
+        <command name="load">netcdf-fortran/4.6.1</command>
+        <command name="load">parallel-netcdf/1.12.3</command>
       </modules>
       <modules>
         <command name="load">cmake/3.24.3</command>
@@ -1944,7 +1946,7 @@ This allows using a different mpirun command to launch unit tests
     </module_system>
     <environment_variables>
       <env name="OMP_STACKSIZE">256M</env>
-<!--      <env name="OMP_PROC_BIND">spread</env>
+      <!--      <env name="OMP_PROC_BIND">spread</env>
       <env name="OMP_PLACES">threads</env> -->
     </environment_variables>
   </machine>
