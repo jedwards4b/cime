@@ -665,13 +665,17 @@ using a fortran linker.
     <base> --host=Linux </base>
   </CONFIG_ARGS>
   <CFLAGS>
-    <append> -xCORE-AVX2 </append>
+    <append> -march=core-avx2 </append>
   </CFLAGS>
   <FFLAGS>
-    <append> -xCORE-AVX2 </append>
+    <append> -march=core-avx2 </append>
   </FFLAGS>
+  <LDFLAGS>
+    <append> -Wl,-rpath,$ENV{NETCDF_FORTRAN_ROOT}/lib -Wl,-rpath,$ENV{NETCDF_C_ROOT}/lib -Wl,-rpath,$ENV{PARALLEL_NETCDF_ROOT}/lib </append>
+  </LDFLAGS>
   <SLIBS>
-    <append> -L$(NETCDF_FORTRAN_ROOT)/lib -lnetcdff -Wl,--as-needed,-L$(NETCDF_C_ROOT)/lib -lnetcdf -L$(PARALLEL_NETCDF_ROOT)/lib -lpnetcdf </append>
+    <append> -L$(NETCDF_FORTRAN_ROOT)/lib -lnetcdff -L$ENV{NETCDF_C_ROOT}/lib -lnetcdf -L$(PARALLEL_NETCDF_ROOT)/lib -lpnetcdf </append>
+    <append MPILIB="mpich"> -qmkl=cluster </append>
   </SLIBS>
   <CPPDEFS>
     <append MODEL="gptl"> -DHAVE_NANOTIME -DBIT64 -DHAVE_VPRINTF -DHAVE_BACKTRACE -DHAVE_SLASHPROC -DHAVE_COMM_F2C -DHAVE_TIMES -DHAVE_GETTIMEOFDAY </append>
