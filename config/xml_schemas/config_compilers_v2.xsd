@@ -180,6 +180,8 @@
       <xs:element name="PETSC_PATH" type="systemPath"/>
       <xs:element name="PFUNIT_PATH" type="systemPath"/>
       <xs:element name="PIO_FILESYSTEM_HINTS" type="xs:token"/>
+      <xs:element name="PIO_INCDIR" type="systemPath"/>
+      <xs:element name="PIO_LIBDIR" type="systemPath"/>
       <xs:element name="PNETCDF_PATH" type="systemPath"/>
       <xs:element name="SCC" type="systemPath"/>
       <xs:element name="SCXX" type="systemPath"/>

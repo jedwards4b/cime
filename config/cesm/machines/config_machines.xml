@@ -1939,6 +1939,7 @@ This allows using a different mpirun command to launch unit tests
         <command name="load">netcdf-c/4.9.2</command>
         <command name="load">netcdf-fortran/4.6.1</command>
         <command name="load">parallel-netcdf/1.12.3</command>
+	<command name="load">parallelio/2.6.2</command>
       </modules>
       <modules>
         <command name="load">cmake/3.24.3</command>
@@ -1946,9 +1947,16 @@ This allows using a different mpirun command to launch unit tests
     </module_system>
     <environment_variables>
       <env name="OMP_STACKSIZE">256M</env>
+      <env name="DVS_MAXNODES">1__</env>
+      <env name="MPICH_MPIIO_DVS_MAXNODES">24</env>
+      <env name="PIO_INCDIR">$ENV{PARALLELIO_ROOT}/include</env>
+      <env name="PIO_LIBDIR">$ENV{PARALLELIO_ROOT}/lib</env>
       <!--      <env name="OMP_PROC_BIND">spread</env>
       <env name="OMP_PLACES">threads</env> -->
     </environment_variables>
+    <resource_limits>
+      <resource name="RLIMIT_STACK">-1</resource>
+    </resource_limits>
   </machine>
   
   <machine MACH="pleiades-bro">
