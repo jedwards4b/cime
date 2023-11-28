@@ -513,28 +513,9 @@ This allows using a different mpirun command to launch unit tests
        <arg name="zthreadplacement"> omplace -tm open64 </arg>
      </arguments>
    </mpirun>
-   <mpirun mpilib="default" comp_interface="nuopc">
-     <executable>mpiexec_mpt</executable>
-     <arguments>
-       <arg name="labelstdout">-p "%g:"</arg>
-       <arg name="num_tasks"> -np {{ total_tasks }}</arg>
-       <arg name="zthreadplacement"> omplace -tm open64 -vv</arg>
-     </arguments>
-   </mpirun>
-   <mpirun mpilib="mpt" queue="share" comp_interface="nuopc">
-     <executable>mpirun `hostname`</executable>
-     <arguments>
-       <arg name="anum_tasks"> -np {{ total_tasks }}</arg>
-     </arguments>
-   </mpirun>
-   <mpirun mpilib="openmpi">
-     <executable>mpirun</executable>
-     <arguments>
-       <arg name="anum_tasks"> -np {{ total_tasks }}</arg>
-     </arguments>
-   </mpirun>
+
    <mpirun mpilib="default" unit_testing="true">
-     <!--The only place we can build and run the unit tests is on cheyenne's
+     <!-- The only place we can build and run the unit tests is on cheyenne's
           shared nodes. However, running mpi jobs on the shared nodes currently
           requires some workarounds; these workarounds are implemented here -->
      <executable>/opt/sgi/mpt/mpt-2.15/bin/mpirun $ENV{UNIT_TEST_HOST} -np 1 </executable>
@@ -605,7 +586,6 @@ This allows using a different mpirun command to launch unit tests
        <command name="use">/glade/p/cesmdata/cseg/PROGS/modulefiles/esmfpkgs/gnu/9.1.0/</command>
        <command name="load">esmf-8.1.0b41-ncdfio-mpiuni-O</command>
      </modules>
--
      <modules compiler="pgi" mpilib="mpt" DEBUG="TRUE">
        <command name="use">/glade/p/cesmdata/cseg/PROGS/modulefiles/esmfpkgs/pgi/20.4/</command>
        <command name="load">esmf-8.1.0b41-ncdfio-mpt-g</command>
@@ -673,7 +653,7 @@ This allows using a different mpirun command to launch unit tests
      <env name="MPI_IB_CONGESTED">1</env>
      <env name="MPI_USE_ARRAY"/>
    </environment_variables>
-   <environment_variables comp_interface="nuopc">
+   <environment_variables>
      <env name="ESMF_RUNTIME_PROFILE">ON</env>
      <env name="ESMF_RUNTIME_PROFILE_OUTPUT">SUMMARY</env>
      <env name="UGCSINPUTPATH">/glade/work/turuncu/FV3GFS/benchmark-inputs/2012010100/gfs/fcst</env>
