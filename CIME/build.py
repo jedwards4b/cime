@@ -758,7 +758,7 @@ def _build_libraries(
     elif case.get_value("MODEL") == "cesm" and comp_interface == "nuopc":
         libs = ["gptl", "mct", "pio", "csm_share"]
     elif case.get_value("MODEL") == "cesm":
-        libs = ["gptl", "mct", "pio", "csm_share", "csm_share_cpl7"]
+        libs = ["gptl", "mct", "pio", "csm_share", "csm_share_cpl7", "mct"]
     elif case.get_value("MODEL") == "e3sm":
         libs = ["gptl", "mct", "spio", "csm_share"]
     else:
@@ -826,6 +826,11 @@ def _build_libraries(
             my_file = os.path.join(
                 cimeroot, "CIME", "build_scripts", "buildlib.{}".format(lib)
             )
+        if not os.path.exists(my_file):
+            srcroot = case.get_value("SRCROOT")
+            submodname = lib.lower()
+            run_cmd("git -C {} fleximod install {}".format(srcroot,submodname),verbose=True)
+            
         expect(
             os.path.exists(my_file),
             "Build script {} for component {} not found.".format(my_file, lib),

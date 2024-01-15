@@ -66,6 +66,10 @@ def buildlib(bldroot, installpath, case):
 
     mct_path = config.mct_path.format(srcroot=srcroot)
 
+    if not os.path.exists(os.path.join(mct_path,"Makefile")):
+        # need to download mct first
+        run_bld_cmd_ensure_logging("git -C {} fleximod install mct".format(srcroot), logger)
+    
     for _dir in ("mct", "mpeu"):
         if not os.path.isdir(os.path.join(bldroot, _dir)):
             os.makedirs(os.path.join(bldroot, _dir))

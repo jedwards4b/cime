@@ -681,6 +681,7 @@ class Case(object):
 
         # Loop through all of the files listed in COMPSETS_SPEC_FILE and find the file
         # that has a match for either the alias or the longname in that order
+        srcroot = self.lookups["SRCROOT"]
         for component in components:
 
             # Determine the compsets file for this component
@@ -689,7 +690,13 @@ class Case(object):
             )
 
             # If the file exists, read it and see if there is a match for the compset alias or longname
+            print(f"component is {component} srcroot is {srcroot}")
+            if not os.path.isfile(compsets_filename):
+                download = input(f"Component {component} not found, download using fleximod? (y or n)")
+                if download == 'y':
+                    run_cmd("git -C {} fleximod install {}".format(srcroot,component),verbose=True)
             if os.path.isfile(compsets_filename):
+
                 compsets = Compsets(compsets_filename)
                 match, compset_alias, science_support = compsets.get_compset_match(
                     name=compset_name
@@ -701,7 +708,8 @@ class Case(object):
                         "Compset specification file is {}".format(compsets_filename)
                     )
                     break
-
+                
+                
         if compset_alias is None:
             logger.info(
                 "Did not find an alias or longname compset match for {} ".format(
@@ -1076,7 +1084,7 @@ class Case(object):
 
         if comp_root_dir is not None:
             self.set_value(root_dir_node_name, comp_root_dir)
-
+        srcroot = self.get_value("SRCROOT")
         for i in range(1, len(self._component_classes)):
             comp_class = self._component_classes[i]
             comp_name = self._components[i - 1]
@@ -1098,7 +1106,14 @@ class Case(object):
             )
             self.set_value(node_name, comp_config_file)
             comp_config_file = files.get_value(node_name, compatt)
-
+            if not os.path.isfile(comp_config_file):
+                if comp_name == 'cice':
+                    comp = 'cice6'
+                else:
+                    comp = comp_name
+            
+                run_cmd("git -C {} fleximod install {}".format(srcroot,comp),verbose=True)
+                
             expect(
                 comp_config_file is not None and os.path.isfile(comp_config_file),
                 "Config file {} for component {} not found.".format(
