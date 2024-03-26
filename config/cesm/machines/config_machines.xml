@@ -2240,10 +2240,10 @@ This allows using a different mpirun command to launch unit tests
 
   <machine MACH="stampede2-skx">
     <DESC>Intel Xeon Platinum 8160 ("Skylake"),48 cores on two sockets (24 cores/socket) , batch system is SLURM</DESC>
-    <NODENAME_REGEX>.*stampede2</NODENAME_REGEX>
+    <NODENAME_REGEX>.*stampede3</NODENAME_REGEX>
     <OS>LINUX</OS>
     <COMPILERS>intel</COMPILERS>
-    <MPILIBS>impi,mvapich2</MPILIBS>
+    <MPILIBS>impi,mvapich</MPILIBS>
     <CIME_OUTPUT_ROOT>$ENV{SCRATCH}</CIME_OUTPUT_ROOT>
     <DIN_LOC_ROOT>/work/02503/edwardsj/CESM/inputdata</DIN_LOC_ROOT>
     <DIN_LOC_ROOT_CLMFORC>/work/02503/edwardsj/CESM/inputdata/lmwg</DIN_LOC_ROOT_CLMFORC>
@@ -2258,7 +2258,7 @@ This allows using a different mpirun command to launch unit tests
     <mpirun mpilib="impi">
       <executable>ibrun</executable>
     </mpirun>
-    <mpirun mpilib="mvapich2">
+    <mpirun mpilib="mvapich">
       <executable>ibrun</executable>
     </mpirun>
     <module_system type="module">
@@ -2271,25 +2271,23 @@ This allows using a different mpirun command to launch unit tests
       <cmd_path lang="sh">module</cmd_path>
       <cmd_path lang="csh">module</cmd_path>
       <modules>
-        <command name="purge"></command>
-        <command name="load">TACC</command>
-        <command name="load">python/2.7.13</command>
-        <command name="load">intel/17.0.4</command>
-        <command name="load">cmake/3.10.2</command>
+	<command name="purge"></command>
+	<command name="load">TACC</command>
+	<command name="load">intel/24.0</command>
+	<command name="load">cmake/3.28.1</command>
       </modules>
       <modules mpilib="mvapich2">
-        <command name="load">mvapich2/2.3b</command>
-        <command name="load">pnetcdf/1.8.1</command>
-        <command name="load">parallel-netcdf/4.3.3.1</command>
+	<command name="load">mvapich/3.0</command>
+	<command name="load">pnetcdf/1.12.3</command>
+	<command name="load">parallel-netcdf/4.9.2</command>
       </modules>
       <modules mpilib="impi">
-        <command name="rm">mvapich2</command>
-        <command name="load">impi/17.0.3</command>
-        <command name="load">pnetcdf/1.8.1</command>
-        <command name="load">parallel-netcdf/4.3.3.1</command>
+	<command name="load">impi/21.11</command>
+	<command name="load">pnetcdf/1.12.3</command>
+	<command name="load">parallel-netcdf/4.9.2</command>
       </modules>
       <modules mpilib="mpi-serial">
-        <command name="load">netcdf/4.3.3.1</command>
+	<command name="load">netcdf/4.9.2</command>
       </modules>
     </module_system>
     <environment_variables>
