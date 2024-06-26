@@ -3,6 +3,7 @@ CIME restart test  This class inherits from SystemTestsCommon
 """
 from CIME.XML.standard_module_setup import *
 from CIME.SystemTests.system_tests_common import SystemTestsCommon
+from CIME.utils import set_directory
 import glob
 
 logger = logging.getLogger(__name__)
@@ -42,6 +43,12 @@ class ERS(SystemTestsCommon):
             ),
         )
         rundir = self._case.get_value("RUNDIR")
+        with set_directory(rundir):
+            results = sorted(glob.glob("rpointer.cpl.*[0-9]"))
+            logger.info("Restarting from {}".format(results[-2]))
+            os.symlink(results[-2], "rpointer.cpl")
+
+
         for pfile in glob.iglob(os.path.join(rundir, "PET*")):
             os.rename(
                 pfile,

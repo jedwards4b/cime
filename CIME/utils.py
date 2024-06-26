@@ -10,6 +10,7 @@ import errno, signal, warnings, filecmp
 import stat as statlib
 from argparse import Action
 from contextlib import contextmanager
+from pathlib import Path
 
 # pylint: disable=deprecated-module
 from distutils import file_util
@@ -90,6 +91,23 @@ def redirect_logger(new_target, logger_name):
         root_log.handlers = orig_root_loggers
         log.handlers = orig_handlers
 
+@contextmanager
+def set_directory(path: Path):
+    """Sets the cwd within the context
+
+    Args:
+        path (Path): The path to the cwd
+
+    Yields:
+        None
+    """
+
+    origin = Path().absolute()
+    try:
+        os.chdir(path)
+        yield
+    finally:
+        os.chdir(origin)
 
 class IndentFormatter(logging.Formatter):
     def __init__(self, indent, fmt=None, datefmt=None):

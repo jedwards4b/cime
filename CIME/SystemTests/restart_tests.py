@@ -5,7 +5,8 @@ Abstract class for restart tests
 
 from CIME.SystemTests.system_tests_compare_two import SystemTestsCompareTwo
 from CIME.XML.standard_module_setup import *
-
+from CIME.utils import set_directory
+import glob
 logger = logging.getLogger(__name__)
 
 
@@ -37,6 +38,7 @@ class RestartTest(SystemTestsCompareTwo):
 
     def _case_two_setup(self):
         rest_n = self._case1.get_value("REST_N")
+        rest_option = self._case1.get_value("REST_OPTION")
         stop_n = self._case1.get_value("STOP_N")
         stop_new = stop_n - rest_n
         expect(
@@ -50,3 +52,14 @@ class RestartTest(SystemTestsCompareTwo):
         self._case.set_value("STOP_N", stop_new)
         self._case.set_value("CONTINUE_RUN", True)
         self._case.set_value("REST_OPTION", "never")
+
+
+
+    def _case_one_custom_postrun_action(self):
+        # Create a link from the previous rpointer.cpl. file to rpointer.cpl
+        case1run = self._case1.get_value("RUNDIR")
+        with set_directory(case1run):
+            results = sorted(glob.glob("rpointer.cpl.*[0-9]"))
+            logger.info("Restarting from {}".format(results[-2]))
+            os.symlink(results[-2], "rpointer.cpl")
+        

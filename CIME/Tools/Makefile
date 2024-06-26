@@ -127,8 +127,8 @@ ifdef USER_INCLDIR
 endif
 
 ifdef FSTDLIB_PKGCONFIG
-  STDLIB_INC  := `pkg-config --cflags fortran_stdlib`
-  STDLIB_LIBS := `pkg-config --libs fortran_stdlib`
+  STDLIB_INC  := $(shell pkg-config --cflags fortran_stdlib)
+  STDLIB_LIBS := $(shell pkg-config --libs fortran_stdlib)
   INCLDIR += $(STDLIB_INC)
   SLIBS += $(STDLIB_LIBS)
 endif
