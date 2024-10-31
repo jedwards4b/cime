@@ -10,7 +10,8 @@ All CIME-compliant components generate their input variable files using a **buil
 component's **cime_config** directory (or other location as set in **config_file.xml**).
 **buildnml** may call other scripts to complete construction of the input file.
 
-For example, the CIME data atmosphere model (DATM) generates namelists using the script **$CIMEROOT/components/data_comps/datm/cime_config/buildnml**.
+For example, in E3SM the CIME data atmosphere model (DATM) generates namelists using the script **$CIMEROOT/components/data_comps/datm/cime_config/buildnml**,
+in CESM the equivalent file is **$SRCROOT/components/cdeps/datm/cime_config/buildnml**.
 
 You can customize a model's namelists in one of two ways:
 
@@ -35,9 +36,9 @@ This results in the creation of component namelists (for example, atm_in, lnd_in
 Customizing driver input variables
 -------------------------------------------
 
-The driver input namelists/variables are contained in the files, **drv_in**, **drv_flds_in** and **seq_maps.rc**. Note that **seq_maps.rc** has a different file format than the other two input files.
+The driver input namelists/variables are driver dependent, for cpl7, the mct driver, these contained in the files, **drv_in**, **drv_flds_in** and **seq_maps.rc**. Note that **seq_maps.rc** has a different file format than the other two input files.   For the CMEPS driver used in CESM and UFS models the files are **drv_in**, **drv_flds_in** and **nuopc.runconfig**.  
 
-All driver namelist variables are defined in the file **$CIMEROOT/src/drivers/mct/cime_config/namelist_definition_drv.xml**.
+All driver namelist variables are defined in the file **$CIMEROOT/src/drivers/mct/cime_config/namelist_definition_drv.xml** for cpl7, or **$SRCROOT/components/cmeps/cime_config/namelist_definition_drv.xml** for CMEPS.
 
 The variables that can be changed only by modifying xml variables appear with the *entry* attribute ``modify_via_xml="xml_variable_name"``.
 
@@ -49,7 +50,7 @@ For example, to change the driver namelist value of ``eps_frac`` to ``1.0e-15``,
 
    eps_frac = 1.0e-15
 
-On the hand, to change the driver namelist value of the starting year/month/day, ``start_ymd`` to ``18500901``, use the command:
+On the other hand, to change the driver namelist value of the starting year/month/day, ``start_ymd`` to ``18500901``, use the command:
 
 ::
 
@@ -72,7 +73,7 @@ compset and resolution in this example are for a CESM fully-coupled case but the
    ::
 
       > cd $CIME/scripts
-      > ./create_newcase --case ~/EXAMPLE_CASE --compset B1850 --res f09_g17
+      > ./create_newcase --case ~/EXAMPLE_CASE --compset BLT1850 --res ne30pg3_t232
 
 2. Check the pe-layout by running **./pelayout**. Make sure it is suitable for your machine.
    If it is not use `xmlchange <../Tools_user/xmlchange.html>`_ or  `pelayout <../Tools_user/pelayout.html>`_ to modify your pe-layout.
@@ -85,7 +86,7 @@ compset and resolution in this example are for a CESM fully-coupled case but the
       > ./case.build
 
    .. warning:: The case.build script can be compute intensive and may not be suitable to run on a login node. As an alternative you would submit this job to an interactive queue.
-                For example, on the NCAR cheyenne platform, you would use **qcmd -- ./case.build** to do this.
+                For example, on the NCAR derecho platform, you would use **qcmd -- ./case.build** to do this.
 
 3. In your case directory, set the job to run 12 model months, set the wallclock time, and submit the job.
 
@@ -98,11 +99,10 @@ compset and resolution in this example are for a CESM fully-coupled case but the
 
 4. Make sure the run succeeded.
 
-   You should see the following line or similar at the end of the **cpl.log** file in your run directory or your short term archiving directory, set by ``$DOUT_S_ROOT``.
+   You should see the following line or similar at the end of the **med.log** (**cpl.log** for cpl7)file in your run directory or your short term archiving directory, set by ``$DOUT_S_ROOT``.
 
    ::
-
-      (seq_mct_drv): ===============       SUCCESSFUL TERMINATION OF CPL7-cesm ===============
+                                           SUCCESSFUL TERMINATION OF CMEPS
 
 5. In the same case directory, Set the case to resubmit itself 10 times so it will run a total of 11 years (including the initial year), and resubmit the case. (Note that a resubmit will automatically change the run to be a continuation run).
 
@@ -129,7 +129,7 @@ A branch or hybrid run uses initialization data from a previous run. Here is an 
    ::
 
       > cd $CIMEROOT/scripts
-      > create_newcase --case ~/NEW_CASE --compset B1850 --res f09_g17
+      > create_newcase --case ~/NEW_CASE --compset BLT1850 --res ne30pg3_t232
       > cd ~/NEW_CASE
 
 
