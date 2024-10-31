@@ -6,7 +6,7 @@ Building a Case
 
 Once the case has been created and setup, its time to build the executable.
 Several directories full of source code must be built all with the same compiler and flags.
-**case.build** performs all build operations (setting dependecies, invoking Make,
+**case.build** performs all build operations (setting dependecies, optionally invoking configure or cmake, invoking Make,
 creating the executable).
 
 .. _building-the-model:
@@ -18,7 +18,8 @@ Calling **case.build**
 After calling `case.setup <../Tools_user/case.setup.html>`_ , run `case.build <../Tools_user/case.build.html>`_  to build the model executable. Running this will:
 
 1. Create the component namelists in ``$RUNDIR`` and ``$CASEROOT/CaseDocs``.
-2. Create the necessary compiled libraries used by coupler and component models ``mct``, ``pio``, ``gptl`` and ``csm_share``.
+2. Create the necessary compiled libraries used by coupler and component models, this may or may not include ``mct``, ``pio``,
+   ``gptl``, ``FMS``, ``mpi-serial`` and ``csm_share``.
    The libraries will be placed in a path below ``$SHAREDLIBROOT``.
 3. Create the necessary compiled libraries for each component model. These are be placed in ``$EXEROOT/bld/lib``.
 4. Create the model executable (``$MODEL.exe``), which is placed in ``$EXEROOT``.
@@ -52,11 +53,11 @@ Each log file is named form: **$component.bldlog.$datestamp**. They are located 
 Invoking `case.build <../Tools_user/case.build.html>`_  creates the following directory structure in ``$EXEROOT`` if the Intel compiler is used:
 ::
 
-   atm/, cpl/, esp/, glc/, ice/, intel/, lib/, lnd/, ocn/, rof/, wav/
+   atm/, cpl/, esp/, glc/, ice/, $COMPILER/, lib/, lnd/, ocn/, rof/, wav/
 
-Except for **intel/** and **lib/**, each directory contains an **obj/** subdirectory for the target model component's compiled object files.
+Except for **$COMPILER/** and **lib/**, each directory contains an **obj/** subdirectory for the target model component's compiled object files.
 
-The *mct*, *pio*, *gptl* and *csm_share* libraries are placed in a directory tree that reflects their dependencies. See the **bldlog** for a given component to locate the library.
+The shared libraries are placed in a directory tree that reflects their dependencies. See the **bldlog** for a given component to locate the library.
 
 Special **include** modules are placed in **lib/include**. The model executable (**cesm.exe** or **e3sm.exe**, for example) is placed directly in ``$EXEROOT``.
 
@@ -144,6 +145,6 @@ The build process handles input data as follows:
   the required data from the input data server with `check_input_data
   <../Tools_user/check_input_data.html>`_ as shown here: ::
 
-     check_input_data --download
+     ./check_input_data --download
 
 The **env_run.xml** variables ``$DIN_LOC_ROOT`` and ``$DIN_LOC_ROOT_CLMFORC`` determine where you should expect input data to reside on a local disk.
